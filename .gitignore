@@ -1,0 +1,5 @@
+# ignore bin directory
+bin
+test/bin
+**.tmp
+doc/html

@@ -1,0 +1,55 @@
+import os ;
+local webserver = .. ;
+local boost = [ os.environ BOOST ] ;
+local json = ../nlohmann/json ;
+
+use-project /webserver
+	: $(webserver)
+	;
+
+use-project /boost
+	: $(boost)
+	;
+
+project webserver_test
+	:
+	:
+	requirements <include>.
+
+	<warnings>all
+	<c++-template-depth>1024
+
+	<define>BOOST_HANA_CONFIG_ENABLE_STRING_UDL
+	<define>BOOST_ASIO_HAS_STD_CHRONO
+
+	<toolset>gcc:<cxxflags>-std=gnu++1z
+	<toolset>gcc:<cxxflags>-fconstexpr-depth=1024
+	<toolset>gcc:<cxxflags>-Wall
+	<toolset>gcc:<cxxflags>-Wextra
+	<toolset>gcc:<linkflags>-lpthread
+	<toolset>gcc:<linkflags>-ldl
+
+	<toolset>clang:<cxxflags>-std=c++1z
+	<toolset>clang:<cxxflags>-fconstexpr-depth=1024
+	<toolset>clang:<cxxflags>-Wall
+	<toolset>clang:<cxxflags>-Wextra
+	<toolset>clang:<cxxflags>-Wno-gnu-string-literal-operator-template
+	<toolset>clang:<cxxflags>-stdlib=libc++
+	<toolset>clang:<linkflags>-lpthread
+	<toolset>clang:<linkflags>-ldl
+	<toolset>clang:<linkflags>-lc++abi
+	<toolset>clang:<linkflags>-stdlib=libc++
+
+	<include>../include
+	<include>$(boost)
+	<include>$(json)/src
+	:
+	;
+
+
+exe server
+	:
+	server.cpp
+	/webserver//webserver
+	/boost//system
+	;
