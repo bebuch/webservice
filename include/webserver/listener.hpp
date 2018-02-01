@@ -10,6 +10,7 @@
 #define _webserver__listener__hpp_INCLUDED_
 
 #include "http_session.hpp"
+#include "fail.hpp"
 
 
 namespace webserver{
@@ -32,14 +33,14 @@ namespace webserver{
 			// Open the acceptor
 			acceptor_.open(endpoint.protocol(), ec);
 			if(ec){
-				fail(ec, "open");
+				log_fail(ec, "open");
 				return;
 			}
 
 			// Bind to the server address
 			acceptor_.bind(endpoint, ec);
 			if(ec){
-				fail(ec, "bind");
+				log_fail(ec, "bind");
 				return;
 			}
 
@@ -47,7 +48,7 @@ namespace webserver{
 			acceptor_.listen(
 				boost::asio::socket_base::max_listen_connections, ec);
 			if(ec){
-				fail(ec, "listen");
+				log_fail(ec, "listen");
 				return;
 			}
 		}
@@ -69,13 +70,17 @@ namespace webserver{
 		}
 
 		void on_accept(boost::system::error_code ec){
-			if(ec){
-				fail(ec, "accept");
+			if(ec == boost::asio::error::invalid_argument){
+				log_fail(ec, "listener accept");
+				return;
+			}else if(ec){
+				log_fail(ec, "listener accept");
 			}else{
 				// Create the http_session and run it
 				std::make_shared< http_session >(
-					std::move(socket_),
-					doc_root_)->run();
+						std::move(socket_),
+						doc_root_
+					)->run();
 			}
 
 			// Accept another connection

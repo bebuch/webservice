@@ -74,7 +74,7 @@ namespace webserver{
 			}
 
 			if(ec){
-				return fail(ec, "accept");
+				return log_fail(ec, "accept");
 			}
 
 			// Read a message
@@ -84,7 +84,7 @@ namespace webserver{
 		// Called when the timer expires.
 		void on_timer(boost::system::error_code ec){
 			if(ec && ec != boost::asio::error::operation_aborted){
-				return fail(ec, "timer");
+				return log_fail(ec, "timer");
 			}
 
 			// See if the timer really expired since the deadline may have
@@ -149,7 +149,7 @@ namespace webserver{
 			}
 
 			if(ec){
-				return fail(ec, "ping");
+				return log_fail(ec, "ping");
 			}
 
 			// Note that the ping was sent.
@@ -207,7 +207,7 @@ namespace webserver{
 			}
 
 			if(ec){
-				fail(ec, "read");
+				log_fail(ec, "read");
 			}
 
 			// Note that there is activity
@@ -239,7 +239,7 @@ namespace webserver{
 			}
 
 			if(ec){
-				return fail(ec, "write");
+				return log_fail(ec, "write");
 			}
 
 			// Clear the buffer

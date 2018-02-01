@@ -11,15 +11,43 @@
 
 #include <boost/system/error_code.hpp>
 
+#include <boost/utility/string_view.hpp>
+
 #include <iostream>
+#include <mutex>
 
 
 namespace webserver{
 
 
+	inline std::mutex& log_mutex(){
+		static std::mutex mutex;
+		return mutex;
+	}
+
+
 	// Report a failure
-	void fail(boost::system::error_code ec, char const* what){
+	inline void log_fail(boost::system::error_code ec, boost::string_view what){
+		std::lock_guard< std::mutex > lock(log_mutex());
 		std::cerr << what << ": " << ec.message() << "\n";
+	}
+
+	// Print an exception
+	inline void log_exception(std::exception const& e, boost::string_view pos){
+		std::lock_guard< std::mutex > lock(log_mutex());
+		std::cerr << "exception in " << pos << ": " << e.what() << "\n";
+	}
+
+	// Print an exception
+	inline void log_exception(boost::string_view pos){
+		std::lock_guard< std::mutex > lock(log_mutex());
+		std::cerr << "unknown exception in " << pos << "\n";
+	}
+
+	// Print an massage
+	inline void log_msg(boost::string_view text){
+		std::lock_guard< std::mutex > lock(log_mutex());
+		std::cout << "log: " << text << "\n";
 	}
 
 
