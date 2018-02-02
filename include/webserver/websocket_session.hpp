@@ -31,7 +31,7 @@ namespace webserver{
 			: ws_(std::move(socket))
 			, strand_(ws_.get_executor())
 			, timer_(ws_.get_executor().context(),
-				(std::chrono::steady_clock::time_point::max)()) {}
+				std::chrono::steady_clock::time_point::max()) {}
 
 		// Start the asynchronous operation
 		template < typename Body, typename Allocator >

@@ -10,7 +10,6 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include <thread>
 #include <algorithm>
 
 
@@ -32,54 +31,13 @@ int main(int argc, char* argv[]){
 	try{
 		auto const address = boost::asio::ip::make_address(argv[1]);
 		auto const port = boost::lexical_cast< std::uint16_t >(argv[2]);
-		std::string const doc_root = argv[3];
 		auto const thread_count = std::max< std::uint16_t >(
 			1, boost::lexical_cast< std::uint16_t >(argv[4]));
+		std::string const doc_root = argv[3];
 
-		// Run the I/O service on the requested number of thread_count
-		std::vector< std::thread > threads;
-		threads.reserve(thread_count);
-
-		// The io_context is required for all I/O
-		boost::asio::io_context ioc{thread_count};
-
-		// Create and launch a listening port
-		std::make_shared< webserver::listener >(
-			ioc,
-			boost::asio::ip::tcp::endpoint{address, port},
-			doc_root)->run();
-
-		for(std::size_t i = 0; i < thread_count; ++i){
-			threads.emplace_back([&ioc]{
-				webserver::log_msg("start io_context thread("
-					+ boost::lexical_cast< std::string >(
-						std::this_thread::get_id()) + ")");
-				for(;;){
-					try{
-						ioc.run();
-						break;
-					}catch(std::exception& e){
-						webserver::log_exception(e, "exception in io_context thread("
-							+ boost::lexical_cast< std::string >(
-								std::this_thread::get_id()) + ")");
-					}catch(...){
-						webserver::log_exception("unknown exception in io_context thread("
-							+ boost::lexical_cast< std::string >(
-								std::this_thread::get_id()) + ")");
-					}
-					webserver::log_msg("restart io_context thread("
-						+ boost::lexical_cast< std::string >(
-							std::this_thread::get_id()) + ")");
-				}
-				webserver::log_msg("exit io_context thread("
-					+ boost::lexical_cast< std::string >(
-						std::this_thread::get_id()) + ")");
-			});
-		}
-
-		for(auto& thread: threads){
-			thread.join();
-		}
+		file_and_websocket_handler handler(doc_root);
+		server(handler, address, port, thread_count);
+		server.block();
 
 		return 0;
 	}catch(std::exception const& e){

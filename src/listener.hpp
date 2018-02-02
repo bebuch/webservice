@@ -9,63 +9,43 @@
 #ifndef _webserver__listener__hpp_INCLUDED_
 #define _webserver__listener__hpp_INCLUDED_
 
-#include "http_session.hpp"
-#include "fail.hpp"
+#include <webserver/request_handler.hpp>
 
 
 namespace webserver{
 
 
-	// Accepts incoming connections and launches the sessions
-	class listener: public std::enable_shared_from_this< listener >{
+	/// \brief Accepts incoming connections and launches the sessions
+	class listener{
 	public:
 		listener(
+			request_handler& handler,
 			boost::asio::io_context& ioc,
-			boost::asio::ip::tcp::endpoint endpoint,
-			std::string const& doc_root
+			boost::asio::ip::tcp::endpoint endpoint
 		)
-			: acceptor_(ioc)
+			: handler_(handler)
+			, acceptor_(ioc)
 			, socket_(ioc)
-			, doc_root_(doc_root)
 		{
-			boost::system::error_code ec;
-
 			// Open the acceptor
-			acceptor_.open(endpoint.protocol(), ec);
-			if(ec){
-				log_fail(ec, "open");
-				return;
-			}
+			acceptor_.open(endpoint.protocol());
 
 			// Bind to the server address
-			acceptor_.bind(endpoint, ec);
-			if(ec){
-				log_fail(ec, "bind");
-				return;
-			}
+			acceptor_.bind(endpoint);
 
 			// Start listening for connections
-			acceptor_.listen(
-				boost::asio::socket_base::max_listen_connections, ec);
-			if(ec){
-				log_fail(ec, "listen");
-				return;
-			}
-		}
+			acceptor_.listen(boost::asio::socket_base::max_listen_connections);
 
-		// Start accepting incoming connections
-		void run(){
-			if(!acceptor_.is_open()){
-				return;
-			}
+			// Start accepting incoming connections
+			BOOST_ASSERT(acceptor_.is_open());
 			do_accept();
 		}
 
 		void do_accept(){
 			acceptor_.async_accept(
 				socket_,
-				[this_ = shared_from_this()](boost::system::error_code ec){
-					this_->on_accept(ec);
+				[this](boost::system::error_code ec){
+					on_accept(ec);
 				});
 		}
 
@@ -77,10 +57,7 @@ namespace webserver{
 				log_fail(ec, "listener accept");
 			}else{
 				// Create the http_session and run it
-				std::make_shared< http_session >(
-						std::move(socket_),
-						doc_root_
-					)->run();
+				handler_(std::move(socket_));
 			}
 
 			// Accept another connection
@@ -88,9 +65,9 @@ namespace webserver{
 		}
 
 	private:
+		request_handler& handler_;
 		boost::asio::ip::tcp::acceptor acceptor_;
 		boost::asio::ip::tcp::socket socket_;
-		std::string const& doc_root_;
 	};
 
 
