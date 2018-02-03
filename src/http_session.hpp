@@ -113,15 +113,14 @@ namespace webserver{
 				// socket
 				std::make_shared< websocket_session >(
 					std::move(socket_))->do_accept(std::move(req_));
-				return;
-			}
+			}else{
+				// Send the response
+				handle_request(doc_root_, std::move(req_), queue_);
 
-			// Send the response
-			handle_request(doc_root_, std::move(req_), queue_);
-
-			// If we aren't at the queue limit, try to pipeline another request
-			if(!queue_.is_full()){
-				do_read();
+				// If we aren't at the queue limit, try to pipeline another request
+				if(!queue_.is_full()){
+					do_read();
+				}
 			}
 		}
 
@@ -185,17 +184,16 @@ namespace webserver{
 			}
 
 			// Called by the HTTP handler to send a response.
-			template < bool isRequest, typename Body, typename Fields >
+			template < typename Body, typename Fields >
 			void operator()(
-				boost::beast::http::message< isRequest, Body, Fields >&& msg
+				boost::beast::http::respons< Body, Fields >&& msg
 			){
 				// This holds a work item
 				class work_impl: public work{
 				public:
 					work_impl(
 						http_session& self,
-						boost::beast::http::message<
-							isRequest, Body, Fields >&& msg
+						boost::beast::http::respons< Body, Fields >&& msg
 					)
 						: self_(self)
 						, msg_(std::move(msg)) {}
@@ -219,7 +217,7 @@ namespace webserver{
 
 				private:
 					http_session& self_;
-					boost::beast::http::message< isRequest, Body, Fields > msg_;
+					boost::beast::http::respons< Body, Fields > msg_;
 				};
 
 				// Allocate and store the work
@@ -252,8 +250,7 @@ namespace webserver{
 		boost::asio::steady_timer timer_;
 		boost::beast::flat_buffer buffer_;
 		std::string const& doc_root_;
-		boost::beast::http::request<
-			boost::beast::http::vector_body< std::uint8_t > > req_;
+		boost::beast::http::request< boost::beast::http::string_body > req_;
 		queue queue_;
 	};
 

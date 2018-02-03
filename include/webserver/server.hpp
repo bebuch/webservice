@@ -36,7 +36,7 @@ namespace webserver{
 			request_handler& handler,
 			boost::asio::ip::address address,
 			std::uint16_t port,
-			std::uint16_t thread_count = 1,
+			std::uint8_t thread_count = 1,
 			exception_handler handle_exception = {}
 		);
 

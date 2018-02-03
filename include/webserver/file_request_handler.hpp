@@ -28,7 +28,7 @@ namespace webserver{
 		template < typename Send >
 		void operator()(
 			boost::beast::http::request<
-				boost::beast::http::vector_body< std::uint8_t > >&& req,
+				boost::beast::http::string_body >&& req,
 			Send&& send
 		){
 			namespace http = boost::beast::http;

@@ -23,12 +23,15 @@ namespace webserver{
 			request_handler& handler,
 			boost::asio::ip::address const address,
 			std::uint16_t const port,
-			std::uint16_t const thread_count,
+			std::uint8_t const thread_count,
 			exception_handler&& handle_exception
 		)
 			: handle_exception_(std::move(handle_exception))
 			, ioc_{thread_count}
-			, listener_(ioc_, boost::asio::ip::tcp::endpoint{address, port})
+			, listener_(
+				handler,
+				ioc_,
+				boost::asio::ip::tcp::endpoint{address, port})
 		{
 			// Run the I/O service on the requested number of thread_count
 			threads_.reserve(thread_count);
@@ -87,7 +90,7 @@ namespace webserver{
 		request_handler& handler,
 		boost::asio::ip::address const address,
 		std::uint16_t const port,
-		std::uint16_t const thread_count,
+		std::uint8_t const thread_count,
 		exception_handler handle_exception
 	)
 		: impl(std::make_unqiue< server_impl >(
