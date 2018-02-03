@@ -62,7 +62,7 @@ namespace webserver{
 						boost::system::error_code ec,
 						std::size_t /*bytes_transferred*/
 					){
-						this_->impl().on_read(ec);
+						this_->on_read(ec);
 					}));
 		}
 
@@ -88,7 +88,7 @@ namespace webserver{
 				boost::asio::bind_executor(
 					strand_,
 					[this_ = shared_from_this()](boost::system::error_code ec){
-						this_->impl().on_timer(ec);
+						this_->on_timer(ec);
 					}));
 		}
 
@@ -200,10 +200,10 @@ namespace webserver{
 
 					void operator()(){
 						boost::beast::http::async_write(
-							self_.impl().socket_,
+							self_.socket_,
 							msg_,
 							boost::asio::bind_executor(
-								self_.impl().strand_,
+								self_.strand_,
 								[
 									this_ = self_.shared_from_this(),
 									need_eof = msg_.need_eof()
@@ -211,7 +211,7 @@ namespace webserver{
 									boost::system::error_code ec,
 									std::size_t /*bytes_transferred*/
 								){
-									this_->impl().on_write(ec, need_eof);
+									this_->on_write(ec, need_eof);
 								}));
 					}
 
