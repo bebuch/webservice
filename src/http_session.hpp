@@ -26,6 +26,46 @@
 namespace webserver{
 
 
+	class http_session;
+
+	class http_session_on_write{
+	public:
+		http_session_on_write(
+			std::shared_ptr< http_session >&& self,
+			auto const need_eof
+		)
+			: self_(self)
+			, need_eof_(need_eof) {}
+
+		void operator()(
+			boost::system::error_code ec,
+			std::size_t /*bytes_transferred*/
+		)const;
+
+	private:
+		std::shared_ptr< http_session > const self_;
+		auto const need_eof_;
+	};
+
+	// The type-erased, saved work item
+	struct http_session_work{
+		virtual ~http_session_work() = default;
+		virtual void operator()() = 0;
+	};
+
+
+
+
+	void http_session_on_write::operator()(
+		boost::system::error_code ec,
+		std::size_t /*bytes_transferred*/
+	)const{
+		self_->on_write(ec, need_eof_);
+	}
+
+
+
+
 	/// \brief Handles an HTTP server connection
 	class http_session: public std::enable_shared_from_this< http_session >{
 	public:
@@ -189,40 +229,41 @@ namespace webserver{
 				boost::beast::http::respons< Body, Fields >&& msg
 			){
 				// This holds a work item
-				class work_impl: public work{
+				class work_impl: public http_session_work{
 				public:
 					work_impl(
-						http_session& self,
+						std::shared_ptr< http_session >&& self,
+						boost::asio::ip::tcp::socket& socket,
+						boost::asio::strand<
+							boost::asio::io_context::executor_type >& strand,
 						boost::beast::http::respons< Body, Fields >&& msg
 					)
-						: self_(self)
+						: self_(std::move(self))
+						, socket_(socket)
+						, strand_(strand)
 						, msg_(std::move(msg)) {}
 
 					void operator()(){
 						boost::beast::http::async_write(
-							self_.socket_,
+							socket_,
 							msg_,
 							boost::asio::bind_executor(
-								self_.strand_,
-								[
-									this_ = self_.shared_from_this(),
-									need_eof = msg_.need_eof()
-								](
-									boost::system::error_code ec,
-									std::size_t /*bytes_transferred*/
-								){
-									this_->on_write(ec, need_eof);
-								}));
+								strand_,
+								http_session_on_write(self_, msg_.need_eof())
+							));
 					}
 
 				private:
-					http_session& self_;
-					boost::beast::http::respons< Body, Fields > msg_;
+					std::shared_ptr< http_session > const self_;
+					boost::asio::ip::tcp::socket& socket_;
+					boost::asio::strand<
+						boost::asio::io_context::executor_type >& strand_;
+					boost::beast::http::respons< Body, Fields > const msg_;
 				};
 
 				// Allocate and store the work
-				items_.push_back(
-					std::make_unique< work_impl >(self_, std::move(msg)));
+				items_.push_back(std::make_unique< work_impl >(
+					self_.shared_from_this(), std::move(msg)));
 
 				// If there was no previous work, start this one
 				if(items_.size() == 1){
@@ -233,12 +274,6 @@ namespace webserver{
 		private:
 			// Maximum number of responses we will queue
 			static constexpr std::size_t limit = 64;
-
-			// The type-erased, saved work item
-			struct work{
-				virtual ~work() = default;
-				virtual void operator()() = 0;
-			};
 
 			http_session& self_;
 			std::vector< std::unique_ptr< work > > items_;
