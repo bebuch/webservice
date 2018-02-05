@@ -9,6 +9,8 @@
 #ifndef _webserver__server__hpp_INCLUDED_
 #define _webserver__server__hpp_INCLUDED_
 
+#include "http_request_handler.hpp"
+
 
 namespace webserver{
 
@@ -33,7 +35,7 @@ namespace webserver{
 		///                         one server thread, then your handling
 		///                         function must be thread save!
 		server(
-			request_handler& handler,
+			http_request_handler& handler,
 			boost::asio::ip::address address,
 			std::uint16_t port,
 			std::uint8_t thread_count = 1,

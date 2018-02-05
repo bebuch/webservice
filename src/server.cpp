@@ -20,11 +20,11 @@ namespace webserver{
 	public:
 		/// \brief Constructor
 		server_impl(
-			request_handler& handler,
+			http_request_handler& handler,
 			boost::asio::ip::address const address,
 			std::uint16_t const port,
 			std::uint8_t const thread_count,
-			exception_handler&& handle_exception
+			server::exception_handler&& handle_exception
 		)
 			: handle_exception_(std::move(handle_exception))
 			, ioc_{thread_count}
@@ -55,25 +55,28 @@ namespace webserver{
 
 		/// \brief Wait until all thread have finished
 		~server_impl(){
+			close();
+			block();
+		}
+
+
+		/// \copydoc server::block()
+		void block(){
 			for(auto& thread: threads_){
 				thread.join();
 			}
 		}
 
-
-		/// \copydoc server::block()
-		void block();
-
 		/// \copydoc server::shutdown()
-		void shutdown();
+		void shutdown(){}
 
 		/// \copydoc server::close()
-		void close();
+		void close(){}
 
 
 	private:
 		/// \brief Callback that is called if an exception is thrown
-		exception_handler const handle_exception_;
+		server::exception_handler const handle_exception_;
 
 		/// \brief The worker threads
 		std::vector< std::thread > threads_;
@@ -87,13 +90,13 @@ namespace webserver{
 
 
 	server::server(
-		request_handler& handler,
+		http_request_handler& handler,
 		boost::asio::ip::address const address,
 		std::uint16_t const port,
 		std::uint8_t const thread_count,
 		exception_handler handle_exception
 	)
-		: impl(std::make_unqiue< server_impl >(
+		: impl_(std::make_unique< server_impl >(
 				handler,
 				address,
 				port,
@@ -101,22 +104,18 @@ namespace webserver{
 				std::move(handle_exception)
 			)) {}
 
-
-	server::~server(){
-		close();
-		block();
-	}
+	server::~server() = default;
 
 
-	server::block(){
+	void server::block(){
 		impl_->block();
 	}
 
-	server::shutdown(){
+	void server::shutdown(){
 		impl_->shutdown();
 	}
 
-	server::close(){
+	void server::close(){
 		impl_->close();
 	}
 

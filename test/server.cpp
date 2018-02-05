@@ -6,11 +6,14 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include <webserver/listener.hpp>
+#include <webserver/file_request_handler.hpp>
+#include <webserver/fail.hpp>
+#include <webserver/server.hpp>
 
 #include <boost/lexical_cast.hpp>
 
 #include <algorithm>
+#include <iostream>
 
 
 void print_help(char const* const exec_name){
@@ -35,8 +38,8 @@ int main(int argc, char* argv[]){
 			1, boost::lexical_cast< std::uint8_t >(argv[4]));
 		std::string const doc_root = argv[3];
 
-		file_and_websocket_handler handler(doc_root);
-		server(handler, address, port, thread_count);
+		webserver::file_request_handler handler(doc_root);
+		webserver::server server(handler, address, port, thread_count);
 		server.block();
 
 		return 0;

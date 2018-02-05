@@ -9,7 +9,10 @@
 #ifndef _webserver__listener__hpp_INCLUDED_
 #define _webserver__listener__hpp_INCLUDED_
 
-#include <webserver/request_handler.hpp>
+#include <webserver/http_request_handler.hpp>
+#include <webserver/fail.hpp>
+
+#include "http_session.hpp"
 
 
 namespace webserver{
@@ -19,7 +22,7 @@ namespace webserver{
 	class listener{
 	public:
 		listener(
-			request_handler& handler,
+			http_request_handler& handler,
 			boost::asio::io_context& ioc,
 			boost::asio::ip::tcp::endpoint endpoint
 		)
@@ -57,7 +60,7 @@ namespace webserver{
 				log_fail(ec, "listener accept");
 			}else{
 				// Create the http_session and run it
-				handler_(std::move(socket_));
+				std::make_shared< http_session >(std::move(socket_), handler_);
 			}
 
 			// Accept another connection
@@ -65,7 +68,7 @@ namespace webserver{
 		}
 
 	private:
-		request_handler& handler_;
+		http_request_handler& handler_;
 		boost::asio::ip::tcp::acceptor acceptor_;
 		boost::asio::ip::tcp::socket socket_;
 	};
