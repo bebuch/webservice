@@ -27,7 +27,7 @@ namespace webserver{
 	/// \brief Handles an HTTP server connection
 	class http_session: public std::enable_shared_from_this< http_session >{
 	public:
-		/// \brief Take ownership of the socket
+		/// \brief Take ownership of the socket and start reading
 		explicit http_session(
 			boost::asio::ip::tcp::socket&& socket,
 			http_request_handler& handler
@@ -36,8 +36,10 @@ namespace webserver{
 			, handler_(handler)
 			, strand_(socket_.get_executor())
 			, timer_(socket_.get_executor().context(),
-				(std::chrono::steady_clock::time_point::max)())
-		{
+				std::chrono::steady_clock::time_point::max())
+			{}
+
+		void run(){
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.
 			on_timer({});
@@ -65,7 +67,8 @@ namespace webserver{
 		// Called when the timer expires.
 		void on_timer(boost::system::error_code ec){
 			if(ec && ec != boost::asio::error::operation_aborted){
-				return log_fail(ec, "timer");
+				log_fail(ec, "timer");
+				return;
 			}
 
 			// Verify that the timer really expired since the deadline may have
@@ -89,6 +92,7 @@ namespace webserver{
 		}
 
 		void on_read(boost::system::error_code ec){
+
 			// Happens when the timer closes the socket
 			if(ec == boost::asio::error::operation_aborted){
 				return;
@@ -96,11 +100,13 @@ namespace webserver{
 
 			// This means they closed the connection
 			if(ec == boost::beast::http::error::end_of_stream){
-				return do_close();
+				do_close();
+				return;
 			}
 
 			if(ec){
-				return log_fail(ec, "read");
+				log_fail(ec, "read");
+				return;
 			}
 
 			// See if it is a WebSocket Upgrade
@@ -133,13 +139,15 @@ namespace webserver{
 			}
 
 			if(ec){
-				return log_fail(ec, "write");
+				log_fail(ec, "write");
+				return;
 			}
 
 			if(close){
 				// This means we should close the connection, usually because
 				// the response indicated the "Connection: close" semantic.
-				return do_close();
+				do_close();
+				return;
 			}
 
 			// Inform the queue that a write completed
@@ -202,7 +210,7 @@ namespace webserver{
 
 
 		private:
-			// Maximum number of responses we will queue
+			/// \brief Maximum number of responses we will queue
 			static constexpr std::size_t limit = 64;
 
 			std::vector< std::unique_ptr< http_session_work > > items_;

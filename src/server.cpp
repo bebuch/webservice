@@ -19,6 +19,8 @@ namespace webserver{
 	class server_impl{
 	public:
 		/// \brief Constructor
+		///
+		/// Run the IO context on all threads.
 		server_impl(
 			http_request_handler& handler,
 			boost::asio::ip::address const address,
@@ -52,6 +54,9 @@ namespace webserver{
 								}catch(...){
 									log_exception("server::exception_handler");
 								}
+							}else{
+								log_exception(std::current_exception(),
+									"server::exception");
 							}
 						}
 					}
@@ -82,6 +87,7 @@ namespace webserver{
 
 
 	private:
+		/// \brief Protect thread joins
 		std::mutex mutex;
 
 		/// \brief Callback that is called if an exception is thrown

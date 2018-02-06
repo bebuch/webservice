@@ -44,6 +44,17 @@ namespace webserver{
 		std::cerr << "unknown exception in " << pos << "\n";
 	}
 
+	// Print an exception
+	inline void log_exception(std::exception_ptr e, boost::string_view pos){
+		try{
+			std::rethrow_exception(e);
+		}catch(std::exception const& e){
+			log_exception(e, pos);
+		}catch(...){
+			log_exception(pos);
+		}
+	}
+
 	// Print an massage
 	inline void log_msg(boost::string_view text){
 		std::lock_guard< std::mutex > lock(log_mutex());

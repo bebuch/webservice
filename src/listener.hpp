@@ -60,7 +60,8 @@ namespace webserver{
 				log_fail(ec, "listener accept");
 			}else{
 				// Create the http_session and run it
-				std::make_shared< http_session >(std::move(socket_), handler_);
+				std::make_shared< http_session >(std::move(socket_), handler_)
+					->run();
 			}
 
 			// Accept another connection

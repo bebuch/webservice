@@ -20,7 +20,7 @@ namespace webserver{
 	/// \brief An http and WebSocket server
 	class server{
 	public:
-		/// \brief
+		/// \brief Type of an exception handling function
 		using exception_handler = std::function< void(std::exception_ptr) >;
 
 

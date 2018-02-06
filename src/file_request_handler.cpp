@@ -8,6 +8,8 @@
 //-----------------------------------------------------------------------------
 #include <webserver/file_request_handler.hpp>
 
+#include <iostream>
+
 
 namespace webserver{
 
