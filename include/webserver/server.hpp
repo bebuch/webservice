@@ -52,17 +52,11 @@ namespace webserver{
 		/// This effecivly blocks the current thread until the server is closed.
 		void block();
 
-		/// \brief Tells all connections to end
-		///
-		/// This function is not blocking. Call block() if you want to wait
-		/// until all connections are closed.
-		void shutdown();
-
 		/// \brief Close all connections as fast as possible
 		///
 		/// This function is not blocking. Call block() if you want to wait
 		/// until all connections are closed.
-		void close();
+		void stop();
 
 
 	private:

@@ -35,7 +35,8 @@ int main(int argc, char* argv[]){
 		auto const address = boost::asio::ip::make_address(argv[1]);
 		auto const port = boost::lexical_cast< std::uint16_t >(argv[2]);
 		auto const thread_count = std::max< std::uint8_t >(
-			1, boost::lexical_cast< std::uint8_t >(argv[4]));
+			1, boost::numeric_cast< std::uint8_t >(
+				boost::lexical_cast< unsigned >(argv[4])));
 		std::string const doc_root = argv[3];
 
 		webserver::file_request_handler handler(doc_root);

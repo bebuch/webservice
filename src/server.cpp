@@ -44,7 +44,14 @@ namespace webserver{
 							return;
 						}catch(...){
 							if(handle_exception_){
-								handle_exception_(std::current_exception());
+								try{
+									handle_exception_(std::current_exception());
+								}catch(std::exception const& e){
+									log_exception(e,
+										"server::exception_handler");
+								}catch(...){
+									log_exception("server::exception_handler");
+								}
 							}
 						}
 					}
@@ -55,26 +62,28 @@ namespace webserver{
 
 		/// \brief Wait until all thread have finished
 		~server_impl(){
-			close();
+			stop();
 			block();
 		}
 
 
 		/// \copydoc server::block()
 		void block(){
+			std::lock_guard< std::mutex > lock(mutex);
 			for(auto& thread: threads_){
-				thread.join();
+				if(thread.joinable()) thread.join();
 			}
 		}
 
-		/// \copydoc server::shutdown()
-		void shutdown(){}
-
-		/// \copydoc server::close()
-		void close(){}
+		/// \copydoc server::stop()
+		void stop(){
+			ioc_.stop();
+		}
 
 
 	private:
+		std::mutex mutex;
+
 		/// \brief Callback that is called if an exception is thrown
 		server::exception_handler const handle_exception_;
 
@@ -111,12 +120,8 @@ namespace webserver{
 		impl_->block();
 	}
 
-	void server::shutdown(){
-		impl_->shutdown();
-	}
-
-	void server::close(){
-		impl_->close();
+	void server::stop(){
+		impl_->stop();
 	}
 
 
