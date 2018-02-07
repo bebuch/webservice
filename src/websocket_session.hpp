@@ -9,7 +9,7 @@
 #ifndef _webserver__websocket_session__hpp_INCLUDED_
 #define _webserver__websocket_session__hpp_INCLUDED_
 
-#include "fail.hpp"
+#include <webserver/fail.hpp>
 
 #include <boost/beast/websocket.hpp>
 
@@ -42,11 +42,13 @@ namespace webserver{
 			// Set the control callback. This will be called
 			// on every incoming ping, pong, and close frame.
 			ws_.control_callback(
-				std::bind(
-					&websocket_session::on_control_callback,
-					this,
-					std::placeholders::_1,
-					std::placeholders::_2));
+				[this](
+					boost::beast::websocket::frame_type /*kind*/,
+					boost::beast::string_view /*payload*/
+				){
+					// Note that there is activity
+					activity();
+				});
 
 
 			// Run the timer. The timer is operated
@@ -104,10 +106,11 @@ namespace webserver{
 					ws_.async_ping({},
 						boost::asio::bind_executor(
 							strand_,
-							std::bind(
-								&websocket_session::on_ping,
-								shared_from_this(),
-								std::placeholders::_1)));
+							[this_ = shared_from_this()](
+								boost::system::error_code ec
+							){
+								this_->on_ping(ec);
+							}));
 				}else{
 					// The timer expired while trying to handshake,
 					// or we sent a ping and it never completed or
@@ -161,16 +164,6 @@ namespace webserver{
 				// at exactly the same time we sent a ping.
 				BOOST_ASSERT(ping_state_ == 0);
 			}
-		}
-
-		void on_control_callback(
-			boost::beast::websocket::frame_type kind,
-			boost::beast::string_view payload
-		){
-			boost::ignore_unused(kind, payload);
-
-			// Note that there is activity
-			activity();
 		}
 
 		void do_read(){

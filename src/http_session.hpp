@@ -9,8 +9,9 @@
 #ifndef _webserver__http_session__hpp_INCLUDED_
 #define _webserver__http_session__hpp_INCLUDED_
 
+#include "websocket_session.hpp"
+
 #include <webserver/fail.hpp>
-#include <webserver/websocket_session.hpp>
 
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/beast/websocket.hpp>
