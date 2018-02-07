@@ -8,6 +8,9 @@
 //-----------------------------------------------------------------------------
 #include <webserver/file_request_handler.hpp>
 
+#include "path_concat.hpp"
+#include "mime_type.hpp"
+
 #include <iostream>
 
 

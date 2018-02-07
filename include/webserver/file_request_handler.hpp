@@ -10,8 +10,6 @@
 #define _webserver__file_request_handler__hpp_INCLUDED_
 
 #include "http_request_handler.hpp"
-#include "path_concat.hpp"
-#include "mime_type.hpp"
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/version.hpp>
