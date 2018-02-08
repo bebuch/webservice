@@ -242,6 +242,13 @@ namespace webserver{
 			do_read();
 		}
 
+		/// \brief Send a text message to all sessions
+		void send_text(std::string&& data);
+
+		/// \brief Send a binary message to all sessions
+		void send_binary(std::vector< std::uint8_t >&& data);
+
+
 	private:
 		boost::beast::websocket::stream< boost::asio::ip::tcp::socket > ws_;
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
