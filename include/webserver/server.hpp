@@ -10,6 +10,7 @@
 #define _webserver__server__hpp_INCLUDED_
 
 #include "http_request_handler.hpp"
+#include "websocket_service.hpp"
 
 
 namespace webserver{
@@ -36,6 +37,7 @@ namespace webserver{
 		///                         function must be thread save!
 		server(
 			http_request_handler& handler,
+			websocket_service& service,
 			boost::asio::ip::address address,
 			std::uint16_t port,
 			std::uint8_t thread_count = 1,

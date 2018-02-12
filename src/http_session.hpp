@@ -31,10 +31,12 @@ namespace webserver{
 		/// \brief Take ownership of the socket and start reading
 		explicit http_session(
 			boost::asio::ip::tcp::socket&& socket,
-			http_request_handler& handler
+			http_request_handler& handler,
+			websocket_service& service
 		)
 			: socket_(std::move(socket))
 			, handler_(handler)
+			, service_(service)
 			, strand_(socket_.get_executor())
 			, timer_(socket_.get_executor().context(),
 				std::chrono::steady_clock::time_point::max())
@@ -114,8 +116,9 @@ namespace webserver{
 			if(boost::beast::websocket::is_upgrade(req_)){
 				// Create a WebSocket websocket_session by transferring the
 				// socket
-				std::make_shared< websocket_session >(std::move(socket_))
-					->do_accept(std::move(req_));
+				std::make_shared< websocket_session >(
+					std::move(socket_), service_)
+						->do_accept(std::move(req_));
 			}else{
 				// Send the response
 				handler_(std::move(req_), http_response{
@@ -220,6 +223,7 @@ namespace webserver{
 
 		boost::asio::ip::tcp::socket socket_;
 		http_request_handler& handler_;
+		websocket_service& service_;
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
 		boost::asio::steady_timer timer_;
 		boost::beast::flat_buffer buffer_;

@@ -9,12 +9,19 @@
 #ifndef _webserver__websocket_service__hpp_INCLUDED_
 #define _webserver__websocket_service__hpp_INCLUDED_
 
+#include <boost/beast/core/multi_buffer.hpp>
+
+#include <memory>
 #include <string>
 #include <vector>
+#include <set>
 
 
 namespace webserver{
 
+
+	class websocket_service_impl;
+	class websocket_session;
 
 	class websocket_service{
 	public:
@@ -26,7 +33,7 @@ namespace webserver{
 
 
 		/// \brief Send a text message to all sessions
-		void send_text(std::string const& data);
+		void send_text(std::string data);
 
 		/// \brief Send a text message to session by identifier
 		void send_text(
@@ -48,7 +55,7 @@ namespace webserver{
 
 		/// \brief Send a binary message to all sessions by identifier
 		void send_binary(
-			std::set< std::size_t > identifier,
+			std::set< std::size_t > const& identifier,
 			std::vector< std::uint8_t > data);
 
 
@@ -62,12 +69,12 @@ namespace webserver{
 		/// \brief Called when a session received a text message
 		virtual void on_text(
 			std::size_t identifier,
-			std::string&& data);
+			boost::beast::multi_buffer& buffer);
 
 		/// \brief Called when a session received a binary message
 		virtual void on_binary(
 			std::size_t identifier,
-			std::vector< std::uint8_t >&& data);
+			boost::beast::multi_buffer& buffer);
 
 
 	private:
@@ -75,6 +82,7 @@ namespace webserver{
 		std::unique_ptr< websocket_service_impl > impl_;
 
 		friend class websocket_service_impl;
+		friend class websocket_session;
 	};
 
 

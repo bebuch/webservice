@@ -40,7 +40,8 @@ int main(int argc, char* argv[]){
 		std::string const doc_root = argv[3];
 
 		webserver::file_request_handler handler(doc_root);
-		webserver::server server(handler, address, port, thread_count);
+		webserver::websocket_service service;
+		webserver::server server(handler, service, address, port, thread_count);
 		server.block();
 
 		return 0;

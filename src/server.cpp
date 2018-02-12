@@ -23,6 +23,7 @@ namespace webserver{
 		/// Run the IO context on all threads.
 		server_impl(
 			http_request_handler& handler,
+			websocket_service& service,
 			boost::asio::ip::address const address,
 			std::uint16_t const port,
 			std::uint8_t const thread_count,
@@ -32,6 +33,7 @@ namespace webserver{
 			, ioc_{thread_count}
 			, listener_(
 				handler,
+				service,
 				ioc_,
 				boost::asio::ip::tcp::endpoint{address, port})
 		{
@@ -106,6 +108,7 @@ namespace webserver{
 
 	server::server(
 		http_request_handler& handler,
+		websocket_service& service,
 		boost::asio::ip::address const address,
 		std::uint16_t const port,
 		std::uint8_t const thread_count,
@@ -113,6 +116,7 @@ namespace webserver{
 	)
 		: impl_(std::make_unique< server_impl >(
 				handler,
+				service,
 				address,
 				port,
 				thread_count,
