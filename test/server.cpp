@@ -14,6 +14,17 @@
 
 #include <algorithm>
 #include <iostream>
+#include <csignal>
+
+
+webserver::server* server = nullptr;
+
+void close_server(int signum){
+	std::signal(signum, SIG_DFL);
+	std::cout << "Signal: " << signum << '\n';
+	server->stop();
+	std::raise(signum);
+}
 
 
 void print_help(char const* const exec_name){
@@ -42,6 +53,12 @@ int main(int argc, char* argv[]){
 		webserver::file_request_handler handler(doc_root);
 		webserver::websocket_service service;
 		webserver::server server(handler, service, address, port, thread_count);
+
+		::server = &server;
+		std::signal(SIGSEGV, &close_server);
+		std::signal(SIGABRT, &close_server);
+		std::signal(SIGINT, &close_server);
+
 		server.block();
 
 		return 0;

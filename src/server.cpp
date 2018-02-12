@@ -76,7 +76,7 @@ namespace webserver{
 
 		/// \copydoc server::block()
 		void block(){
-			std::lock_guard< std::mutex > lock(mutex);
+			std::lock_guard lock(mutex);
 			for(auto& thread: threads_){
 				if(thread.joinable()) thread.join();
 			}
@@ -90,7 +90,7 @@ namespace webserver{
 
 	private:
 		/// \brief Protect thread joins
-		std::mutex mutex;
+		std::recursive_mutex mutex;
 
 		/// \brief Callback that is called if an exception is thrown
 		server::exception_handler const handle_exception_;
