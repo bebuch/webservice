@@ -36,6 +36,9 @@ namespace webservice{
 			boost::asio::ip::tcp::socket socket,
 			websocket_service& service);
 
+		/// \brief Destructor
+		~websocket_session();
+
 		/// \brief Start the asynchronous operation
 		void do_accept(
 			boost::beast::http::request< boost::beast::http::string_body > req
@@ -93,6 +96,7 @@ namespace webservice{
 		boost::asio::steady_timer timer_;
 		boost::beast::multi_buffer buffer_;
 		char ping_state_ = 0;
+		bool is_open_ = false;
 	};
 
 

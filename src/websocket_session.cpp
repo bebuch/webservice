@@ -33,6 +33,17 @@ namespace webservice{
 		, timer_(ws_.get_executor().context(),
 			std::chrono::steady_clock::time_point::max()) {}
 
+	websocket_session::~websocket_session(){
+		if(is_open_){
+			try{
+				service_.impl_->on_close(this);
+			}catch(...){
+				log_exception(std::current_exception(),
+					"websocket_service::on_close");
+			}
+		}
+	}
+
 	void websocket_session::do_accept(
 		boost::beast::http::request< boost::beast::http::string_body > req
 	){
@@ -74,6 +85,14 @@ namespace webservice{
 
 		if(ec){
 			return log_fail(ec, "accept");
+		}
+
+		is_open_ = true;
+		try{
+			service_.impl_->on_open(this);
+		}catch(...){
+			log_exception(std::current_exception(),
+				"websocket_service::on_open");
 		}
 
 		// Read a message
@@ -202,9 +221,19 @@ namespace webservice{
 
 		// Echo the message
 		if(ws_.got_text()){
-			service_.impl_->on_text(this, buffer_);
+			try{
+				service_.impl_->on_text(this, buffer_);
+			}catch(...){
+				log_exception(std::current_exception(),
+					"websocket_service::on_text");
+			}
 		}else{
-			service_.impl_->on_binary(this, buffer_);
+			try{
+				service_.impl_->on_binary(this, buffer_);
+			}catch(...){
+				log_exception(std::current_exception(),
+					"websocket_service::on_binary");
+			}
 		}
 
 		// Clear the buffer
