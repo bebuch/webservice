@@ -61,10 +61,6 @@ void check(state_t got){
 			break;
 		case state_t::ws_open:
 			pass(state, got);
-			state = state_t::ws_close;
-			break;
-		case state_t::ws_close:
-			pass(state, got);
 			state = state_t::ws_text;
 			break;
 		case state_t::ws_text:
@@ -72,6 +68,10 @@ void check(state_t got){
 			state = state_t::ws_binary;
 			break;
 		case state_t::ws_binary:
+			pass(state, got);
+			state = state_t::ws_close;
+			break;
+		case state_t::ws_close:
 			pass(state, got);
 			state = state_t::exit;
 			break;
@@ -97,7 +97,7 @@ struct file_request_handler: webservice::file_request_handler{
 
 
 struct websocket_service: webservice::websocket_service{
-	static char const test_text[17];
+	static std::string const test_text;
 
 	void on_open(std::uintptr_t)override{
 		check(state_t::ws_open);
@@ -146,7 +146,7 @@ struct websocket_service: webservice::websocket_service{
 	}
 };
 
-char const websocket_service::test_text[17] = "test text values";
+std::string const websocket_service::test_text = "test text values";
 
 
 int main(){

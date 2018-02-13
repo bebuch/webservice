@@ -20,7 +20,7 @@ file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 		var socket = new WebSocket('ws://' + window.location.host + '/');
 		socket.binaryType = 'arraybuffer';
 		socket.onmessage = function(evt){
-			socket.send("onmessage string: " + JSON.stringify(evt.data));
+			console.log("onmessage string: " + JSON.stringify(evt.data));
 			socket.send(evt.data);
 		};
 		socket.onopen = function(event){
