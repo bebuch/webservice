@@ -32,12 +32,12 @@ namespace webservice{
 			sessions_.emplace(std::move(session));
 			lock.unlock();
 
-			self_.on_open(reinterpret_cast< std::size_t const >(session));
+			self_.on_open(reinterpret_cast< std::uintptr_t const >(session));
 		}
 
 		/// \brief Called with a unique identifier when a sessions ends
 		void on_close(websocket_session* const session){
-			self_.on_close(reinterpret_cast< std::size_t const >(session));
+			self_.on_close(reinterpret_cast< std::uintptr_t const >(session));
 
 			std::unique_lock lock(mutex_);
 			sessions_.erase(session);
@@ -49,7 +49,7 @@ namespace webservice{
 			boost::beast::multi_buffer& buffer
 		){
 			self_.on_text(
-				reinterpret_cast< std::size_t const >(session),
+				reinterpret_cast< std::uintptr_t const >(session),
 				buffer);
 		}
 
@@ -59,7 +59,7 @@ namespace webservice{
 			boost::beast::multi_buffer& buffer
 		){
 			self_.on_binary(
-				reinterpret_cast< std::size_t const >(session),
+				reinterpret_cast< std::uintptr_t const >(session),
 				buffer);
 		}
 
@@ -76,7 +76,7 @@ namespace webservice{
 		/// \brief Send a message to session by identifier
 		template < typename Data >
 		void send(
-			std::set< std::size_t > const& identifiers,
+			std::set< std::uintptr_t > const& identifiers,
 			std::shared_ptr< Data > const& data
 		){
 			std::shared_lock lock(mutex_);
@@ -84,7 +84,7 @@ namespace webservice{
 			auto const end = identifiers.end();
 			for(auto const session: sessions_){
 				auto const identifier =
-					reinterpret_cast< std::size_t const >(session);
+					reinterpret_cast< std::uintptr_t const >(session);
 
 				while(iter != end && *iter != identifier){
 					++iter;
@@ -102,7 +102,7 @@ namespace webservice{
 		/// \brief Send a message to session by identifiers
 		template < typename Data >
 		void send(
-			std::size_t const identifier,
+			std::uintptr_t const identifier,
 			std::shared_ptr< Data >&& data
 		){
 			std::shared_lock lock(mutex_);

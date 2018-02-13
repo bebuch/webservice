@@ -37,12 +37,12 @@ namespace webservice{
 
 		/// \brief Send a text message to session by identifier
 		void send_text(
-			std::size_t identifier,
+			std::uintptr_t identifier,
 			std::string data);
 
 		/// \brief Send a text message to all sessions by identifier
 		void send_text(
-			std::set< std::size_t > const& identifier,
+			std::set< std::uintptr_t > const& identifier,
 			std::string data);
 
 		/// \brief Send a binary message to all sessions
@@ -50,30 +50,30 @@ namespace webservice{
 
 		/// \brief Send a binary message to session by identifier
 		void send_binary(
-			std::size_t identifier,
+			std::uintptr_t identifier,
 			std::vector< std::uint8_t > data);
 
 		/// \brief Send a binary message to all sessions by identifier
 		void send_binary(
-			std::set< std::size_t > const& identifier,
+			std::set< std::uintptr_t > const& identifier,
 			std::vector< std::uint8_t > data);
 
 
 	protected:
 		/// \brief Called with a unique identifier when a sessions starts
-		virtual void on_open(std::size_t identifier);
+		virtual void on_open(std::uintptr_t identifier);
 
 		/// \brief Called with a unique identifier when a sessions ends
-		virtual void on_close(std::size_t identifier);
+		virtual void on_close(std::uintptr_t identifier);
 
 		/// \brief Called when a session received a text message
 		virtual void on_text(
-			std::size_t identifier,
+			std::uintptr_t identifier,
 			boost::beast::multi_buffer& buffer);
 
 		/// \brief Called when a session received a binary message
 		virtual void on_binary(
-			std::size_t identifier,
+			std::uintptr_t identifier,
 			boost::beast::multi_buffer& buffer);
 
 

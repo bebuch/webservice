@@ -19,16 +19,16 @@ namespace webservice{
 	websocket_service::~websocket_service(){}
 
 
-	void websocket_service::on_open(std::size_t const /*identifier*/){}
+	void websocket_service::on_open(std::uintptr_t const /*identifier*/){}
 
-	void websocket_service::on_close(std::size_t const /*identifier*/){}
+	void websocket_service::on_close(std::uintptr_t const /*identifier*/){}
 
 	void websocket_service::on_text(
-		std::size_t const /*identifier*/,
+		std::uintptr_t const /*identifier*/,
 		boost::beast::multi_buffer& /*buffer*/){}
 
 	void websocket_service::on_binary(
-		std::size_t const /*identifier*/,
+		std::uintptr_t const /*identifier*/,
 		boost::beast::multi_buffer& /*buffer*/){}
 
 
@@ -37,7 +37,7 @@ namespace webservice{
 	}
 
 	void websocket_service::send_text(
-		std::size_t const identifier,
+		std::uintptr_t const identifier,
 		std::string data
 	){
 		impl_->send(
@@ -46,7 +46,7 @@ namespace webservice{
 	}
 
 	void websocket_service::send_text(
-		std::set< std::size_t > const& identifier,
+		std::set< std::uintptr_t > const& identifier,
 		std::string data
 	){
 		impl_->send(
@@ -62,7 +62,7 @@ namespace webservice{
 	}
 
 	void websocket_service::send_binary(
-		std::size_t const identifier,
+		std::uintptr_t const identifier,
 		std::vector< std::uint8_t > data
 	){
 		impl_->send(
@@ -71,7 +71,7 @@ namespace webservice{
 	}
 
 	void websocket_service::send_binary(
-		std::set< std::size_t > const& identifier,
+		std::set< std::uintptr_t > const& identifier,
 		std::vector< std::uint8_t > data
 	){
 		impl_->send(
