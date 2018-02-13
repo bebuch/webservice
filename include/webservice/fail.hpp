@@ -1,13 +1,13 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2018 Benjamin Buch
 //
-// https://github.com/bebuch/webserver
+// https://github.com/bebuch/webservice
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webserver__fail__hpp_INCLUDED_
-#define _webserver__fail__hpp_INCLUDED_
+#ifndef _webservice__fail__hpp_INCLUDED_
+#define _webservice__fail__hpp_INCLUDED_
 
 #include <boost/system/error_code.hpp>
 
@@ -17,7 +17,7 @@
 #include <mutex>
 
 
-namespace webserver{
+namespace webservice{
 
 
 	inline std::mutex& log_mutex(){
@@ -28,19 +28,19 @@ namespace webserver{
 
 	// Report a failure
 	inline void log_fail(boost::system::error_code ec, boost::string_view what){
-		std::lock_guard lock(log_mutex());
+		std::lock_guard< std::mutex > lock(log_mutex());
 		std::cerr << what << ": " << ec.message() << "\n";
 	}
 
 	// Print an exception
 	inline void log_exception(std::exception const& e, boost::string_view pos){
-		std::lock_guard lock(log_mutex());
+		std::lock_guard< std::mutex > lock(log_mutex());
 		std::cerr << "exception in " << pos << ": " << e.what() << "\n";
 	}
 
 	// Print an exception
 	inline void log_exception(boost::string_view pos){
-		std::lock_guard lock(log_mutex());
+		std::lock_guard< std::mutex > lock(log_mutex());
 		std::cerr << "unknown exception in " << pos << "\n";
 	}
 
@@ -57,7 +57,7 @@ namespace webserver{
 
 	// Print an massage
 	inline void log_msg(boost::string_view text){
-		std::lock_guard lock(log_mutex());
+		std::lock_guard< std::mutex > lock(log_mutex());
 		std::cout << "log: " << text << "\n";
 	}
 

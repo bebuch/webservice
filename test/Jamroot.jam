@@ -1,17 +1,17 @@
 import os ;
-local webserver = .. ;
+local webservice = .. ;
 local boost = [ os.environ BOOST ] ;
 local json = ../nlohmann/json ;
 
-use-project /webserver
-	: $(webserver)
+use-project /webservice
+	: $(webservice)
 	;
 
 use-project /boost
 	: $(boost)
 	;
 
-project webserver_test
+project webservice_test
 	:
 	:
 	requirements <include>.
@@ -22,14 +22,14 @@ project webserver_test
 	<define>BOOST_HANA_CONFIG_ENABLE_STRING_UDL
 	<define>BOOST_ASIO_HAS_STD_CHRONO
 
-	<toolset>gcc:<cxxflags>-std=gnu++1z
+	<toolset>gcc:<cxxflags>-std=c++11
 	<toolset>gcc:<cxxflags>-fconstexpr-depth=1024
 	<toolset>gcc:<cxxflags>-Wall
 	<toolset>gcc:<cxxflags>-Wextra
 	<toolset>gcc:<linkflags>-lpthread
 	<toolset>gcc:<linkflags>-ldl
 
-	<toolset>clang:<cxxflags>-std=c++1z
+	<toolset>clang:<cxxflags>-std=c++11
 	<toolset>clang:<cxxflags>-fconstexpr-depth=1024
 	<toolset>clang:<cxxflags>-Wall
 	<toolset>clang:<cxxflags>-Wextra
@@ -50,6 +50,6 @@ project webserver_test
 exe server
 	:
 	server.cpp
-	/webserver//webserver
+	/webservice//webservice
 	/boost//system
 	;

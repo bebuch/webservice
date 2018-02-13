@@ -1,21 +1,21 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2018 Benjamin Buch
 //
-// https://github.com/bebuch/webserver
+// https://github.com/bebuch/webservice
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webserver__listener__hpp_INCLUDED_
-#define _webserver__listener__hpp_INCLUDED_
+#ifndef _webservice__listener__hpp_INCLUDED_
+#define _webservice__listener__hpp_INCLUDED_
 
-#include <webserver/http_request_handler.hpp>
-#include <webserver/fail.hpp>
+#include <webservice/http_request_handler.hpp>
+#include <webservice/fail.hpp>
 
 #include "http_session.hpp"
 
 
-namespace webserver{
+namespace webservice{
 
 
 	/// \brief Accepts incoming connections and launches the sessions

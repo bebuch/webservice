@@ -6,7 +6,7 @@ use-project /boost
 	: $(boost)
 	;
 
-project webserver
+project webservice
 	:
 	source-location src
 	:
@@ -40,7 +40,7 @@ project webserver
 	usage-requirements <include>include
 	;
 
-lib webserver
+lib webservice
 	:
 	[ glob *.cpp ]
 	/boost//system

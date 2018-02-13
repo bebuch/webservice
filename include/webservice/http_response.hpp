@@ -1,13 +1,13 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2018 Benjamin Buch
 //
-// https://github.com/bebuch/webserver
+// https://github.com/bebuch/webservice
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webserver__http_response__hpp_INCLUDED_
-#define _webserver__http_response__hpp_INCLUDED_
+#ifndef _webservice__http_response__hpp_INCLUDED_
+#define _webservice__http_response__hpp_INCLUDED_
 
 #include <boost/beast/http/message.hpp>
 #include <boost/beast/http/write.hpp>
@@ -16,10 +16,12 @@
 #include <boost/asio/strand.hpp>
 #include <boost/asio/bind_executor.hpp>
 
+#include <boost/make_unique.hpp>
+
 #include <memory>
 
 
-namespace webserver{
+namespace webservice{
 
 
 	class http_session;
@@ -104,7 +106,7 @@ namespace webserver{
 				boost::beast::http::response< Body, Fields > msg_;
 			};
 
-			((*self_).*fn_)(std::make_unique< work_impl >(
+			((*self_).*fn_)(boost::make_unique< work_impl >(
 				self_, socket_, strand_, std::move(msg)));
 		}
 

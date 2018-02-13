@@ -1,15 +1,15 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2018 Benjamin Buch
 //
-// https://github.com/bebuch/webserver
+// https://github.com/bebuch/webservice
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include "websocket_service_impl.hpp"
 
-#include <webserver/websocket_service.hpp>
-#include <webserver/fail.hpp>
+#include <webservice/websocket_service.hpp>
+#include <webservice/fail.hpp>
 
 #include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/websocket.hpp>
@@ -20,7 +20,7 @@
 #include <boost/asio/bind_executor.hpp>
 
 
-namespace webserver{
+namespace webservice{
 
 
 	websocket_session::websocket_session(

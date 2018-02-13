@@ -6,9 +6,9 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include <webserver/file_request_handler.hpp>
-#include <webserver/fail.hpp>
-#include <webserver/server.hpp>
+#include <webservice/file_request_handler.hpp>
+#include <webservice/fail.hpp>
+#include <webservice/server.hpp>
 
 #include <boost/lexical_cast.hpp>
 
@@ -17,7 +17,7 @@
 #include <csignal>
 
 
-webserver::server* server = nullptr;
+webservice::server* server = nullptr;
 
 void close_server(int signum){
 	std::signal(signum, SIG_DFL);
@@ -50,9 +50,9 @@ int main(int argc, char* argv[]){
 				boost::lexical_cast< unsigned >(argv[4])));
 		std::string const doc_root = argv[3];
 
-		webserver::file_request_handler handler(doc_root);
-		webserver::websocket_service service;
-		webserver::server server(handler, service, address, port, thread_count);
+		webservice::file_request_handler handler(doc_root);
+		webservice::websocket_service service;
+		webservice::server server(handler, service, address, port, thread_count);
 
 		::server = &server;
 		std::signal(SIGSEGV, &close_server);
@@ -63,11 +63,11 @@ int main(int argc, char* argv[]){
 
 		return 0;
 	}catch(std::exception const& e){
-		webserver::log_exception(e, "program");
+		webservice::log_exception(e, "program");
 		print_help(argv[0]);
 		return 2;
 	}catch(...){
-		webserver::log_exception("program");
+		webservice::log_exception("program");
 		print_help(argv[0]);
 		return 2;
 	}

@@ -1,22 +1,22 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2018 Benjamin Buch
 //
-// https://github.com/bebuch/webserver
+// https://github.com/bebuch/webservice
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webserver__websocket_service_impl__hpp_INCLUDED_
-#define _webserver__websocket_service_impl__hpp_INCLUDED_
+#ifndef _webservice__websocket_service_impl__hpp_INCLUDED_
+#define _webservice__websocket_service_impl__hpp_INCLUDED_
 
-#include <webserver/websocket_service.hpp>
+#include <webservice/websocket_service.hpp>
 
 #include "websocket_session.hpp"
 
 #include <shared_mutex>
 
 
-namespace webserver{
+namespace webservice{
 
 
 	/// \brief Implementation of websocket_service
