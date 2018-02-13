@@ -1,0 +1,37 @@
+<!--
+Copyright (c) 2017 Benjamin Buch
+
+https://github.com/bebuch/http
+
+Distributed under the Boost Software License, Version 1.0. (See accompanying
+file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>live view</title>
+</head>
+<body style="text-align:center;">
+	WebSocket test.
+	<script>
+		var image = document.getElementById("image");
+		console.log("try to open websocket ws://" + window.location.host + '/');
+		var socket = new WebSocket('ws://' + window.location.host + '/');
+		socket.binaryType = 'arraybuffer';
+		socket.onmessage = function(evt){
+			socket.send("onmessage string: " + JSON.stringify(evt.data));
+			socket.send(evt.data);
+		};
+		socket.onopen = function(event){
+			console.log("onopen: " + JSON.stringify(event));
+		};
+		socket.onerror = function(event){
+			console.log("onerror: " + JSON.stringify(event));
+		};
+		socket.onclose = function(event){
+			console.log("onclose: " + JSON.stringify(event));
+		};
+	</script>
+</body>
+</html>
