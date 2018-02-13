@@ -54,6 +54,7 @@ namespace webservice{
 			std::make_shared< std::string >(std::move(data)));
 	}
 
+
 	void websocket_service::send_binary(
 		std::vector< std::uint8_t > data
 	){
@@ -78,6 +79,17 @@ namespace webservice{
 			identifier,
 			std::make_shared< std::vector< std::uint8_t > >(std::move(data)));
 	}
+
+
+	void websocket_service::close(std::string /*data*/){}
+
+	void websocket_service::close(
+		std::uintptr_t /*identifier*/,
+		std::string /*data*/){}
+
+	void websocket_service::close(
+		std::set< std::uintptr_t > const& /*identifier*/,
+		std::string /*data*/){}
 
 
 }

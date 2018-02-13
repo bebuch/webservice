@@ -45,6 +45,7 @@ namespace webservice{
 			std::set< std::uintptr_t > const& identifier,
 			std::string data);
 
+
 		/// \brief Send a binary message to all sessions
 		void send_binary(std::vector< std::uint8_t > data);
 
@@ -57,6 +58,21 @@ namespace webservice{
 		void send_binary(
 			std::set< std::uintptr_t > const& identifier,
 			std::vector< std::uint8_t > data);
+
+
+		/// \brief Shutdown all sessions
+		void close(std::string data);
+
+		/// \brief Shutdown session by identifier
+		void close(
+			std::uintptr_t identifier,
+			std::string data);
+
+		/// \brief Shutdown all sessions by identifier
+		void close(
+			std::set< std::uintptr_t > const& identifier,
+			std::string data);
+
 
 
 	protected:
