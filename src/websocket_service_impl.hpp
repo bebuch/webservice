@@ -84,7 +84,7 @@ namespace webservice{
 			auto const end = identifiers.end();
 			for(auto const session: sessions_){
 				auto const identifier =
-					reinterpret_cast< std::uintptr_t const >(session);
+					reinterpret_cast< std::uintptr_t >(session);
 
 				while(iter != end && *iter != identifier){
 					++iter;
@@ -107,7 +107,7 @@ namespace webservice{
 		){
 			std::shared_lock lock(mutex_);
 			auto const iter = sessions_.find(
-				reinterpret_cast< websocket_session* const >(identifier));
+				reinterpret_cast< websocket_session* >(identifier));
 			if(iter == sessions_.end()){
 				return;
 			}
