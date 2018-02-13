@@ -29,7 +29,7 @@ namespace webservice{
 		/// \brief Called with a unique identifier when a sessions starts
 		void on_open(websocket_session* const session){
 			std::unique_lock lock(mutex_);
-			sessions_.emplace(std::move(session));
+			sessions_.emplace(session);
 			lock.unlock();
 
 			self_.on_open(reinterpret_cast< std::uintptr_t const >(session));
