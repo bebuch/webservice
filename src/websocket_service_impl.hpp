@@ -66,7 +66,7 @@ namespace webservice{
 
 		/// \brief Send a message to all sessions
 		template < typename Data >
-		void send(std::shared_ptr< Data > const& data){
+		void send(Data const& data){
 			std::shared_lock lock(mutex_);
 			for(auto const& session: sessions_){
 				send(session, data);
@@ -77,7 +77,7 @@ namespace webservice{
 		template < typename Data >
 		void send(
 			std::set< std::uintptr_t > const& identifiers,
-			std::shared_ptr< Data > const& data
+			Data const& data
 		){
 			std::shared_lock lock(mutex_);
 			auto iter = identifiers.begin();
@@ -103,7 +103,7 @@ namespace webservice{
 		template < typename Data >
 		void send(
 			std::uintptr_t const identifier,
-			std::shared_ptr< Data >&& data
+			Data&& data
 		){
 			std::shared_lock lock(mutex_);
 			auto const iter = sessions_.find(
@@ -112,7 +112,7 @@ namespace webservice{
 				return;
 			}
 
-			send(*iter, std::move(data));
+			send(*iter, static_cast< Data&& >(data));
 		}
 
 
@@ -121,9 +121,9 @@ namespace webservice{
 		template < typename Data >
 		void send(
 			websocket_session* const session,
-			std::shared_ptr< Data > data
+			Data&& data
 		){
-			session->send(std::move(data));
+			session->send(static_cast< Data&& >(data));
 		}
 
 

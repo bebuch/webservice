@@ -88,6 +88,12 @@ namespace webservice{
 					}));
 		}
 
+		/// \brief Close the session
+		void send(boost::beast::websocket::close_reason reason);
+
+		/// \brief Close the session
+		void close(boost::system::error_code reason);
+
 
 	private:
 		websocket_service& service_;

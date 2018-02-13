@@ -46,6 +46,14 @@ namespace webservice{
 			do_accept();
 		}
 
+		~listener(){
+			boost::system::error_code ec;
+			acceptor_.cancel(ec);
+			if(ec) log_fail(ec, "acceptor cancel");
+			acceptor_.close(ec);
+			if(ec) log_fail(ec, "acceptor close");
+		}
+
 		void do_accept(){
 			acceptor_.async_accept(
 				socket_,

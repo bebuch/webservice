@@ -81,15 +81,23 @@ namespace webservice{
 	}
 
 
-	void websocket_service::close(std::string /*data*/){}
+	void websocket_service::close(boost::beast::string_view reason){
+		impl_->send(boost::beast::websocket::close_reason(reason));
+	}
 
 	void websocket_service::close(
-		std::uintptr_t /*identifier*/,
-		std::string /*data*/){}
+		std::uintptr_t identifier,
+		boost::beast::string_view reason
+	){
+		impl_->send(identifier, boost::beast::websocket::close_reason(reason));
+	}
 
 	void websocket_service::close(
-		std::set< std::uintptr_t > const& /*identifier*/,
-		std::string /*data*/){}
+		std::set< std::uintptr_t > const& identifier,
+		boost::beast::string_view reason
+	){
+		impl_->send(identifier, boost::beast::websocket::close_reason(reason));
+	}
 
 
 }

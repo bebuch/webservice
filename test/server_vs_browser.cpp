@@ -11,6 +11,7 @@
 #include <webservice/server.hpp>
 
 #include <thread>
+#include <csignal>
 
 
 enum class state_t{
@@ -48,8 +49,9 @@ void pass(state_t expect, state_t got){
 	}
 }
 
+state_t state = state_t::init;
+
 void check(state_t got){
-	static state_t state = state_t::init;
 	switch(state){
 		case state_t::init:
 			pass(state, got);
@@ -149,7 +151,19 @@ struct websocket_service: webservice::websocket_service{
 std::string const websocket_service::test_text = "test text values";
 
 
+void close_server(int signum){
+	std::signal(signum, SIG_DFL);
+	std::cout << "Signal: " << signum << '\n';
+	std::raise(signum);
+}
+
+
 int main(){
+	std::signal(SIGSEGV, &close_server);
+	std::signal(SIGABRT, &close_server);
+	std::signal(SIGINT, &close_server);
+
+
 	try{
 		file_request_handler handler("server_vs_browser");
 		websocket_service service;
@@ -160,7 +174,13 @@ int main(){
 
 		std::system("xdg-open http://127.0.0.1:1234");
 
-		std::this_thread::sleep_for(std::chrono::seconds(10));
+		auto const start = std::chrono::system_clock::now();
+		while(
+			state != state_t::exit &&
+			std::chrono::system_clock::now() < start + std::chrono::seconds(10)
+		){
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
 		server.stop();
 
 		check(state_t::exit);

@@ -10,6 +10,7 @@
 #define _webservice__websocket_service__hpp_INCLUDED_
 
 #include <boost/beast/core/multi_buffer.hpp>
+#include <boost/beast/core/string.hpp>
 
 #include <memory>
 #include <string>
@@ -61,17 +62,17 @@ namespace webservice{
 
 
 		/// \brief Shutdown all sessions
-		void close(std::string data);
+		void close(boost::beast::string_view reason);
 
 		/// \brief Shutdown session by identifier
 		void close(
 			std::uintptr_t identifier,
-			std::string data);
+			boost::beast::string_view reason);
 
 		/// \brief Shutdown all sessions by identifier
 		void close(
 			std::set< std::uintptr_t > const& identifier,
-			std::string data);
+			boost::beast::string_view reason);
 
 
 
