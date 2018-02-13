@@ -22,6 +22,7 @@ project webservice
 	<toolset>gcc:<cxxflags>-fconstexpr-depth=1024
 	<toolset>gcc:<cxxflags>-Wall
 	<toolset>gcc:<cxxflags>-Wextra
+	<toolset>gcc:<cxxflags>-Wno-parentheses
 	<toolset>gcc:<linkflags>-lpthread
 
 	<toolset>clang:<cxxflags>-std=c++1z
