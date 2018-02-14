@@ -255,18 +255,16 @@ namespace webservice{
 		close(boost::beast::websocket::error::closed);
 	}
 
-	void websocket_session::close(boost::system::error_code reason){
+	void websocket_session::close(boost::system::error_code ec){
 		// The timer expired while trying to handshake,
 		// or we sent a ping and it never completed or
 		// we never got back a control frame, so close.
 
 		// Closing the socket cancels all outstanding operations.
-		// They will complete with
-		// boost::asio::error::operation_aborted
+		// They will complete with boost::asio::error::operation_aborted
 		ws_.next_layer().shutdown(
-			boost::asio::ip::tcp::socket::shutdown_both, reason);
-		ws_.next_layer().close(reason);
-// 		timer_.cancel();
+			boost::asio::ip::tcp::socket::shutdown_both, ec);
+		ws_.next_layer().close(ec);
 	}
 
 
