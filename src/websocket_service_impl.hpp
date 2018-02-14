@@ -27,17 +27,25 @@ namespace webservice{
 			self_(self) {}
 
 		/// \brief Called with a unique identifier when a sessions starts
-		void on_open(websocket_session* const session){
+		void on_open(
+			websocket_session* const session,
+			std::string const& resource
+		){
 			std::unique_lock lock(mutex_);
 			sessions_.emplace(session);
 			lock.unlock();
 
-			self_.on_open(reinterpret_cast< std::uintptr_t >(session));
+			self_.on_open(
+				reinterpret_cast< std::uintptr_t >(session), resource);
 		}
 
 		/// \brief Called with a unique identifier when a sessions ends
-		void on_close(websocket_session* const session){
-			self_.on_close(reinterpret_cast< std::uintptr_t >(session));
+		void on_close(
+			websocket_session* const session,
+			std::string const& resource
+		){
+			self_.on_close(
+				reinterpret_cast< std::uintptr_t >(session), resource);
 
 			std::unique_lock lock(mutex_);
 			sessions_.erase(session);
@@ -46,20 +54,24 @@ namespace webservice{
 		/// \brief Called when a session received a text message
 		void on_text(
 			websocket_session* const session,
+			std::string const& resource,
 			boost::beast::multi_buffer& buffer
 		){
 			self_.on_text(
 				reinterpret_cast< std::uintptr_t >(session),
+				resource,
 				buffer);
 		}
 
 		/// \brief Called when a session received a binary message
 		void on_binary(
 			websocket_session* const session,
+			std::string const& resource,
 			boost::beast::multi_buffer& buffer
 		){
 			self_.on_binary(
 				reinterpret_cast< std::uintptr_t >(session),
+				resource,
 				buffer);
 		}
 

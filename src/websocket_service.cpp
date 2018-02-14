@@ -19,16 +19,22 @@ namespace webservice{
 	websocket_service::~websocket_service(){}
 
 
-	void websocket_service::on_open(std::uintptr_t const /*identifier*/){}
+	void websocket_service::on_open(
+		std::uintptr_t const /*identifier*/,
+		std::string const& /*resource*/){}
 
-	void websocket_service::on_close(std::uintptr_t const /*identifier*/){}
+	void websocket_service::on_close(
+		std::uintptr_t const /*identifier*/,
+		std::string const& /*resource*/){}
 
 	void websocket_service::on_text(
 		std::uintptr_t const /*identifier*/,
+		std::string const& /*resource*/,
 		boost::beast::multi_buffer& /*buffer*/){}
 
 	void websocket_service::on_binary(
 		std::uintptr_t const /*identifier*/,
+		std::string const& /*resource*/,
 		boost::beast::multi_buffer& /*buffer*/){}
 
 

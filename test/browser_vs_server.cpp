@@ -99,16 +99,17 @@ struct file_request_handler: webservice::file_request_handler{
 
 
 struct websocket_service: webservice::websocket_service{
-	void on_open(std::uintptr_t)override{
+	void on_open(std::uintptr_t, std::string const&)override{
 		check(state_t::ws_open);
 	}
 
-	void on_close(std::uintptr_t)override{
+	void on_close(std::uintptr_t, std::string const&)override{
 		check(state_t::ws_close);
 	}
 
 	void on_text(
 		std::uintptr_t,
+		std::string const&,
 		boost::beast::multi_buffer& buffer
 	)override{
 		check(state_t::ws_text);
@@ -119,6 +120,7 @@ struct websocket_service: webservice::websocket_service{
 
 	void on_binary(
 		std::uintptr_t,
+		std::string const&,
 		boost::beast::multi_buffer& buffer
 	)override{
 		check(state_t::ws_binary);

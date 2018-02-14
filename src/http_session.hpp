@@ -95,7 +95,6 @@ namespace webservice{
 		}
 
 		void on_read(boost::system::error_code ec){
-
 			// Happens when the timer closes the socket
 			if(ec == boost::asio::error::operation_aborted){
 				return;

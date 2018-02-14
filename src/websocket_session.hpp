@@ -102,6 +102,7 @@ namespace webservice{
 		boost::asio::steady_timer timer_;
 		boost::beast::multi_buffer buffer_;
 		char ping_state_ = 0;
+		std::string resource_;
 		bool is_open_ = false;
 	};
 

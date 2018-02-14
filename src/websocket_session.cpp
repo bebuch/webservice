@@ -36,7 +36,7 @@ namespace webservice{
 	websocket_session::~websocket_session(){
 		if(is_open_){
 			try{
-				service_.impl_->on_close(this);
+				service_.impl_->on_close(this, resource_);
 			}catch(...){
 				log_exception(std::current_exception(),
 					"websocket_service::on_close");
@@ -67,6 +67,8 @@ namespace webservice{
 		using namespace std::literals::chrono_literals;
 		timer_.expires_after(15s);
 
+		resource_ = std::string(req.target());
+
 		// Accept the websocket handshake
 		ws_.async_accept(
 			req,
@@ -89,7 +91,7 @@ namespace webservice{
 
 		is_open_ = true;
 		try{
-			service_.impl_->on_open(this);
+			service_.impl_->on_open(this, resource_);
 		}catch(...){
 			log_exception(std::current_exception(),
 				"websocket_service::on_open");
@@ -213,14 +215,14 @@ namespace webservice{
 		// Echo the message
 		if(ws_.got_text()){
 			try{
-				service_.impl_->on_text(this, buffer_);
+				service_.impl_->on_text(this, resource_, buffer_);
 			}catch(...){
 				log_exception(std::current_exception(),
 					"websocket_service::on_text");
 			}
 		}else{
 			try{
-				service_.impl_->on_binary(this, buffer_);
+				service_.impl_->on_binary(this, resource_, buffer_);
 			}catch(...){
 				log_exception(std::current_exception(),
 					"websocket_service::on_binary");
