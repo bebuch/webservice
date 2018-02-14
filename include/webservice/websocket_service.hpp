@@ -23,6 +23,7 @@ namespace webservice{
 
 	class websocket_service_impl;
 	class websocket_session;
+	class server;
 
 	class websocket_service{
 	public:
@@ -99,10 +100,31 @@ namespace webservice{
 			boost::beast::multi_buffer& buffer);
 
 
+		/// \brief Get reference to const server
+		///
+		/// Must not be called before a server is initialized with this service.
+		class server const& server()const{
+			assert(server_ != nullptr);
+			return *server_;
+		}
+
+		/// \brief Get reference to server
+		///
+		/// Must not be called before a server is initialized with this service.
+		class server& server(){
+			assert(server_ != nullptr);
+			return *server_;
+		}
+
+
 	private:
 		/// \brief Pointer to implementation
 		std::unique_ptr< websocket_service_impl > impl_;
 
+		/// \brief Pointer to the server object
+		class server* server_ = nullptr;
+
+		friend class server;
 		friend class websocket_service_impl;
 		friend class websocket_session;
 	};

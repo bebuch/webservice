@@ -115,12 +115,22 @@ namespace webservice{
 		exception_handler handle_exception
 	)
 		: impl_(std::make_unique< server_impl >(
-				handler
-					? std::move(handler)
-					: boost::make_unique< http_request_handler >(),
-				service
-					? std::move(service)
-					: boost::make_unique< websocket_service >(),
+				[this, handler = std::move(handler)]()mutable{
+						if(!handler){
+							handler =
+								boost::make_unique< http_request_handler >();
+						}
+						handler->server_ = this;
+						return std::move(handler);
+					}(),
+				[this, service = std::move(service)]()mutable{
+						if(!service){
+							service =
+								boost::make_unique< websocket_service >();
+						}
+						service->server_ = this;
+						return std::move(service);
+					}(),
 				address,
 				port,
 				thread_count,

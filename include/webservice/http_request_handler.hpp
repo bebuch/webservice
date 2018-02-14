@@ -23,10 +23,38 @@ namespace webservice{
 	using http_string_response
 		= boost::beast::http::response< boost::beast::http::string_body >;
 
+	class server;
 
-	struct http_request_handler{
+
+	/// \brief Base class of all HTTP request handlers
+	class http_request_handler{
+	public:
 		virtual ~http_request_handler() = default;
 		virtual void operator()(http_request&& req, http_response&& send);
+
+	protected:
+		/// \brief Get reference to const server
+		///
+		/// Must not be called before a server is initialized with this service.
+		class server const& server()const{
+			assert(server_ != nullptr);
+			return *server_;
+		}
+
+		/// \brief Get reference to server
+		///
+		/// Must not be called before a server is initialized with this service.
+		class server& server(){
+			assert(server_ != nullptr);
+			return *server_;
+		}
+
+
+	private:
+		/// \brief Pointer to the server object
+		class server* server_ = nullptr;
+
+		friend class server;
 	};
 
 	/// \brief Returns a bad request response
