@@ -75,7 +75,6 @@ namespace webservice{
 			boost::beast::string_view reason);
 
 
-
 	protected:
 		/// \brief Called with a unique identifier when a sessions starts
 		virtual void on_open(

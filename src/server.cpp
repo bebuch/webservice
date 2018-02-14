@@ -22,8 +22,8 @@ namespace webservice{
 		///
 		/// Run the IO context on all threads.
 		server_impl(
-			http_request_handler& handler,
-			websocket_service& service,
+			std::unique_ptr< http_request_handler > handler,
+			std::unique_ptr< websocket_service > service,
 			boost::asio::ip::address const address,
 			std::uint16_t const port,
 			std::uint8_t const thread_count,
@@ -32,8 +32,8 @@ namespace webservice{
 			: handle_exception_(std::move(handle_exception))
 			, ioc_{thread_count}
 			, listener_(
-				handler,
-				service,
+				std::move(handler),
+				std::move(service),
 				ioc_,
 				boost::asio::ip::tcp::endpoint{address, port})
 		{
@@ -107,16 +107,20 @@ namespace webservice{
 
 
 	server::server(
-		http_request_handler& handler,
-		websocket_service& service,
+		std::unique_ptr< http_request_handler > handler,
+		std::unique_ptr< websocket_service > service,
 		boost::asio::ip::address const address,
 		std::uint16_t const port,
 		std::uint8_t const thread_count,
 		exception_handler handle_exception
 	)
 		: impl_(std::make_unique< server_impl >(
-				handler,
-				service,
+				handler
+					? std::move(handler)
+					: boost::make_unique< http_request_handler >(),
+				service
+					? std::move(service)
+					: boost::make_unique< websocket_service >(),
 				address,
 				port,
 				thread_count,

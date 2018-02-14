@@ -36,8 +36,8 @@ namespace webservice{
 		///                         one server thread, then your handling
 		///                         function must be thread save!
 		server(
-			http_request_handler& handler,
-			websocket_service& service,
+			std::unique_ptr< http_request_handler > handler,
+			std::unique_ptr< websocket_service > service,
 			boost::asio::ip::address address,
 			std::uint16_t port,
 			std::uint8_t thread_count = 1,

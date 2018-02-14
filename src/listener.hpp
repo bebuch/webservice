@@ -22,13 +22,13 @@ namespace webservice{
 	class listener{
 	public:
 		listener(
-			http_request_handler& handler,
-			websocket_service& service,
+			std::unique_ptr< http_request_handler > handler,
+			std::unique_ptr< websocket_service > service,
 			boost::asio::io_context& ioc,
 			boost::asio::ip::tcp::endpoint endpoint
 		)
-			: handler_(handler)
-			, service_(service)
+			: handler_(std::move(handler))
+			, service_(std::move(service))
 			, acceptor_(ioc)
 			, socket_(ioc)
 		{
@@ -71,8 +71,7 @@ namespace webservice{
 			}else{
 				// Create the http_session and run it
 				std::make_shared< http_session >(
-					std::move(socket_), handler_, service_)
-						->run();
+					std::move(socket_), *handler_, *service_)->run();
 			}
 
 			// Accept another connection
@@ -80,8 +79,8 @@ namespace webservice{
 		}
 
 	private:
-		http_request_handler& handler_;
-		websocket_service& service_;
+		std::unique_ptr< http_request_handler > handler_;
+		std::unique_ptr< websocket_service > service_;
 		boost::asio::ip::tcp::acceptor acceptor_;
 		boost::asio::ip::tcp::socket socket_;
 	};

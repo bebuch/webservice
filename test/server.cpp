@@ -12,6 +12,8 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <boost/make_unique.hpp>
+
 #include <algorithm>
 #include <iostream>
 #include <csignal>
@@ -50,9 +52,13 @@ int main(int argc, char* argv[]){
 				boost::lexical_cast< unsigned >(argv[4])));
 		std::string const doc_root = argv[3];
 
-		webservice::file_request_handler handler(doc_root);
-		webservice::websocket_service service;
-		webservice::server server(handler, service, address, port, thread_count);
+		using webservice::file_request_handler;
+		using webservice::websocket_service;
+		using webservice::server;
+		auto handler = boost::make_unique< file_request_handler >(doc_root);
+		auto service = boost::make_unique< websocket_service >();
+		server server(std::move(handler), std::move(service), address, port,
+			thread_count);
 
 		::server = &server;
 		std::signal(SIGSEGV, &close_server);

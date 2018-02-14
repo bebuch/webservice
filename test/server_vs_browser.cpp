@@ -10,6 +10,8 @@
 #include <webservice/fail.hpp>
 #include <webservice/server.hpp>
 
+#include <boost/make_unique.hpp>
+
 #include <thread>
 #include <csignal>
 
@@ -166,9 +168,10 @@ int main(){
 	std::signal(SIGINT, &close_server);
 
 	try{
-		file_request_handler handler("server_vs_browser");
-		websocket_service service;
-		webservice::server server(handler, service,
+		auto handler =
+			boost::make_unique< file_request_handler >("server_vs_browser");
+		auto service = boost::make_unique< websocket_service >();
+		webservice::server server(std::move(handler), std::move(service),
 			boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
 		check(state_t::init);
