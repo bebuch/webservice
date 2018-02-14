@@ -55,10 +55,16 @@ exe server
 	/boost//system
 	;
 
-
 exe server_vs_browser
 	:
 	server_vs_browser.cpp
+	/webservice//webservice
+	/boost//system
+	;
+
+exe browser_vs_server
+	:
+	browser_vs_server.cpp
 	/webservice//webservice
 	/boost//system
 	;
