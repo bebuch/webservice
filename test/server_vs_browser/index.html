@@ -15,22 +15,44 @@ file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 <body style="text-align:center;">
 	WebSocket test.
 	<script>
-		var image = document.getElementById("image");
+		var dec = new TextDecoder("utf-8");
+
+		var body = document.body;
+
 		console.log("try to open websocket ws://" + window.location.host + '/');
 		var socket = new WebSocket('ws://' + window.location.host + '/');
 		socket.binaryType = 'arraybuffer';
 		socket.onmessage = function(evt){
-			console.log("onmessage string: " + JSON.stringify(evt.data));
+			if(typeof(evt.data) === 'string'){
+				let div = document.createElement("div");
+				div.style = "color:white;background:black;padding:0.5em;";
+				div.innerText = "received text: " + evt.data;
+				body.append(div);
+			}else{
+				let div = document.createElement("div");
+				div.style = "color:white;background:black;padding:0.5em;";
+				div.innerText = "received binary: " + dec.decode(evt.data);
+				body.append(div);
+			}
 			socket.send(evt.data);
 		};
 		socket.onopen = function(event){
-			console.log("onopen: " + JSON.stringify(event));
+			let div = document.createElement("div");
+			div.style = "color:lime;background:black;padding:0.5em;";
+			div.innerText = "onopen: " + JSON.stringify(event);
+			body.append(div);
 		};
 		socket.onerror = function(event){
-			console.log("onerror: " + JSON.stringify(event));
+			let div = document.createElement("div");
+			div.style = "color:red;background:black;padding:0.5em;";
+			div.innerText = "onerror: " + JSON.stringify(event);
+			body.append(div);
 		};
 		socket.onclose = function(event){
-			console.log("onclose: " + JSON.stringify(event));
+			let div = document.createElement("div");
+			div.style = "color:white;background:black;padding:0.5em;";
+			div.innerText = "onclose: " + JSON.stringify(event);
+			body.append(div);
 		};
 	</script>
 </body>

@@ -163,7 +163,6 @@ int main(){
 	std::signal(SIGABRT, &close_server);
 	std::signal(SIGINT, &close_server);
 
-
 	try{
 		file_request_handler handler("server_vs_browser");
 		websocket_service service;
