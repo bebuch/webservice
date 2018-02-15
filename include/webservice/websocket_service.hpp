@@ -78,32 +78,56 @@ namespace webservice{
 
 	protected:
 		/// \brief Called with a unique identifier when a sessions starts
+		///
+		/// Default implementation does nothing.
 		virtual void on_open(
 			std::uintptr_t identifier,
 			std::string const& resource);
 
 		/// \brief Called with a unique identifier when a sessions ends
+		///
+		/// Default implementation does nothing.
 		virtual void on_close(
 			std::uintptr_t identifier,
 			std::string const& resource);
 
 		/// \brief Called when a session received a text message
+		///
+		/// Default implementation does nothing.
 		virtual void on_text(
 			std::uintptr_t identifier,
 			std::string const& resource,
 			boost::beast::multi_buffer& buffer);
 
 		/// \brief Called when a session received a binary message
+		///
+		/// Default implementation does nothing.
 		virtual void on_binary(
 			std::uintptr_t identifier,
 			std::string const& resource,
 			boost::beast::multi_buffer& buffer);
 
+		/// \brief Called when an error occured
+		///
+		/// Default implementation does nothing.
+		virtual void on_error(
+			std::uintptr_t identifier,
+			std::string const& resource,
+			boost::system::error_code ec);
+
+		/// \brief Called when an exception was thrown
+		///
+		/// Default implementation does nothing.
+		virtual void on_exception(
+			std::uintptr_t identifier,
+			std::string const& resource,
+			std::exception_ptr error)noexcept;
+
 
 		/// \brief Get reference to const server
 		///
 		/// Must not be called before a server is initialized with this service.
-		class server const& server()const{
+		class server const& server()const noexcept{
 			assert(server_ != nullptr);
 			return *server_;
 		}
@@ -111,7 +135,7 @@ namespace webservice{
 		/// \brief Get reference to server
 		///
 		/// Must not be called before a server is initialized with this service.
-		class server& server(){
+		class server& server()noexcept{
 			assert(server_ != nullptr);
 			return *server_;
 		}

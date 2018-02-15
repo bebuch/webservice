@@ -52,13 +52,13 @@ namespace webservice{
 		/// \brief Wait on all processing threads
 		///
 		/// This effecivly blocks the current thread until the server is closed.
-		void block();
+		void block()noexcept;
 
 		/// \brief Close all connections as fast as possible
 		///
 		/// This function is not blocking. Call block() if you want to wait
 		/// until all connections are closed.
-		void stop();
+		void stop()noexcept;
 
 
 	private:

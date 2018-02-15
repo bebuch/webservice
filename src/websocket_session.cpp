@@ -9,7 +9,6 @@
 #include "websocket_service_impl.hpp"
 
 #include <webservice/websocket_service.hpp>
-#include <webservice/fail.hpp>
 
 #include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/websocket.hpp>
@@ -35,12 +34,7 @@ namespace webservice{
 
 	websocket_session::~websocket_session(){
 		if(is_open_){
-			try{
-				service_.impl_->on_close(this, resource_);
-			}catch(...){
-				log_exception(std::current_exception(),
-					"websocket_service::on_close");
-			}
+			on_close();
 		}
 	}
 
@@ -86,16 +80,11 @@ namespace webservice{
 		}
 
 		if(ec){
-			return log_fail(ec, "accept");
+			on_error(ec);
+			return;
 		}
 
-		is_open_ = true;
-		try{
-			service_.impl_->on_open(this, resource_);
-		}catch(...){
-			log_exception(std::current_exception(),
-				"websocket_service::on_open");
-		}
+		on_open();
 
 		// Read a message
 		do_read();
@@ -103,7 +92,8 @@ namespace webservice{
 
 	void websocket_session::on_timer(boost::system::error_code ec){
 		if(ec && ec != boost::asio::error::operation_aborted){
-			return log_fail(ec, "timer");
+			on_error(ec);
+			return;
 		}
 
 		// See if the timer really expired since the deadline may have
@@ -158,7 +148,8 @@ namespace webservice{
 		}
 
 		if(ec){
-			return log_fail(ec, "ping");
+			on_error(ec);
+			return;
 		}
 
 		// Note that the ping was sent.
@@ -183,18 +174,13 @@ namespace webservice{
 				strand_,
 				[this_ = shared_from_this()](
 					boost::system::error_code ec,
-					std::size_t bytes_transferred
+					std::size_t /*bytes_transferred*/
 				){
-					this_->on_read(ec, bytes_transferred);
+					this_->on_read(ec);
 				}));
 	}
 
-	void websocket_session::on_read(
-		boost::system::error_code ec,
-		std::size_t bytes_transferred
-	){
-		boost::ignore_unused(bytes_transferred);
-
+	void websocket_session::on_read(boost::system::error_code ec){
 		// Happens when the timer closes the socket
 		if(ec == boost::asio::error::operation_aborted){
 			return;
@@ -206,7 +192,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			log_fail(ec, "read");
+			on_error(ec);
 		}
 
 		// Note that there is activity
@@ -214,19 +200,9 @@ namespace webservice{
 
 		// Echo the message
 		if(ws_.got_text()){
-			try{
-				service_.impl_->on_text(this, resource_, buffer_);
-			}catch(...){
-				log_exception(std::current_exception(),
-					"websocket_service::on_text");
-			}
+			on_text(buffer_);
 		}else{
-			try{
-				service_.impl_->on_binary(this, resource_, buffer_);
-			}catch(...){
-				log_exception(std::current_exception(),
-					"websocket_service::on_binary");
-			}
+			on_binary(buffer_);
 		}
 
 		// Clear the buffer
@@ -236,19 +212,15 @@ namespace webservice{
 		do_read();
 	}
 
-	void websocket_session::on_write(
-		boost::system::error_code ec,
-		std::size_t bytes_transferred
-	){
-		boost::ignore_unused(bytes_transferred);
-
+	void websocket_session::on_write(boost::system::error_code ec){
 		// Happens when the timer closes the socket
 		if(ec == boost::asio::error::operation_aborted){
 			return;
 		}
 
 		if(ec){
-			return log_fail(ec, "write");
+			on_error(ec);
+			return;
 		}
 	}
 
@@ -267,6 +239,52 @@ namespace webservice{
 		ws_.next_layer().shutdown(
 			boost::asio::ip::tcp::socket::shutdown_both, ec);
 		ws_.next_layer().close(ec);
+	}
+
+
+	void websocket_session::on_open(){
+		is_open_ = true;
+		try{
+			service_.impl_->on_open(this, resource_);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
+	}
+
+	void websocket_session::on_close(){
+		try{
+			service_.impl_->on_close(this, resource_);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
+	}
+
+	void websocket_session::on_text(boost::beast::multi_buffer& buffer){
+		try{
+			service_.impl_->on_text(this, resource_, buffer);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
+	}
+
+	void websocket_session::on_binary(boost::beast::multi_buffer& buffer){
+		try{
+			service_.impl_->on_binary(this, resource_, buffer);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
+	}
+
+	void websocket_session::on_error(boost::system::error_code ec){
+		try{
+			service_.impl_->on_error(this, resource_, ec);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
+	}
+
+	void websocket_session::on_exception(std::exception_ptr error)noexcept{
+		service_.impl_->on_exception(this, resource_, error);
 	}
 
 

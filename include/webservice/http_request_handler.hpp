@@ -33,10 +33,16 @@ namespace webservice{
 		virtual void operator()(http_request&& req, http_response&& send);
 
 	protected:
+		/// \brief Called when an exception occurred
+		///
+		/// Default implementation does nothing.
+		virtual void on_exception()noexcept;
+
+
 		/// \brief Get reference to const server
 		///
 		/// Must not be called before a server is initialized with this service.
-		class server const& server()const{
+		class server const& server()const noexcept{
 			assert(server_ != nullptr);
 			return *server_;
 		}
@@ -44,7 +50,7 @@ namespace webservice{
 		/// \brief Get reference to server
 		///
 		/// Must not be called before a server is initialized with this service.
-		class server& server(){
+		class server& server()noexcept{
 			assert(server_ != nullptr);
 			return *server_;
 		}

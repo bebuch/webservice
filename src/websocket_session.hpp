@@ -60,16 +60,10 @@ namespace webservice{
 		void do_read();
 
 		/// \brief Called when a message was readed
-		void on_read(
-			boost::system::error_code ec,
-			std::size_t bytes_transferred
-		);
+		void on_read(boost::system::error_code ec);
 
 		/// \brief Called when a message was written
-		void on_write(
-			boost::system::error_code ec,
-			std::size_t bytes_transferred
-		);
+		void on_write(boost::system::error_code ec);
 
 		/// \brief Send a message
 		template < typename Data >
@@ -82,9 +76,9 @@ namespace webservice{
 					strand_,
 					[this_ = shared_from_this(), data = std::move(data)](
 						boost::system::error_code ec,
-						std::size_t bytes_transferred
+						std::size_t /*bytes_transferred*/
 					){
-						this_->on_write(ec, bytes_transferred);
+						this_->on_write(ec);
 					}));
 		}
 
@@ -96,6 +90,25 @@ namespace webservice{
 
 
 	private:
+		/// \brief Called with a unique identifier when a sessions starts
+		void on_open();
+
+		/// \brief Called with a unique identifier when a sessions ends
+		void on_close();
+
+		/// \brief Called when a session received a text message
+		void on_text(boost::beast::multi_buffer& buffer);
+
+		/// \brief Called when a session received a binary message
+		void on_binary(boost::beast::multi_buffer& buffer);
+
+		/// \brief Called when an error occured
+		void on_error(boost::system::error_code ec);
+
+		/// \brief Called when an exception was thrown
+		void on_exception(std::exception_ptr error)noexcept;
+
+
 		websocket_service& service_;
 		boost::beast::websocket::stream< boost::asio::ip::tcp::socket > ws_;
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;

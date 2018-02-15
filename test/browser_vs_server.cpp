@@ -26,7 +26,7 @@ enum class state_t{
 	exit
 };
 
-std::string to_string(state_t state){
+boost::beast::string_view to_string(state_t state)noexcept{
 	switch(state){
 		case state_t::init:         return "init";
 		case state_t::file_request: return "file_request";
@@ -36,7 +36,7 @@ std::string to_string(state_t state){
 		case state_t::ws_binary:    return "ws_binary";
 		case state_t::exit:         return "exit";
 	}
-	throw std::logic_error("unknown state");
+	return "unknown state";
 }
 
 void pass(state_t expect, state_t got){
@@ -131,6 +131,31 @@ struct websocket_service: webservice::websocket_service{
 		send_binary(std::vector< std::uint8_t >(
 			std::begin(text), std::end(text)));
 		close("shutdown");
+	}
+
+	void on_error(
+		std::uintptr_t,
+		std::string const&,
+		boost::system::error_code ec
+	)override{
+		throw boost::system::system_error(ec);
+	}
+
+	void on_exception(
+		std::uintptr_t,
+		std::string const&,
+		std::exception_ptr error
+	)noexcept override{
+		try{
+			std::rethrow_exception(error);
+		}catch(std::exception const& e){
+			std::cout << "\033[1;31mfail: unexpected exception: "
+				<< e.what()
+				<< "\033[0m\n";
+		}catch(...){
+			std::cout
+				<< "\033[1;31mfail: unexpected unknown exception\033[0m\n";
+		}
 	}
 };
 

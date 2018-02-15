@@ -75,7 +75,7 @@ namespace webservice{
 
 
 		/// \copydoc server::block()
-		void block(){
+		void block()noexcept{
 			std::lock_guard lock(mutex);
 			for(auto& thread: threads_){
 				if(thread.joinable()) thread.join();
@@ -83,7 +83,7 @@ namespace webservice{
 		}
 
 		/// \copydoc server::stop()
-		void stop(){
+		void stop()noexcept{
 			ioc_.stop();
 		}
 
@@ -140,11 +140,11 @@ namespace webservice{
 	server::~server() = default;
 
 
-	void server::block(){
+	void server::block()noexcept{
 		impl_->block();
 	}
 
-	void server::stop(){
+	void server::stop()noexcept{
 		impl_->stop();
 	}
 

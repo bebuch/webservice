@@ -24,6 +24,8 @@ namespace webservice{
 		send(not_found(req, req.target()));
 	}
 
+	void http_request_handler::on_exception()noexcept{}
+
 
 	http_string_response bad_request(
 		http_request const& req,

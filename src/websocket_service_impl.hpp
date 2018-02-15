@@ -75,6 +75,30 @@ namespace webservice{
 				buffer);
 		}
 
+		/// \brief Called when a session received a binary message
+		void on_error(
+			websocket_session* const session,
+			std::string const& resource,
+			boost::system::error_code ec
+		){
+			self_.on_error(
+				reinterpret_cast< std::uintptr_t >(session),
+				resource,
+				ec);
+		}
+
+		/// \brief Called when a session received a binary message
+		void on_exception(
+			websocket_session* const session,
+			std::string const& resource,
+			std::exception_ptr error
+		)noexcept{
+			self_.on_exception(
+				reinterpret_cast< std::uintptr_t >(session),
+				resource,
+				error);
+		}
+
 
 		/// \brief Send a message to all sessions
 		template < typename Data >

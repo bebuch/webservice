@@ -23,8 +23,7 @@ namespace webservice{
 		file_request_handler(std::string doc_root)
 			: doc_root_(std::move(doc_root)) {}
 
-		virtual void operator()(
-			http_request&& req, http_response&& send)override;
+		void operator()(http_request&& req, http_response&& send)override;
 
 
 	private:

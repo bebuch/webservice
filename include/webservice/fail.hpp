@@ -20,20 +20,26 @@
 namespace webservice{
 
 
-	inline std::mutex& log_mutex(){
+	inline std::mutex& log_mutex()noexcept{
 		static std::mutex mutex;
 		return mutex;
 	}
 
 
 	// Report a failure
-	inline void log_fail(boost::system::error_code ec, boost::string_view what){
+	inline void log_fail(
+		boost::system::error_code ec,
+		boost::string_view what
+	)noexcept{
 		std::lock_guard< std::mutex > lock(log_mutex());
 		std::cerr << what << ": " << ec.message() << "\n";
 	}
 
 	// Print an exception
-	inline void log_exception(std::exception const& e, boost::string_view pos){
+	inline void log_exception(
+		std::exception const& e,
+		boost::string_view pos
+	)noexcept{
 		std::lock_guard< std::mutex > lock(log_mutex());
 		std::cerr << "exception in " << pos << ": " << e.what() << "\n";
 	}
@@ -45,7 +51,10 @@ namespace webservice{
 	}
 
 	// Print an exception
-	inline void log_exception(std::exception_ptr e, boost::string_view pos){
+	inline void log_exception(
+		std::exception_ptr e,
+		boost::string_view pos
+	)noexcept{
 		try{
 			std::rethrow_exception(e);
 		}catch(std::exception const& e){
@@ -56,7 +65,7 @@ namespace webservice{
 	}
 
 	// Print an massage
-	inline void log_msg(boost::string_view text){
+	inline void log_msg(boost::string_view text)noexcept{
 		std::lock_guard< std::mutex > lock(log_mutex());
 		std::cout << "log: " << text << "\n";
 	}

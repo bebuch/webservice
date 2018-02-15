@@ -37,6 +37,16 @@ namespace webservice{
 		std::string const& /*resource*/,
 		boost::beast::multi_buffer& /*buffer*/){}
 
+	void websocket_service::on_error(
+		std::uintptr_t /*identifier*/,
+		std::string const& /*resource*/,
+		boost::system::error_code /*ec*/){}
+
+	void websocket_service::on_exception(
+		std::uintptr_t /*identifier*/,
+		std::string const& /*resource*/,
+		std::exception_ptr /*error*/)noexcept{}
+
 
 	void websocket_service::send_text(std::string data){
 		impl_->send(std::make_shared< std::string >(std::move(data)));
