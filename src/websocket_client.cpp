@@ -8,6 +8,8 @@
 //-----------------------------------------------------------------------------
 #include <webservice/websocket_client.hpp>
 
+#include <boost/make_unique.hpp>
+
 #include "websocket_client_impl.hpp"
 
 
@@ -18,12 +20,12 @@ namespace webservice{
 
 
 	websocket_client::websocket_client(
-		boost::asio::ip::address address,
+		std::string host,
 		std::uint16_t port,
 		std::string resource
 	)
 		: impl_(boost::make_unique< websocket_client_impl >(
-			address, port, std::move(resource))) {}
+			std::move(host), port, std::move(resource))) {}
 
 	websocket_client::~websocket_client(){}
 
@@ -42,6 +44,8 @@ namespace webservice{
 
 
 	void websocket_client::on_open(){}
+
+	void websocket_client::on_error(boost::system::error_code /*ec*/){}
 
 	void websocket_client::on_close(boost::beast::string_view /*reason*/){}
 

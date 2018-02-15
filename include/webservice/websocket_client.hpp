@@ -26,7 +26,7 @@ namespace webservice{
 	public:
 		/// \brief Constructor
 		websocket_client(
-			boost::asio::ip::address address,
+			std::string host,
 			std::uint16_t port,
 			std::string resource
 		);
@@ -48,6 +48,9 @@ namespace webservice{
 	protected:
 		/// \brief Called when the sessions starts
 		virtual void on_open();
+
+		/// \brief Called when an error occured
+		virtual void on_error(boost::system::error_code ec);
 
 		/// \brief Called when the sessions ends
 		virtual void on_close(boost::beast::string_view reason);

@@ -68,3 +68,10 @@ exe browser_vs_server
 	/webservice//webservice
 	/boost//system
 	;
+
+exe server_vs_client
+	:
+	server_vs_client.cpp
+	/webservice//webservice
+	/boost//system
+	;
