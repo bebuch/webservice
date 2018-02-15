@@ -44,73 +44,62 @@ namespace webservice{
 			: self_(self)
 			, resolver_(ioc_)
 			, ws_(ioc_)
+			, strand_(ws_.get_executor())
 			, thread_([
-				this,
-				host = std::move(host),
-				port,
-				resource = std::move(resource)
-			]{
-				// Look up the domain name
-				resolver_.async_resolve(
-					host,
+					this,
+					host = std::move(host),
 					port,
-					[this, host, resource](
-						boost::system::error_code ec,
-						boost::asio::ip::tcp::resolver::results_type results
-					)mutable{
-						if(ec){
-							return on_error(ec, "ws client resolve");
-						}
-
-						// Make the connection on the IP address we get from a
-						// lookup
-						boost::asio::async_connect(
-							ws_.next_layer(),
-							results.begin(),
-							results.end(),
-							[
-								this,
-								host = std::move(host),
-								resource = std::move(resource)
-							](boost::system::error_code ec){
-								if(ec){
-									return on_error(ec, "ws client connect");
-								}
-
-								// Perform the websocket handshake
-								ws_.async_handshake(host, resource,
-									[this](boost::system::error_code ec){
-										if(ec){
-											on_error(ec);
-										}else{
-											on_open();
-										}
-									});
-							});
-					});
-
-				// restart io_context if it returned by exception
-				for(;;){
-					try{
-						ioc_.run();
-						return;
-					}catch(...){
-						if(handle_exception_){
-							try{
-								handle_exception_(std::current_exception());
-							}catch(std::exception const& e){
-								log_exception(e,
-									"server::exception_handler");
-							}catch(...){
-								log_exception("server::exception_handler");
+					resource = std::move(resource)
+				]{
+					// Look up the domain name
+					resolver_.async_resolve(
+						host,
+						std::to_string(port),
+						[this, host, resource](
+							boost::system::error_code ec,
+							boost::asio::ip::tcp::resolver::results_type results
+						){
+							if(ec){
+								on_error(ec);
+								return;
 							}
-						}else{
-							log_exception(std::current_exception(),
-								"server::exception");
+
+							// Make the connection on the IP address we get
+							// from a lookup
+							boost::asio::async_connect(
+								ws_.next_layer(),
+								results.begin(),
+								results.end(),
+								[this, host, resource](
+									boost::system::error_code ec, auto
+								){
+									if(ec){
+										on_error(ec);
+										return;
+									}
+
+									// Perform the websocket handshake
+									ws_.async_handshake(host, resource,
+										[this](boost::system::error_code ec){
+											if(ec){
+												on_error(ec);
+											}else{
+												on_open();
+											}
+										});
+								});
+						});
+
+					// restart io_context if it returned by exception
+					for(;;){
+						try{
+							ioc_.run();
+							return;
+						}catch(...){
+							on_exception(std::current_exception());
 						}
 					}
-				}
-			}){}
+				}) {}
 
 		/// \brief Destructor
 		~websocket_client_impl(){
@@ -120,17 +109,20 @@ namespace webservice{
 
 
 		/// \brief Send a message
-		void send(boost::beast::multi_buffer buffer){
+		template < typename Data >
+		void send(std::shared_ptr< Data > data){
+			ws_.text(std::is_same_v< Data, std::string >);
+			auto buffer = boost::asio::const_buffer(data->data(), data->size());
 			ws_.async_write(
-				buffer,
-				[this](
-					boost::system::error_code ec,
-					std::size_t /*bytes_transferred*/
-				){
-					if(ec){
-						on_error(ec);
-					}
-				});
+				std::move(buffer),
+				boost::asio::bind_executor(
+					strand_,
+					[this, data = std::move(data)](
+						boost::system::error_code ec,
+						std::size_t /*bytes_transferred*/
+					){
+						on_write(ec);
+					}));
 		}
 
 		/// \brief Close the sessions
@@ -139,25 +131,67 @@ namespace webservice{
 			ioc_.stop();
 		}
 
-		void on_read(boost::system::error_code ec){
-			if(ec){
-				return log_fail(ec, "ws client read");
-			}
+		/// \brief Read a websocket message
+		void do_read(){
+			// Set the timer
+// 			timer_.expires_after(std::chrono::seconds(15));
 
 			// Read a message into our buffer
-			if(ws_.open()) ws_.async_read(
+			ws_.async_read(
 				buffer_,
-				[this](
-					boost::system::error_code ec,
-					std::size_t /*bytes_transferred*/
-				){
-					on_read(ec);
-				});
+				boost::asio::bind_executor(
+					strand_,
+					[this](
+						boost::system::error_code ec,
+						std::size_t /*bytes_transferred*/
+					){
+						on_read(ec);
+					}));
 		}
 
-		void on_close(boost::system::error_code ec){
+		/// \brief Called when a websocket message was read
+		void on_read(boost::system::error_code ec){
+			// Happens when the timer closes the socket
+			if(ec == boost::asio::error::operation_aborted){
+				return;
+			}
+
+			// This indicates that the websocket_session was closed
+			if(ec == boost::beast::websocket::error::closed){
+				return;
+			}
+
 			if(ec){
-				return log_fail(ec, "ws client close");
+				on_error(ec);
+			}
+
+			// Note that there is activity
+// 			activity();
+
+			// Echo the message
+			if(ws_.got_text()){
+				on_text(buffer_);
+			}else{
+				on_binary(buffer_);
+			}
+
+			// Clear the buffer
+			buffer_.consume(buffer_.size());
+
+			// Do another read
+			do_read();
+		}
+
+
+		void on_write(boost::system::error_code ec){
+			// Happens when the timer closes the socket
+			if(ec == boost::asio::error::operation_aborted){
+				return;
+			}
+
+			if(ec){
+				on_error(ec);
+				return;
 			}
 		}
 
@@ -165,31 +199,58 @@ namespace webservice{
 	private:
 		/// \brief Called when the sessions starts
 		void on_open(){
-			self_.on_open();
+			try{
+				self_.on_open();
+			}catch(...){
+				on_exception(std::current_exception());
+			}
 
-			ws_.async_read(
-				buffer_,
-				[this](
-					boost::system::error_code ec,
-					std::size_t /*bytes_transferred*/
-				){
-					on_read(ec);
-				});
+			do_read();
 		}
 
 		/// \brief Called when the sessions ends
 		void on_close(boost::beast::string_view reason){
-			self_.on_open(reason);
+			try{
+				self_.on_close(reason);
+			}catch(...){
+				on_exception(std::current_exception());
+			}
 		}
 
 		/// \brief Called when the session received a text message
 		void on_text(boost::beast::multi_buffer& buffer){
-			self_.on_text(buffer);
+			try{
+				self_.on_text(buffer);
+			}catch(...){
+				on_exception(std::current_exception());
+			}
 		}
 
 		/// \brief Called when the session received a binary message
 		void on_binary(boost::beast::multi_buffer& buffer){
-			self_.on_binary(buffer);
+			try{
+				self_.on_binary(buffer);
+			}catch(...){
+				on_exception(std::current_exception());
+			}
+		}
+
+		/// \brief Called when an error occured
+		void on_error(boost::system::error_code ec){
+			try{
+				self_.on_error(ec);
+			}catch(...){
+				on_exception(std::current_exception());
+			}
+		}
+
+		/// \brief Called when an exception was thrown
+		void on_exception(std::exception_ptr error)noexcept{
+			try{
+				self_.on_exception(error);
+			}catch(...){
+				on_exception(std::current_exception());
+			}
 		}
 
 

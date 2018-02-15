@@ -16,7 +16,7 @@
 namespace webservice{
 
 
-	class websocket_client_impl{};
+	class websocket_client_impl;
 
 
 	websocket_client::websocket_client(
@@ -25,17 +25,18 @@ namespace webservice{
 		std::string resource
 	)
 		: impl_(boost::make_unique< websocket_client_impl >(
-			std::move(host), port, std::move(resource))) {}
+			*this, std::move(host), port, std::move(resource))) {}
 
 	websocket_client::~websocket_client(){}
 
 
 	void websocket_client::send_text(std::string data){
-		impl_->send_text(data);
+		impl_->send(std::make_shared< std::string >(std::move(data)));
 	}
 
 	void websocket_client::send_binary(std::vector< std::uint8_t > data){
-		impl_->send_binary(data);
+		impl_->send(std::make_shared< std::vector< std::uint8_t > >(
+			std::move(data)));
 	}
 
 	void websocket_client::close(boost::beast::string_view reason){
@@ -52,6 +53,8 @@ namespace webservice{
 	void websocket_client::on_text(boost::beast::multi_buffer& /*buffer*/){}
 
 	void websocket_client::on_binary(boost::beast::multi_buffer& /*buffer*/){}
+
+	void websocket_client::on_exception(std::exception_ptr /*error*/)noexcept{}
 
 
 }

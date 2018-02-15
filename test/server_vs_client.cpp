@@ -25,7 +25,7 @@ enum class state_t{
 	exit
 };
 
-std::string to_string(state_t state){
+boost::beast::string_view to_string(state_t state)noexcept{
 	switch(state){
 		case state_t::init:         return "init";
 		case state_t::ws_open:      return "ws_open";
@@ -34,7 +34,7 @@ std::string to_string(state_t state){
 		case state_t::ws_binary:    return "ws_binary";
 		case state_t::exit:         return "exit";
 	}
-	throw std::logic_error("unknown state");
+	return "unknown state";
 }
 
 void pass(state_t expect, state_t got){
