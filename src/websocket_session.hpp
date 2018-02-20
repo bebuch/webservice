@@ -87,8 +87,20 @@ namespace webservice{
 		/// \brief Called when a session received a binary message
 		void on_binary(boost::beast::multi_buffer& buffer);
 
-		/// \brief Called when an error occured
-		void on_error(boost::system::error_code ec);
+		/// \brief Called when an accept error occured
+		void on_accept_error(boost::system::error_code ec);
+
+		/// \brief Called when an timer error occured
+		void on_timer_error(boost::system::error_code ec);
+
+		/// \brief Called when an ping error occured
+		void on_ping_error(boost::system::error_code ec);
+
+		/// \brief Called when an read error occured
+		void on_read_error(boost::system::error_code ec);
+
+		/// \brief Called when an write error occured
+		void on_write_error(boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown
 		void on_exception(std::exception_ptr error)noexcept;

@@ -11,6 +11,7 @@
 #include "listener.hpp"
 
 #include <thread>
+#include <mutex>
 
 
 namespace webservice{
@@ -24,16 +25,16 @@ namespace webservice{
 		server_impl(
 			std::unique_ptr< http_request_handler > handler,
 			std::unique_ptr< websocket_service > service,
+			std::unique_ptr< error_handler > error_handler,
 			boost::asio::ip::address const address,
 			std::uint16_t const port,
-			std::uint8_t const thread_count,
-			server::exception_handler&& handle_exception
+			std::uint8_t const thread_count
 		)
-			: handle_exception_(std::move(handle_exception))
-			, ioc_{thread_count}
+			: ioc_{thread_count}
 			, listener_(
 				std::move(handler),
 				std::move(service),
+				std::move(error_handler),
 				ioc_,
 				boost::asio::ip::tcp::endpoint{address, port})
 		{
@@ -47,19 +48,7 @@ namespace webservice{
 							ioc_.run();
 							return;
 						}catch(...){
-							if(handle_exception_){
-								try{
-									handle_exception_(std::current_exception());
-								}catch(std::exception const& e){
-									log_exception(e,
-										"server::exception_handler");
-								}catch(...){
-									log_exception("server::exception_handler");
-								}
-							}else{
-								log_exception(std::current_exception(),
-									"server::exception");
-							}
+							listener_.on_exception(std::current_exception());
 						}
 					}
 				});
@@ -92,9 +81,6 @@ namespace webservice{
 		/// \brief Protect thread joins
 		std::recursive_mutex mutex;
 
-		/// \brief Callback that is called if an exception is thrown
-		server::exception_handler const handle_exception_;
-
 		/// \brief The worker threads
 		std::vector< std::thread > threads_;
 
@@ -109,10 +95,10 @@ namespace webservice{
 	server::server(
 		std::unique_ptr< http_request_handler > handler,
 		std::unique_ptr< websocket_service > service,
+		std::unique_ptr< error_handler > error_handler,
 		boost::asio::ip::address const address,
 		std::uint16_t const port,
-		std::uint8_t const thread_count,
-		exception_handler handle_exception
+		std::uint8_t const thread_count
 	)
 		: impl_(std::make_unique< server_impl >(
 				[this, handler = std::move(handler)]()mutable{
@@ -131,10 +117,16 @@ namespace webservice{
 						service->server_ = this;
 						return std::move(service);
 					}(),
+				[this, error_handler = std::move(error_handler)]()mutable{
+						if(!error_handler){
+							error_handler =
+								boost::make_unique< class error_handler >();
+						}
+						return std::move(error_handler);
+					}(),
 				address,
 				port,
-				thread_count,
-				std::move(handle_exception)
+				thread_count
 			)) {}
 
 	server::~server() = default;

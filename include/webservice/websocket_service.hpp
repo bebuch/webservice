@@ -111,10 +111,42 @@ namespace webservice{
 			std::string const& resource,
 			boost::beast::multi_buffer& buffer);
 
-		/// \brief Called when an error occured
+		/// \brief Called when an accept error occured
 		///
 		/// Default implementation does nothing.
-		virtual void on_error(
+		virtual void on_accept_error(
+			std::uintptr_t identifier,
+			std::string const& resource,
+			boost::system::error_code ec);
+
+		/// \brief Called when an timer error occured
+		///
+		/// Default implementation does nothing.
+		virtual void on_timer_error(
+			std::uintptr_t identifier,
+			std::string const& resource,
+			boost::system::error_code ec);
+
+		/// \brief Called when an ping error occured
+		///
+		/// Default implementation does nothing.
+		virtual void on_ping_error(
+			std::uintptr_t identifier,
+			std::string const& resource,
+			boost::system::error_code ec);
+
+		/// \brief Called when an read error occured
+		///
+		/// Default implementation does nothing.
+		virtual void on_read_error(
+			std::uintptr_t identifier,
+			std::string const& resource,
+			boost::system::error_code ec);
+
+		/// \brief Called when an write error occured
+		///
+		/// Default implementation does nothing.
+		virtual void on_write_error(
 			std::uintptr_t identifier,
 			std::string const& resource,
 			boost::system::error_code ec);

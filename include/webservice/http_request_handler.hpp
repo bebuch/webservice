@@ -24,6 +24,8 @@ namespace webservice{
 		= boost::beast::http::response< boost::beast::http::string_body >;
 
 	class server;
+	class listener;
+	class http_session;
 
 
 	/// \brief Base class of all HTTP request handlers
@@ -33,10 +35,25 @@ namespace webservice{
 		virtual void operator()(http_request&& req, http_response&& send);
 
 	protected:
+		/// \brief Called when an timer error occured
+		///
+		/// Default implementation does nothing.
+		virtual void on_timer_error(boost::system::error_code ec);
+
+		/// \brief Called when an read error occured
+		///
+		/// Default implementation does nothing.
+		virtual void on_read_error(boost::system::error_code ec);
+
+		/// \brief Called when an write error occured
+		///
+		/// Default implementation does nothing.
+		virtual void on_write_error(boost::system::error_code ec);
+
 		/// \brief Called when an exception occurred
 		///
 		/// Default implementation does nothing.
-		virtual void on_exception()noexcept;
+		virtual void on_exception(std::exception_ptr error)noexcept;
 
 
 		/// \brief Get reference to const server
@@ -60,6 +77,8 @@ namespace webservice{
 		/// \brief Pointer to the server object
 		class server* server_ = nullptr;
 
+		friend class http_session;
+		friend class listener;
 		friend class server;
 	};
 

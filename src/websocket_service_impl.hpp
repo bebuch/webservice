@@ -75,19 +75,67 @@ namespace webservice{
 				buffer);
 		}
 
-		/// \brief Called when a session received a binary message
-		void on_error(
+		/// \brief Called when an accept error occured
+		void on_accept_error(
 			websocket_session< websocket_service >* const session,
 			std::string const& resource,
 			boost::system::error_code ec
 		){
-			self_.on_error(
+			self_.on_accept_error(
 				reinterpret_cast< std::uintptr_t >(session),
 				resource,
 				ec);
 		}
 
-		/// \brief Called when a session received a binary message
+		/// \brief Called when an timer error occured
+		void on_timer_error(
+			websocket_session< websocket_service >* const session,
+			std::string const& resource,
+			boost::system::error_code ec
+		){
+			self_.on_timer_error(
+				reinterpret_cast< std::uintptr_t >(session),
+				resource,
+				ec);
+		}
+
+		/// \brief Called when an ping error occured
+		void on_ping_error(
+			websocket_session< websocket_service >* const session,
+			std::string const& resource,
+			boost::system::error_code ec
+		){
+			self_.on_ping_error(
+				reinterpret_cast< std::uintptr_t >(session),
+				resource,
+				ec);
+		}
+
+		/// \brief Called when an read error occured
+		void on_read_error(
+			websocket_session< websocket_service >* const session,
+			std::string const& resource,
+			boost::system::error_code ec
+		){
+			self_.on_read_error(
+				reinterpret_cast< std::uintptr_t >(session),
+				resource,
+				ec);
+		}
+
+		/// \brief Called when an write error occured
+		void on_write_error(
+			websocket_session< websocket_service >* const session,
+			std::string const& resource,
+			boost::system::error_code ec
+		){
+			self_.on_write_error(
+				reinterpret_cast< std::uintptr_t >(session),
+				resource,
+				ec);
+		}
+
+		/// \brief Called when an exception was thrown
 		void on_exception(
 			websocket_session< websocket_service >* const session,
 			std::string const& resource,

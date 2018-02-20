@@ -11,6 +11,7 @@
 
 #include "http_request_handler.hpp"
 #include "websocket_service.hpp"
+#include "error_handler.hpp"
 
 
 namespace webservice{
@@ -21,27 +22,21 @@ namespace webservice{
 	/// \brief An http and WebSocket server
 	class server{
 	public:
-		/// \brief Type of an exception handling function
-		using exception_handler = std::function< void(std::exception_ptr) >;
-
-
 		/// \brief Constructor
 		///
-		/// \param handler Handles the sessions
+		/// \param http_handler Handles HTTP sessions
+		/// \param service Handles websocket sessions
+		/// \param error_handler Handles error in the server
 		/// \param address IP address (IPv4 or IPv6)
 		/// \param port TCP Port
 		/// \param thread_count Count of threads that proccess request parallel
-		/// \param handle_exception Is called if an asynchronous operation
-		///                         returns by exception. If you use more than
-		///                         one server thread, then your handling
-		///                         function must be thread save!
 		server(
-			std::unique_ptr< http_request_handler > handler,
+			std::unique_ptr< http_request_handler > http_handler,
 			std::unique_ptr< websocket_service > service,
+			std::unique_ptr< error_handler > error_handler,
 			boost::asio::ip::address address,
 			std::uint16_t port,
-			std::uint8_t thread_count = 1,
-			exception_handler handle_exception = {}
+			std::uint8_t thread_count = 1
 		);
 
 		/// \brief Close all connections and wait on all processing threads

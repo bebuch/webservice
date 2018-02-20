@@ -37,7 +37,27 @@ namespace webservice{
 		std::string const& /*resource*/,
 		boost::beast::multi_buffer& /*buffer*/){}
 
-	void websocket_service::on_error(
+	void websocket_service::on_accept_error(
+		std::uintptr_t /*identifier*/,
+		std::string const& /*resource*/,
+		boost::system::error_code /*ec*/){}
+
+	void websocket_service::on_timer_error(
+		std::uintptr_t /*identifier*/,
+		std::string const& /*resource*/,
+		boost::system::error_code /*ec*/){}
+
+	void websocket_service::on_ping_error(
+		std::uintptr_t /*identifier*/,
+		std::string const& /*resource*/,
+		boost::system::error_code /*ec*/){}
+
+	void websocket_service::on_read_error(
+		std::uintptr_t /*identifier*/,
+		std::string const& /*resource*/,
+		boost::system::error_code /*ec*/){}
+
+	void websocket_service::on_write_error(
 		std::uintptr_t /*identifier*/,
 		std::string const& /*resource*/,
 		boost::system::error_code /*ec*/){}

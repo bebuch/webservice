@@ -11,8 +11,6 @@
 
 #include "websocket_session.hpp"
 
-#include <webservice/fail.hpp>
-
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/beast/websocket.hpp>
 
@@ -70,7 +68,11 @@ namespace webservice{
 		// Called when the timer expires.
 		void on_timer(boost::system::error_code ec){
 			if(ec && ec != boost::asio::error::operation_aborted){
-				log_fail(ec, "timer");
+				try{
+					handler_.on_timer_error(ec);
+				}catch(...){
+					handler_.on_exception(std::current_exception());
+				}
 				return;
 			}
 
@@ -86,12 +88,15 @@ namespace webservice{
 			}
 
 			// Wait on the timer
-			timer_.async_wait(
-				boost::asio::bind_executor(
-					strand_,
-					[this_ = shared_from_this()](boost::system::error_code ec){
-						this_->on_timer(ec);
-					}));
+			if(socket_.is_open()){
+				timer_.async_wait(
+					boost::asio::bind_executor(
+						strand_,
+						[this_ = shared_from_this()]
+						(boost::system::error_code ec){
+							this_->on_timer(ec);
+						}));
+			}
 		}
 
 		void on_read(boost::system::error_code ec){
@@ -107,7 +112,11 @@ namespace webservice{
 			}
 
 			if(ec){
-				log_fail(ec, "read");
+				try{
+					handler_.on_read_error(ec);
+				}catch(...){
+					handler_.on_exception(std::current_exception());
+				}
 				return;
 			}
 
@@ -142,7 +151,11 @@ namespace webservice{
 			}
 
 			if(ec){
-				log_fail(ec, "write");
+				try{
+					handler_.on_write_error(ec);
+				}catch(...){
+					handler_.on_exception(std::current_exception());
+				}
 				return;
 			}
 

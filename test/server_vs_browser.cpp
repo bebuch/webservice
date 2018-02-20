@@ -6,8 +6,10 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include <webservice/file_request_handler.hpp>
-#include <webservice/fail.hpp>
+#include "error_printing_webservice.hpp"
+#include "error_printing_error_handler.hpp"
+#include "error_printing_file_request_handler.hpp"
+
 #include <webservice/server.hpp>
 
 #include <boost/make_unique.hpp>
@@ -86,8 +88,9 @@ void check(state_t got){
 }
 
 
-struct file_request_handler: webservice::file_request_handler{
-	using webservice::file_request_handler::file_request_handler;
+struct file_request_handler: webservice::error_printing_file_request_handler{
+	using webservice::error_printing_file_request_handler
+		::error_printing_file_request_handler;
 
 	void operator()(
 		webservice::http_request&& req,
@@ -100,7 +103,7 @@ struct file_request_handler: webservice::file_request_handler{
 };
 
 
-struct websocket_service: webservice::websocket_service{
+struct websocket_service: webservice::error_printing_webservice{
 	static std::string const test_text;
 
 	void on_open(std::uintptr_t, std::string const&)override{
@@ -150,31 +153,6 @@ struct websocket_service: webservice::websocket_service{
 		}
 		close("shutdown");
 	}
-
-	void on_error(
-		std::uintptr_t,
-		std::string const&,
-		boost::system::error_code ec
-	)override{
-		throw boost::system::system_error(ec);
-	}
-
-	void on_exception(
-		std::uintptr_t,
-		std::string const&,
-		std::exception_ptr error
-	)noexcept override{
-		try{
-			std::rethrow_exception(error);
-		}catch(std::exception const& e){
-			std::cout << "\033[1;31mfail: unexpected exception: "
-				<< e.what()
-				<< "\033[0m\n";
-		}catch(...){
-			std::cout
-				<< "\033[1;31mfail: unexpected unknown exception\033[0m\n";
-		}
-	}
 };
 
 std::string const websocket_service::test_text = "test text values";
@@ -193,10 +171,10 @@ int main(){
 	std::signal(SIGINT, &close_server);
 
 	try{
-		auto handler =
-			boost::make_unique< file_request_handler >("server_vs_browser");
-		auto service = boost::make_unique< websocket_service >();
-		webservice::server server(std::move(handler), std::move(service),
+		webservice::server server(
+			boost::make_unique< file_request_handler >("server_vs_browser"),
+			boost::make_unique< websocket_service >(),
+			boost::make_unique< webservice::error_printing_error_handler >(),
 			boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
 		check(state_t::init);
@@ -216,10 +194,10 @@ int main(){
 
 		return 0;
 	}catch(std::exception const& e){
-		webservice::log_exception(e, "program");
+		std::cerr << "Exception: " << e.what() << "\n";
 		return 1;
 	}catch(...){
-		webservice::log_exception("program");
+		std::cerr << "Unknown exception\n";
 		return 1;
 	}
 

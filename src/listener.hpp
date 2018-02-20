@@ -10,7 +10,6 @@
 #define _webservice__listener__hpp_INCLUDED_
 
 #include <webservice/http_request_handler.hpp>
-#include <webservice/fail.hpp>
 
 #include "http_session.hpp"
 
@@ -24,11 +23,13 @@ namespace webservice{
 		listener(
 			std::unique_ptr< http_request_handler > handler,
 			std::unique_ptr< websocket_service > service,
+			std::unique_ptr< error_handler > error_handler,
 			boost::asio::io_context& ioc,
 			boost::asio::ip::tcp::endpoint endpoint
 		)
 			: handler_(std::move(handler))
 			, service_(std::move(service))
+			, error_handler_(std::move(error_handler))
 			, acceptor_(ioc)
 			, socket_(ioc)
 		{
@@ -46,14 +47,6 @@ namespace webservice{
 			do_accept();
 		}
 
-		~listener(){
-			boost::system::error_code ec;
-			acceptor_.cancel(ec);
-			if(ec) log_fail(ec, "acceptor cancel");
-			acceptor_.close(ec);
-			if(ec) log_fail(ec, "acceptor close");
-		}
-
 		void do_accept(){
 			acceptor_.async_accept(
 				socket_,
@@ -63,11 +56,12 @@ namespace webservice{
 		}
 
 		void on_accept(boost::system::error_code ec){
-			if(ec == boost::asio::error::invalid_argument){
-				log_fail(ec, "listener accept");
-				return;
-			}else if(ec){
-				log_fail(ec, "listener accept");
+			if(ec){
+				try{
+					error_handler_->on_accept_error(ec);
+				}catch(...){
+					error_handler_->on_exception(std::current_exception());
+				}
 			}else{
 				// Create the http_session and run it
 				std::make_shared< http_session >(
@@ -78,9 +72,15 @@ namespace webservice{
 			do_accept();
 		}
 
+		/// \brief Called when an exception in the server occurred
+		virtual void on_exception(std::exception_ptr error)noexcept{
+			error_handler_->on_exception(error);
+		}
+
 	private:
 		std::unique_ptr< http_request_handler > handler_;
 		std::unique_ptr< websocket_service > service_;
+		std::unique_ptr< error_handler > error_handler_;
 		boost::asio::ip::tcp::acceptor acceptor_;
 		boost::asio::ip::tcp::socket socket_;
 	};

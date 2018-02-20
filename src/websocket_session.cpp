@@ -85,7 +85,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			on_error(ec);
+			on_accept_error(ec);
 			return;
 		}
 
@@ -98,7 +98,7 @@ namespace webservice{
 	template < typename Service >
 	void websocket_session< Service >::on_timer(boost::system::error_code ec){
 		if(ec && ec != boost::asio::error::operation_aborted){
-			on_error(ec);
+			on_timer_error(ec);
 			return;
 		}
 
@@ -131,13 +131,15 @@ namespace webservice{
 		}
 
 		// Wait on the timer
-		if(ws_.is_open()) timer_.async_wait(
-			boost::asio::bind_executor(
-				strand_,
-				[this_ = this->shared_from_this()]
-				(boost::system::error_code ec){
-					this_->on_timer(ec);
-				}));
+		if(ws_.is_open()){
+			timer_.async_wait(
+				boost::asio::bind_executor(
+					strand_,
+					[this_ = this->shared_from_this()]
+					(boost::system::error_code ec){
+						this_->on_timer(ec);
+					}));
+		}
 	}
 
 	template < typename Service >
@@ -157,7 +159,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			on_error(ec);
+			on_ping_error(ec);
 			return;
 		}
 
@@ -203,7 +205,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			on_error(ec);
+			on_read_error(ec);
 		}
 
 		// Note that there is activity
@@ -231,7 +233,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			on_error(ec);
+			on_write_error(ec);
 			return;
 		}
 	}
@@ -317,11 +319,55 @@ namespace webservice{
 	}
 
 	template < typename Service >
-	void websocket_session< Service >::on_error(
+	void websocket_session< Service >::on_accept_error(
 		boost::system::error_code ec
 	){
 		try{
-			service_.impl_->on_error(this, resource_, ec);
+			service_.impl_->on_accept_error(this, resource_, ec);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
+	}
+
+	template < typename Service >
+	void websocket_session< Service >::on_timer_error(
+		boost::system::error_code ec
+	){
+		try{
+			service_.impl_->on_timer_error(this, resource_, ec);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
+	}
+
+	template < typename Service >
+	void websocket_session< Service >::on_ping_error(
+		boost::system::error_code ec
+	){
+		try{
+			service_.impl_->on_ping_error(this, resource_, ec);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
+	}
+
+	template < typename Service >
+	void websocket_session< Service >::on_read_error(
+		boost::system::error_code ec
+	){
+		try{
+			service_.impl_->on_read_error(this, resource_, ec);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
+	}
+
+	template < typename Service >
+	void websocket_session< Service >::on_write_error(
+		boost::system::error_code ec
+	){
+		try{
+			service_.impl_->on_write_error(this, resource_, ec);
 		}catch(...){
 			on_exception(std::current_exception());
 		}

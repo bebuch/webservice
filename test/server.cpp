@@ -7,7 +7,6 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include <webservice/file_request_handler.hpp>
-#include <webservice/fail.hpp>
 #include <webservice/server.hpp>
 
 #include <boost/lexical_cast.hpp>
@@ -55,10 +54,10 @@ int main(int argc, char* argv[]){
 		using webservice::file_request_handler;
 		using webservice::websocket_service;
 		using webservice::server;
-		auto handler = boost::make_unique< file_request_handler >(doc_root);
-		auto service = boost::make_unique< websocket_service >();
-		server server(std::move(handler), std::move(service), address, port,
-			thread_count);
+		server server(
+			boost::make_unique< file_request_handler >(doc_root),
+			boost::make_unique< websocket_service >(),
+			nullptr, address, port, thread_count);
 
 		::server = &server;
 		std::signal(SIGSEGV, &close_server);
@@ -69,13 +68,11 @@ int main(int argc, char* argv[]){
 
 		return 0;
 	}catch(std::exception const& e){
-		webservice::log_exception(e, "program");
-		print_help(argv[0]);
-		return 2;
+		std::cerr << "Exception: " << e.what() << "\n";
+		return 1;
 	}catch(...){
-		webservice::log_exception("program");
-		print_help(argv[0]);
-		return 2;
+		std::cerr << "Unknown exception\n";
+		return 1;
 	}
 
 }
