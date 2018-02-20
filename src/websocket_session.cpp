@@ -22,9 +22,10 @@
 namespace webservice{
 
 
-	websocket_session::websocket_session(
+	template < typename Service >
+	websocket_session< Service >::websocket_session(
 		boost::asio::ip::tcp::socket socket,
-		websocket_service& service
+		Service& service
 	)
 		: service_(service)
 		, ws_(std::move(socket))
@@ -32,13 +33,15 @@ namespace webservice{
 		, timer_(ws_.get_executor().context(),
 			std::chrono::steady_clock::time_point::max()) {}
 
-	websocket_session::~websocket_session(){
+	template < typename Service >
+	websocket_session< Service >::~websocket_session(){
 		if(is_open_){
 			on_close();
 		}
 	}
 
-	void websocket_session::do_accept(
+	template < typename Service >
+	void websocket_session< Service >::do_accept(
 		boost::beast::http::request< boost::beast::http::string_body > req
 	){
 		// Set the control callback. This will be called
@@ -68,12 +71,14 @@ namespace webservice{
 			req,
 			boost::asio::bind_executor(
 				strand_,
-				[this_ = shared_from_this()](boost::system::error_code ec){
+				[this_ = this->shared_from_this()]
+				(boost::system::error_code ec){
 					this_->on_accept(ec);
 				}));
 	}
 
-	void websocket_session::on_accept(boost::system::error_code ec){
+	template < typename Service >
+	void websocket_session< Service >::on_accept(boost::system::error_code ec){
 		// Happens when the timer closes the socket
 		if(ec == boost::asio::error::operation_aborted){
 			return;
@@ -90,7 +95,8 @@ namespace webservice{
 		do_read();
 	}
 
-	void websocket_session::on_timer(boost::system::error_code ec){
+	template < typename Service >
+	void websocket_session< Service >::on_timer(boost::system::error_code ec){
 		if(ec && ec != boost::asio::error::operation_aborted){
 			on_error(ec);
 			return;
@@ -113,7 +119,7 @@ namespace webservice{
 				ws_.async_ping({},
 					boost::asio::bind_executor(
 						strand_,
-						[this_ = shared_from_this()](
+						[this_ = this->shared_from_this()](
 							boost::system::error_code ec
 						){
 							this_->on_ping(ec);
@@ -128,12 +134,14 @@ namespace webservice{
 		if(ws_.is_open()) timer_.async_wait(
 			boost::asio::bind_executor(
 				strand_,
-				[this_ = shared_from_this()](boost::system::error_code ec){
+				[this_ = this->shared_from_this()]
+				(boost::system::error_code ec){
 					this_->on_timer(ec);
 				}));
 	}
 
-	void websocket_session::activity() {
+	template < typename Service >
+	void websocket_session< Service >::activity() {
 		// Note that the connection is alive
 		ping_state_ = 0;
 
@@ -141,7 +149,8 @@ namespace webservice{
 		timer_.expires_after(std::chrono::seconds(15));
 	}
 
-	void websocket_session::on_ping(boost::system::error_code ec){
+	template < typename Service >
+	void websocket_session< Service >::on_ping(boost::system::error_code ec){
 		// Happens when the timer closes the socket
 		if(ec == boost::asio::error::operation_aborted){
 			return;
@@ -163,7 +172,8 @@ namespace webservice{
 		}
 	}
 
-	void websocket_session::do_read(){
+	template < typename Service >
+	void websocket_session< Service >::do_read(){
 		// Set the timer
 		timer_.expires_after(std::chrono::seconds(15));
 
@@ -172,7 +182,7 @@ namespace webservice{
 			buffer_,
 			boost::asio::bind_executor(
 				strand_,
-				[this_ = shared_from_this()](
+				[this_ = this->shared_from_this()](
 					boost::system::error_code ec,
 					std::size_t /*bytes_transferred*/
 				){
@@ -180,7 +190,8 @@ namespace webservice{
 				}));
 	}
 
-	void websocket_session::on_read(boost::system::error_code ec){
+	template < typename Service >
+	void websocket_session< Service >::on_read(boost::system::error_code ec){
 		// Happens when the timer closes the socket
 		if(ec == boost::asio::error::operation_aborted){
 			return;
@@ -212,7 +223,8 @@ namespace webservice{
 		do_read();
 	}
 
-	void websocket_session::on_write(boost::system::error_code ec){
+	template < typename Service >
+	void websocket_session< Service >::on_write(boost::system::error_code ec){
 		// Happens when the timer closes the socket
 		if(ec == boost::asio::error::operation_aborted){
 			return;
@@ -224,12 +236,33 @@ namespace webservice{
 		}
 	}
 
-	void websocket_session::send(boost::beast::websocket::close_reason reason){
+	template < typename Service >
+	template < typename Data >
+	void websocket_session< Service >::send(std::shared_ptr< Data > data){
+		ws_.text(std::is_same_v< Data, std::string >);
+		auto buffer = boost::asio::const_buffer(data->data(), data->size());
+		ws_.async_write(
+			std::move(buffer),
+			boost::asio::bind_executor(
+				strand_,
+				[this_ = this->shared_from_this(), data = std::move(data)](
+					boost::system::error_code ec,
+					std::size_t /*bytes_transferred*/
+				){
+					this_->on_write(ec);
+				}));
+	}
+
+	template < typename Service >
+	void websocket_session< Service >::send(
+		boost::beast::websocket::close_reason reason
+	){
 		ws_.close(reason);
 		close(boost::beast::websocket::error::closed);
 	}
 
-	void websocket_session::close(boost::system::error_code ec){
+	template < typename Service >
+	void websocket_session< Service >::close(boost::system::error_code ec){
 		// The timer expired while trying to handshake,
 		// or we sent a ping and it never completed or
 		// we never got back a control frame, so close.
@@ -242,7 +275,8 @@ namespace webservice{
 	}
 
 
-	void websocket_session::on_open(){
+	template < typename Service >
+	void websocket_session< Service >::on_open(){
 		is_open_ = true;
 		try{
 			service_.impl_->on_open(this, resource_);
@@ -251,7 +285,8 @@ namespace webservice{
 		}
 	}
 
-	void websocket_session::on_close(){
+	template < typename Service >
+	void websocket_session< Service >::on_close(){
 		try{
 			service_.impl_->on_close(this, resource_);
 		}catch(...){
@@ -259,7 +294,10 @@ namespace webservice{
 		}
 	}
 
-	void websocket_session::on_text(boost::beast::multi_buffer& buffer){
+	template < typename Service >
+	void websocket_session< Service >::on_text(
+		boost::beast::multi_buffer& buffer
+	){
 		try{
 			service_.impl_->on_text(this, resource_, buffer);
 		}catch(...){
@@ -267,7 +305,10 @@ namespace webservice{
 		}
 	}
 
-	void websocket_session::on_binary(boost::beast::multi_buffer& buffer){
+	template < typename Service >
+	void websocket_session< Service >::on_binary(
+		boost::beast::multi_buffer& buffer
+	){
 		try{
 			service_.impl_->on_binary(this, resource_, buffer);
 		}catch(...){
@@ -275,7 +316,10 @@ namespace webservice{
 		}
 	}
 
-	void websocket_session::on_error(boost::system::error_code ec){
+	template < typename Service >
+	void websocket_session< Service >::on_error(
+		boost::system::error_code ec
+	){
 		try{
 			service_.impl_->on_error(this, resource_, ec);
 		}catch(...){
@@ -283,9 +327,22 @@ namespace webservice{
 		}
 	}
 
-	void websocket_session::on_exception(std::exception_ptr error)noexcept{
+	template < typename Service >
+	void websocket_session< Service >::on_exception(
+		std::exception_ptr error
+	)noexcept{
 		service_.impl_->on_exception(this, resource_, error);
 	}
+
+
+	template class websocket_session< websocket_service >;
+
+	template void websocket_session< websocket_service >
+		::send< std::vector< std::uint8_t > >(
+			std::shared_ptr< std::vector< std::uint8_t > > data
+		);
+	template void websocket_session< websocket_service >
+		::send< std::string >(std::shared_ptr< std::string > data);
 
 
 }

@@ -28,7 +28,7 @@ namespace webservice{
 
 		/// \brief Called with a unique identifier when a sessions starts
 		void on_open(
-			websocket_session* const session,
+			websocket_session< websocket_service >* const session,
 			std::string const& resource
 		){
 			std::unique_lock lock(mutex_);
@@ -41,7 +41,7 @@ namespace webservice{
 
 		/// \brief Called with a unique identifier when a sessions ends
 		void on_close(
-			websocket_session* const session,
+			websocket_session< websocket_service >* const session,
 			std::string const& resource
 		){
 			self_.on_close(
@@ -53,7 +53,7 @@ namespace webservice{
 
 		/// \brief Called when a session received a text message
 		void on_text(
-			websocket_session* const session,
+			websocket_session< websocket_service >* const session,
 			std::string const& resource,
 			boost::beast::multi_buffer& buffer
 		){
@@ -65,7 +65,7 @@ namespace webservice{
 
 		/// \brief Called when a session received a binary message
 		void on_binary(
-			websocket_session* const session,
+			websocket_session< websocket_service >* const session,
 			std::string const& resource,
 			boost::beast::multi_buffer& buffer
 		){
@@ -77,7 +77,7 @@ namespace webservice{
 
 		/// \brief Called when a session received a binary message
 		void on_error(
-			websocket_session* const session,
+			websocket_session< websocket_service >* const session,
 			std::string const& resource,
 			boost::system::error_code ec
 		){
@@ -89,7 +89,7 @@ namespace webservice{
 
 		/// \brief Called when a session received a binary message
 		void on_exception(
-			websocket_session* const session,
+			websocket_session< websocket_service >* const session,
 			std::string const& resource,
 			std::exception_ptr error
 		)noexcept{
@@ -142,8 +142,8 @@ namespace webservice{
 			Data&& data
 		){
 			std::shared_lock lock(mutex_);
-			auto const iter = sessions_.find(
-				reinterpret_cast< websocket_session* >(identifier));
+			auto const iter = sessions_.find(reinterpret_cast<
+				websocket_session< websocket_service >* >(identifier));
 			if(iter == sessions_.end()){
 				return;
 			}
@@ -156,7 +156,7 @@ namespace webservice{
 		/// \brief Send a message to session
 		template < typename Data >
 		void send(
-			websocket_session* const session,
+			websocket_session< websocket_service >* const session,
 			Data&& data
 		){
 			session->send(static_cast< Data&& >(data));
@@ -170,7 +170,7 @@ namespace webservice{
 		std::shared_mutex mutex_;
 
 		/// \brief List of sessions registered by open, erased by close
-		std::set< websocket_session* > sessions_;
+		std::set< websocket_session< websocket_service >* > sessions_;
 	};
 
 

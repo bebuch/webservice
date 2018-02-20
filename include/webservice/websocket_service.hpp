@@ -22,8 +22,12 @@ namespace webservice{
 
 
 	class websocket_service_impl;
+
+	template < typename Service >
 	class websocket_session;
+
 	class server;
+
 
 	class websocket_service{
 	public:
@@ -150,7 +154,7 @@ namespace webservice{
 
 		friend class server;
 		friend class websocket_service_impl;
-		friend class websocket_session;
+		friend class websocket_session< websocket_service >;
 	};
 
 
