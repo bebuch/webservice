@@ -124,7 +124,7 @@ namespace webservice{
 			if(boost::beast::websocket::is_upgrade(req_)){
 				// Create a WebSocket websocket_session by transferring the
 				// socket
-				std::make_shared< websocket_session< websocket_service > >(
+				std::make_shared< websocket_server_session >(
 					std::move(socket_), service_)
 						->do_accept(std::move(req_));
 			}else{

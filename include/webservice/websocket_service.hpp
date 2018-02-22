@@ -186,7 +186,7 @@ namespace webservice{
 
 		friend class server;
 		friend class websocket_service_impl;
-		friend class websocket_session< websocket_service >;
+		friend class websocket_server_session;
 	};
 
 

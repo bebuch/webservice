@@ -32,16 +32,9 @@ namespace webservice{
 			std::chrono::steady_clock::time_point::max()) {}
 
 	template < typename Derived >
-	websocket_session< Derived >::~websocket_session(){
-		if(is_open_){
-			on_close();
-		}
-	}
-
-	template < typename Derived >
 	void websocket_session< Derived >::on_timer(boost::system::error_code ec){
 		if(ec && ec != boost::asio::error::operation_aborted){
-			on_timer_error(ec);
+			this->on_timer_error(ec);
 			return;
 		}
 
@@ -55,8 +48,7 @@ namespace webservice{
 				ping_state_ = 1;
 
 				// Set the timer
-				using namespace std::literals::chrono_literals;
-				timer_.expires_after(15s);
+				start_timer();
 
 				// Now send the ping
 				ws_.async_ping({},
@@ -86,12 +78,17 @@ namespace webservice{
 	}
 
 	template < typename Derived >
+	void websocket_session< Derived >::start_timer(){
+		timer_.expires_after(std::chrono::seconds(15));
+	}
+
+	template < typename Derived >
 	void websocket_session< Derived >::activity() {
 		// Note that the connection is alive
 		ping_state_ = 0;
 
 		// Set the timer
-		timer_.expires_after(std::chrono::seconds(15));
+		start_timer();
 	}
 
 	template < typename Derived >
@@ -102,7 +99,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			on_ping_error(ec);
+			this->on_ping_error(ec);
 			return;
 		}
 
@@ -148,7 +145,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			on_read_error(ec);
+			this->on_read_error(ec);
 		}
 
 		// Note that there is activity
@@ -156,9 +153,9 @@ namespace webservice{
 
 		// Echo the message
 		if(ws_.got_text()){
-			on_text(buffer_);
+			this->on_text(buffer_);
 		}else{
-			on_binary(buffer_);
+			this->on_binary(buffer_);
 		}
 
 		// Clear the buffer
@@ -176,7 +173,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			on_write_error(ec);
+			this->on_write_error(ec);
 			return;
 		}
 	}
@@ -219,110 +216,7 @@ namespace webservice{
 		ws_.next_layer().close(ec);
 	}
 
-
-	template < typename Derived >
-	void websocket_session_callbacks< Derived >::on_open()noexcept{
-		is_open_ = true;
-		try{
-			static_cast< Derived* >(this)->on_open();
-		}catch(...){
-			on_exception(std::current_exception());
-		}
-	}
-
-	template < typename Derived >
-	void websocket_session_callbacks< Derived >::on_close()noexcept{
-		try{
-			static_cast< Derived* >(this)->on_close();
-		}catch(...){
-			on_exception(std::current_exception());
-		}
-	}
-
-	template < typename Derived >
-	void websocket_session_callbacks< Derived >::on_text(
-		boost::beast::multi_buffer& buffer
-	)noexcept{
-		try{
-			static_cast< Derived* >(this)->on_text(buffer);
-		}catch(...){
-			on_exception(std::current_exception());
-		}
-	}
-
-	template < typename Derived >
-	void websocket_session_callbacks< Derived >::on_binary(
-		boost::beast::multi_buffer& buffer
-	)noexcept{
-		try{
-			static_cast< Derived* >(this)->on_binary(buffer);
-		}catch(...){
-			on_exception(std::current_exception());
-		}
-	}
-
-	template < typename Derived >
-	void websocket_session_callbacks< Derived >::on_accept_error(
-		boost::system::error_code ec
-	)noexcept{
-		try{
-			static_cast< Derived* >(this)->on_accept_error(ec);
-		}catch(...){
-			on_exception(std::current_exception());
-		}
-	}
-
-	template < typename Derived >
-	void websocket_session_callbacks< Derived >::on_timer_error(
-		boost::system::error_code ec
-	)noexcept{
-		try{
-			static_cast< Derived* >(this)->on_timer_error(ec);
-		}catch(...){
-			on_exception(std::current_exception());
-		}
-	}
-
-	template < typename Derived >
-	void websocket_session_callbacks< Derived >::on_ping_error(
-		boost::system::error_code ec
-	)noexcept{
-		try{
-			static_cast< Derived* >(this)->on_ping_error(ec);
-		}catch(...){
-			on_exception(std::current_exception());
-		}
-	}
-
-	template < typename Derived >
-	void websocket_session_callbacks< Derived >::on_read_error(
-		boost::system::error_code ec
-	)noexcept{
-		try{
-			static_cast< Derived* >(this)->on_read_error(ec);
-		}catch(...){
-			on_exception(std::current_exception());
-		}
-	}
-
-	template < typename Derived >
-	void websocket_session_callbacks< Derived >::on_write_error(
-		boost::system::error_code ec
-	)noexcept{
-		try{
-			static_cast< Derived* >(this)->on_write_error(ec);
-		}catch(...){
-			on_exception(std::current_exception());
-		}
-	}
-
-	template < typename Derived >
-	void websocket_session_callbacks< Derived >::on_exception(
-		std::exception_ptr error
-	)noexcept{
-		static_cast< Derived* >(this)->on_exception(error);
-	}
-
+	template class websocket_session_callbacks< websocket_server_session >;
 
 	template class websocket_session< websocket_server_session >;
 
@@ -333,6 +227,19 @@ namespace webservice{
 	template void websocket_session< websocket_server_session >
 		::send< std::string >(std::shared_ptr< std::string > data);
 
+
+	websocket_server_session::websocket_server_session(
+		boost::asio::ip::tcp::socket socket,
+		websocket_service& service
+	)
+		: websocket_session< websocket_server_session >(std::move(socket))
+		, service_(service) {}
+
+	websocket_server_session::~websocket_server_session(){
+		if(is_open_){
+			this->on_close();
+		}
+	}
 
 	void websocket_server_session::do_accept(
 		boost::beast::http::request< boost::beast::http::string_body > req
@@ -354,8 +261,7 @@ namespace webservice{
 		on_timer({});
 
 		// Set the timer
-		using namespace std::literals::chrono_literals;
-		timer_.expires_after(15s);
+		this->start_timer();
 
 		resource_ = std::string(req.target());
 
@@ -377,16 +283,73 @@ namespace webservice{
 		}
 
 		if(ec){
-			on_accept_error(ec);
+			this->on_accept_error(ec);
 			return;
 		}
 
+		is_open_ = true;
 		websocket_session< websocket_server_session >::on_open();
 
 		// Read a message
 		do_read();
 	}
 
+
+	void websocket_server_session::on_open(){
+		service_.impl_->on_open(this, resource_);
+	}
+
+	void websocket_server_session::on_close(){
+		service_.impl_->on_close(this, resource_);
+	}
+
+	void websocket_server_session::on_text(
+		boost::beast::multi_buffer& buffer
+	){
+		service_.impl_->on_text(this, resource_, buffer);
+	}
+
+	void websocket_server_session::on_binary(
+		boost::beast::multi_buffer& buffer
+	){
+		service_.impl_->on_binary(this, resource_, buffer);
+	}
+
+	void websocket_server_session::on_accept_error(
+		boost::system::error_code ec
+	){
+		service_.impl_->on_accept_error(this, resource_, ec);
+	}
+
+	void websocket_server_session::on_timer_error(
+		boost::system::error_code ec
+	){
+		service_.impl_->on_timer_error(this, resource_, ec);
+	}
+
+	void websocket_server_session::on_ping_error(
+		boost::system::error_code ec
+	){
+		service_.impl_->on_ping_error(this, resource_, ec);
+	}
+
+	void websocket_server_session::on_read_error(
+		boost::system::error_code ec
+	){
+		service_.impl_->on_read_error(this, resource_, ec);
+	}
+
+	void websocket_server_session::on_write_error(
+		boost::system::error_code ec
+	){
+		service_.impl_->on_write_error(this, resource_, ec);
+	}
+
+	void websocket_server_session::on_exception(
+		std::exception_ptr error
+	)noexcept{
+		service_.impl_->on_exception(this, resource_, error);
+	}
 
 
 }

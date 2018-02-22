@@ -28,7 +28,7 @@ namespace webservice{
 
 		/// \brief Called with a unique identifier when a sessions starts
 		void on_open(
-			websocket_session< websocket_service >* const session,
+			websocket_server_session* const session,
 			std::string const& resource
 		){
 			std::unique_lock lock(mutex_);
@@ -41,7 +41,7 @@ namespace webservice{
 
 		/// \brief Called with a unique identifier when a sessions ends
 		void on_close(
-			websocket_session< websocket_service >* const session,
+			websocket_server_session* const session,
 			std::string const& resource
 		){
 			self_.on_close(
@@ -53,7 +53,7 @@ namespace webservice{
 
 		/// \brief Called when a session received a text message
 		void on_text(
-			websocket_session< websocket_service >* const session,
+			websocket_server_session* const session,
 			std::string const& resource,
 			boost::beast::multi_buffer& buffer
 		){
@@ -65,7 +65,7 @@ namespace webservice{
 
 		/// \brief Called when a session received a binary message
 		void on_binary(
-			websocket_session< websocket_service >* const session,
+			websocket_server_session* const session,
 			std::string const& resource,
 			boost::beast::multi_buffer& buffer
 		){
@@ -77,7 +77,7 @@ namespace webservice{
 
 		/// \brief Called when an accept error occured
 		void on_accept_error(
-			websocket_session< websocket_service >* const session,
+			websocket_server_session* const session,
 			std::string const& resource,
 			boost::system::error_code ec
 		){
@@ -89,7 +89,7 @@ namespace webservice{
 
 		/// \brief Called when an timer error occured
 		void on_timer_error(
-			websocket_session< websocket_service >* const session,
+			websocket_server_session* const session,
 			std::string const& resource,
 			boost::system::error_code ec
 		){
@@ -101,7 +101,7 @@ namespace webservice{
 
 		/// \brief Called when an ping error occured
 		void on_ping_error(
-			websocket_session< websocket_service >* const session,
+			websocket_server_session* const session,
 			std::string const& resource,
 			boost::system::error_code ec
 		){
@@ -113,7 +113,7 @@ namespace webservice{
 
 		/// \brief Called when an read error occured
 		void on_read_error(
-			websocket_session< websocket_service >* const session,
+			websocket_server_session* const session,
 			std::string const& resource,
 			boost::system::error_code ec
 		){
@@ -125,7 +125,7 @@ namespace webservice{
 
 		/// \brief Called when an write error occured
 		void on_write_error(
-			websocket_session< websocket_service >* const session,
+			websocket_server_session* const session,
 			std::string const& resource,
 			boost::system::error_code ec
 		){
@@ -137,7 +137,7 @@ namespace webservice{
 
 		/// \brief Called when an exception was thrown
 		void on_exception(
-			websocket_session< websocket_service >* const session,
+			websocket_server_session* const session,
 			std::string const& resource,
 			std::exception_ptr error
 		)noexcept{
@@ -191,7 +191,7 @@ namespace webservice{
 		){
 			std::shared_lock lock(mutex_);
 			auto const iter = sessions_.find(reinterpret_cast<
-				websocket_session< websocket_service >* >(identifier));
+				websocket_server_session* >(identifier));
 			if(iter == sessions_.end()){
 				return;
 			}
@@ -204,7 +204,7 @@ namespace webservice{
 		/// \brief Send a message to session
 		template < typename Data >
 		void send(
-			websocket_session< websocket_service >* const session,
+			websocket_server_session* const session,
 			Data&& data
 		){
 			session->send(static_cast< Data&& >(data));
@@ -218,7 +218,7 @@ namespace webservice{
 		std::shared_mutex mutex_;
 
 		/// \brief List of sessions registered by open, erased by close
-		std::set< websocket_session< websocket_service >* > sessions_;
+		std::set< websocket_server_session* > sessions_;
 	};
 
 
