@@ -15,10 +15,10 @@ namespace webservice{
 
 	enum class websocket_service_error{
 		accept,
-		timer,
-		ping,
 		read,
-		write
+		write,
+		timer,
+		ping
 	};
 
 

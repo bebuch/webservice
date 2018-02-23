@@ -58,7 +58,7 @@ namespace webservice{
 		void on_accept(boost::system::error_code ec){
 			if(ec){
 				try{
-					error_handler_->on_accept_error(ec);
+					error_handler_->on_error(ec);
 				}catch(...){
 					error_handler_->on_exception(std::current_exception());
 				}

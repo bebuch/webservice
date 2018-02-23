@@ -18,7 +18,7 @@ namespace webservice{
 
 
 	struct error_printing_error_handler: error_handler{
-		void on_accept_error(boost::system::error_code ec)override{
+		void on_error(boost::system::error_code ec)override{
 			throw boost::system::system_error(ec);
 		}
 

@@ -69,7 +69,7 @@ namespace webservice{
 		void on_timer(boost::system::error_code ec){
 			if(ec && ec != boost::asio::error::operation_aborted){
 				try{
-					handler_.on_timer_error(ec);
+					handler_.on_error(http_request_error::timer, ec);
 				}catch(...){
 					handler_.on_exception(std::current_exception());
 				}
@@ -113,7 +113,7 @@ namespace webservice{
 
 			if(ec){
 				try{
-					handler_.on_read_error(ec);
+					handler_.on_error(http_request_error::read, ec);
 				}catch(...){
 					handler_.on_exception(std::current_exception());
 				}
@@ -152,7 +152,7 @@ namespace webservice{
 
 			if(ec){
 				try{
-					handler_.on_write_error(ec);
+					handler_.on_error(http_request_error::write, ec);
 				}catch(...){
 					handler_.on_exception(std::current_exception());
 				}

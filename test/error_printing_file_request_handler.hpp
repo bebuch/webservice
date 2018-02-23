@@ -20,15 +20,7 @@ namespace webservice{
 	struct error_printing_file_request_handler: file_request_handler{
 		using webservice::file_request_handler::file_request_handler;
 
-		void on_timer_error(boost::system::error_code ec)override{
-			throw boost::system::system_error(ec);
-		}
-
-		void on_read_error(boost::system::error_code ec)override{
-			throw boost::system::system_error(ec);
-		}
-
-		void on_write_error(boost::system::error_code ec)override{
+		void on_error(http_request_error, boost::system::error_code ec)override{
 			throw boost::system::system_error(ec);
 		}
 

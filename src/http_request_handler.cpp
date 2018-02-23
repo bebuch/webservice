@@ -24,13 +24,12 @@ namespace webservice{
 		send(not_found(req, req.target()));
 	}
 
-	void http_request_handler::on_timer_error(boost::system::error_code ec){}
+	void http_request_handler::on_error(
+		http_request_error /*error*/,
+		boost::system::error_code /*ec*/){}
 
-	void http_request_handler::on_read_error(boost::system::error_code ec){}
-
-	void http_request_handler::on_write_error(boost::system::error_code ec){}
-
-	void http_request_handler::on_exception(std::exception_ptr error)noexcept{}
+	void http_request_handler::on_exception(
+		std::exception_ptr /*error*/)noexcept{}
 
 
 	http_string_response bad_request(
