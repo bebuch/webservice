@@ -64,8 +64,10 @@ namespace webservice{
 				}
 			}else{
 				// Create the http_session and run it
-				std::make_shared< http_session >(
-					std::move(socket_), *handler_, *service_)->run();
+				auto session = std::make_shared< http_session >(
+					std::move(socket_), *handler_, *service_);
+
+				session->run();
 			}
 
 			// Accept another connection

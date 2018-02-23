@@ -10,6 +10,7 @@
 #define _webservice__websocket_session__hpp_INCLUDED_
 
 #include <webservice/websocket_service_error.hpp>
+#include <webservice/websocket_client_error.hpp>
 
 #include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/websocket.hpp>
@@ -28,6 +29,11 @@ namespace webservice{
 	class websocket_service;
 	class websocket_client;
 	class websocket_server_session;
+	class websocket_client_session;
+
+	using websocket_stream =
+		boost::beast::websocket::stream< boost::asio::ip::tcp::socket >;
+
 
 	template < typename Derived >
 	struct session_error_type;
@@ -37,8 +43,15 @@ namespace webservice{
 		using type = websocket_service_error;
 	};
 
+	template <>
+	struct session_error_type< websocket_client_session >{
+		using type = websocket_client_error;
+	};
+
+
 	template < typename Derived >
-	struct websocket_session_callbacks{
+	class websocket_session_callbacks{
+	protected:
 		/// \brief Called with a unique identifier when a sessions starts
 		void on_open()noexcept{
 			try{
@@ -95,11 +108,11 @@ namespace webservice{
 	/// \brief Base of WebSocket sessions
 	template < typename Derived >
 	class websocket_session
-		: protected websocket_session_callbacks< Derived >
+		: public websocket_session_callbacks< Derived >
 		, public std::enable_shared_from_this< Derived >{
 	public:
 		/// \brief Take ownership of the socket
-		explicit websocket_session(boost::asio::ip::tcp::socket socket);
+		explicit websocket_session(websocket_stream&& ws);
 
 		/// \brief Called when the timer expires.
 		void on_timer(boost::system::error_code ec);
@@ -134,12 +147,13 @@ namespace webservice{
 
 
 	protected:
-		boost::beast::websocket::stream< boost::asio::ip::tcp::socket > ws_;
+		websocket_stream ws_;
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
 
 
 	private:
 		using error_type = typename session_error_type< Derived >::type;
+		using callback = websocket_session_callbacks< Derived >;
 
 		boost::asio::steady_timer timer_;
 		boost::beast::multi_buffer buffer_;
@@ -152,7 +166,7 @@ namespace webservice{
 	public:
 		/// \brief Take ownership of the socket
 		explicit websocket_server_session(
-			boost::asio::ip::tcp::socket socket,
+			websocket_stream&& ws,
 			websocket_service& service);
 
 		/// \brief Destructor
@@ -168,7 +182,6 @@ namespace webservice{
 		void on_accept(boost::system::error_code ec);
 
 
-	private:
 		/// \brief Called with a unique identifier when a sessions starts
 		void on_open();
 
@@ -190,14 +203,59 @@ namespace webservice{
 		void on_exception(std::exception_ptr error)noexcept;
 
 
+	private:
+		using callback
+			= websocket_session_callbacks< websocket_server_session >;
+
 		websocket_service& service_;
 		std::string resource_;
 		bool is_open_ = false;
-
-
-		friend class websocket_session_callbacks< websocket_server_session >;
 	};
 
+
+	class websocket_client_session
+		: public websocket_session< websocket_client_session >{
+	public:
+		/// \brief Take ownership of the socket
+		explicit websocket_client_session(
+			websocket_stream&& ws,
+			websocket_client& client);
+
+		/// \brief Destructor
+		~websocket_client_session();
+
+
+		/// \brief Start the session
+		void start();
+
+
+		/// \brief Called when the sessions starts
+		void on_open();
+
+		/// \brief Called when the sessions ends
+		void on_close();
+
+		/// \brief Called when the session received a text message
+		void on_text(boost::beast::multi_buffer& buffer);
+
+		/// \brief Called when the session received a binary message
+		void on_binary(boost::beast::multi_buffer& buffer);
+
+		/// \brief Called when an error occured
+		void on_error(
+			websocket_client_error error,
+			boost::system::error_code ec);
+
+		/// \brief Called when an exception was thrown
+		void on_exception(std::exception_ptr error)noexcept;
+
+
+	private:
+		using callback
+			= websocket_session_callbacks< websocket_client_session >;
+
+		websocket_client& client_;
+	};
 
 
 }
