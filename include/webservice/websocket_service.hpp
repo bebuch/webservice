@@ -9,6 +9,8 @@
 #ifndef _webservice__websocket_service__hpp_INCLUDED_
 #define _webservice__websocket_service__hpp_INCLUDED_
 
+#include "websocket_service_error.hpp"
+
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/string.hpp>
 
@@ -111,44 +113,13 @@ namespace webservice{
 			std::string const& resource,
 			boost::beast::multi_buffer& buffer);
 
-		/// \brief Called when an accept error occured
+		/// \brief Called when an error occured
 		///
 		/// Default implementation does nothing.
-		virtual void on_accept_error(
+		virtual void on_error(
 			std::uintptr_t identifier,
 			std::string const& resource,
-			boost::system::error_code ec);
-
-		/// \brief Called when an timer error occured
-		///
-		/// Default implementation does nothing.
-		virtual void on_timer_error(
-			std::uintptr_t identifier,
-			std::string const& resource,
-			boost::system::error_code ec);
-
-		/// \brief Called when an ping error occured
-		///
-		/// Default implementation does nothing.
-		virtual void on_ping_error(
-			std::uintptr_t identifier,
-			std::string const& resource,
-			boost::system::error_code ec);
-
-		/// \brief Called when an read error occured
-		///
-		/// Default implementation does nothing.
-		virtual void on_read_error(
-			std::uintptr_t identifier,
-			std::string const& resource,
-			boost::system::error_code ec);
-
-		/// \brief Called when an write error occured
-		///
-		/// Default implementation does nothing.
-		virtual void on_write_error(
-			std::uintptr_t identifier,
-			std::string const& resource,
+			websocket_service_error error,
 			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown

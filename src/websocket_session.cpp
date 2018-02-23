@@ -34,7 +34,7 @@ namespace webservice{
 	template < typename Derived >
 	void websocket_session< Derived >::on_timer(boost::system::error_code ec){
 		if(ec && ec != boost::asio::error::operation_aborted){
-			this->on_timer_error(ec);
+			this->on_error(error_type::timer, ec);
 			return;
 		}
 
@@ -99,7 +99,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->on_ping_error(ec);
+			this->on_error(error_type::ping, ec);
 			return;
 		}
 
@@ -145,7 +145,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->on_read_error(ec);
+			this->on_error(error_type::read, ec);
 		}
 
 		// Note that there is activity
@@ -173,7 +173,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->on_write_error(ec);
+			this->on_error(error_type::write, ec);
 			return;
 		}
 	}
@@ -283,7 +283,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->on_accept_error(ec);
+			this->on_error(websocket_service_error::accept, ec);
 			return;
 		}
 
@@ -315,34 +315,11 @@ namespace webservice{
 		service_.impl_->on_binary(this, resource_, buffer);
 	}
 
-	void websocket_server_session::on_accept_error(
+	void websocket_server_session::on_error(
+		websocket_service_error error,
 		boost::system::error_code ec
 	){
-		service_.impl_->on_accept_error(this, resource_, ec);
-	}
-
-	void websocket_server_session::on_timer_error(
-		boost::system::error_code ec
-	){
-		service_.impl_->on_timer_error(this, resource_, ec);
-	}
-
-	void websocket_server_session::on_ping_error(
-		boost::system::error_code ec
-	){
-		service_.impl_->on_ping_error(this, resource_, ec);
-	}
-
-	void websocket_server_session::on_read_error(
-		boost::system::error_code ec
-	){
-		service_.impl_->on_read_error(this, resource_, ec);
-	}
-
-	void websocket_server_session::on_write_error(
-		boost::system::error_code ec
-	){
-		service_.impl_->on_write_error(this, resource_, ec);
+		service_.impl_->on_error(this, resource_, error, ec);
 	}
 
 	void websocket_server_session::on_exception(

@@ -9,6 +9,8 @@
 #ifndef _webservice__websocket_session__hpp_INCLUDED_
 #define _webservice__websocket_session__hpp_INCLUDED_
 
+#include <webservice/websocket_service_error.hpp>
+
 #include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/websocket.hpp>
 
@@ -25,6 +27,15 @@ namespace webservice{
 
 	class websocket_service;
 	class websocket_client;
+	class websocket_server_session;
+
+	template < typename Derived >
+	struct session_error_type;
+
+	template <>
+	struct session_error_type< websocket_server_session >{
+		using type = websocket_service_error;
+	};
 
 	template < typename Derived >
 	struct websocket_session_callbacks{
@@ -64,37 +75,11 @@ namespace webservice{
 			}
 		}
 
-		/// \brief Called when an timer error occured
-		void on_timer_error(boost::system::error_code ec)noexcept{
+		/// \brief Called when an error occured
+		template < typename Error >
+		void on_error(Error error, boost::system::error_code ec)noexcept{
 			try{
-				static_cast< Derived* >(this)->on_timer_error(ec);
-			}catch(...){
-				on_exception(std::current_exception());
-			}
-		}
-
-		/// \brief Called when an ping error occured
-		void on_ping_error(boost::system::error_code ec)noexcept{
-			try{
-				static_cast< Derived* >(this)->on_ping_error(ec);
-			}catch(...){
-				on_exception(std::current_exception());
-			}
-		}
-
-		/// \brief Called when an read error occured
-		void on_read_error(boost::system::error_code ec)noexcept{
-			try{
-				static_cast< Derived* >(this)->on_read_error(ec);
-			}catch(...){
-				on_exception(std::current_exception());
-			}
-		}
-
-		/// \brief Called when an write error occured
-		void on_write_error(boost::system::error_code ec)noexcept{
-			try{
-				static_cast< Derived* >(this)->on_write_error(ec);
+				static_cast< Derived* >(this)->on_error(error, ec);
 			}catch(...){
 				on_exception(std::current_exception());
 			}
@@ -154,6 +139,8 @@ namespace webservice{
 
 
 	private:
+		using error_type = typename session_error_type< Derived >::type;
+
 		boost::asio::steady_timer timer_;
 		boost::beast::multi_buffer buffer_;
 		char ping_state_ = 0;
@@ -194,20 +181,10 @@ namespace webservice{
 		/// \brief Called when a session received a binary message
 		void on_binary(boost::beast::multi_buffer& buffer);
 
-		/// \brief Called when an accept error occured
-		void on_accept_error(boost::system::error_code ec);
-
-		/// \brief Called when an timer error occured
-		void on_timer_error(boost::system::error_code ec);
-
-		/// \brief Called when an ping error occured
-		void on_ping_error(boost::system::error_code ec);
-
-		/// \brief Called when an read error occured
-		void on_read_error(boost::system::error_code ec);
-
-		/// \brief Called when an write error occured
-		void on_write_error(boost::system::error_code ec);
+		/// \brief Called when an error occured
+		void on_error(
+			websocket_service_error error,
+			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown
 		void on_exception(std::exception_ptr error)noexcept;

@@ -18,41 +18,10 @@ namespace webservice{
 
 
 	struct error_printing_webservice: webservice::websocket_service{
-		void on_accept_error(
+		void on_error(
 			std::uintptr_t,
 			std::string const&,
-			boost::system::error_code ec
-		)override{
-			throw boost::system::system_error(ec);
-		}
-
-		void on_timer_error(
-			std::uintptr_t,
-			std::string const&,
-			boost::system::error_code ec
-		)override{
-			throw boost::system::system_error(ec);
-		}
-
-		void on_ping_error(
-			std::uintptr_t,
-			std::string const&,
-			boost::system::error_code ec
-		)override{
-			throw boost::system::system_error(ec);
-		}
-
-		void on_read_error(
-			std::uintptr_t,
-			std::string const&,
-			boost::system::error_code ec
-		)override{
-			throw boost::system::system_error(ec);
-		}
-
-		void on_write_error(
-			std::uintptr_t,
-			std::string const&,
+			websocket_service_error,
 			boost::system::error_code ec
 		)override{
 			throw boost::system::system_error(ec);
