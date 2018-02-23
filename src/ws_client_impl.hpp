@@ -6,12 +6,12 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__websocket_client_impl__hpp_INCLUDED_
-#define _webservice__websocket_client_impl__hpp_INCLUDED_
+#ifndef _webservice__ws_client_impl__hpp_INCLUDED_
+#define _webservice__ws_client_impl__hpp_INCLUDED_
 
-#include <webservice/websocket_client.hpp>
+#include <webservice/ws_client.hpp>
 
-#include "websocket_session.hpp"
+#include "ws_session.hpp"
 
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/string.hpp>
@@ -32,11 +32,11 @@
 namespace webservice{
 
 
-	class websocket_client_impl{
+	class ws_client_impl{
 	public:
 		/// \brief Constructor
-		websocket_client_impl(
-			websocket_client& self,
+		ws_client_impl(
+			ws_client& self,
 			std::string&& host,
 			std::string&& port,
 			std::string&& resource
@@ -46,17 +46,17 @@ namespace webservice{
 		{
 			auto results = resolver_.resolve(host, port);
 
-			websocket_stream ws(ioc_);
+			ws_stream ws(ioc_);
 
 			// Make the connection on the IP address we get from a lookup
 			boost::asio::connect(ws.next_layer(),
 				results.begin(), results.end());
 
-			// Perform the websocket handshake
+			// Perform the ws handshake
 			ws.handshake(host, resource);
 
 			// Create a WebSocket session by transferring the socket
-			auto session = std::make_shared< websocket_client_session >(
+			auto session = std::make_shared< ws_client_session >(
 				std::move(ws), self_);
 
 			session->start();
@@ -83,7 +83,7 @@ namespace webservice{
 		}
 
 		/// \brief Destructor
-		~websocket_client_impl(){
+		~ws_client_impl(){
 			close();
 			if(thread_.joinable()) thread_.join();
 		}
@@ -119,7 +119,7 @@ namespace webservice{
 
 		/// \brief Called when an error occured
 		void on_error(
-			websocket_client_error error,
+			ws_client_error error,
 			boost::system::error_code ec
 		){
 			self_.on_error(error, ec);
@@ -133,11 +133,11 @@ namespace webservice{
 
 	private:
 		/// \brief Pointer to implementation
-		websocket_client& self_;
+		ws_client& self_;
 
 		boost::asio::io_context ioc_;
 		boost::asio::ip::tcp::resolver resolver_;
-		std::weak_ptr< websocket_client_session > session_;
+		std::weak_ptr< ws_client_session > session_;
 		std::thread thread_;
 	};
 

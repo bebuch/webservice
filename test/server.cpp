@@ -52,11 +52,11 @@ int main(int argc, char* argv[]){
 		std::string const doc_root = argv[3];
 
 		using webservice::file_request_handler;
-		using webservice::websocket_service;
+		using webservice::ws_service;
 		using webservice::server;
 		server server(
 			boost::make_unique< file_request_handler >(doc_root),
-			boost::make_unique< websocket_service >(),
+			boost::make_unique< ws_service >(),
 			nullptr, address, port, thread_count);
 
 		::server = &server;

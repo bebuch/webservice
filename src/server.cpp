@@ -24,7 +24,7 @@ namespace webservice{
 		/// Run the IO context on all threads.
 		server_impl(
 			std::unique_ptr< http_request_handler > handler,
-			std::unique_ptr< websocket_service > service,
+			std::unique_ptr< ws_service > service,
 			std::unique_ptr< error_handler > error_handler,
 			boost::asio::ip::address const address,
 			std::uint16_t const port,
@@ -94,7 +94,7 @@ namespace webservice{
 
 	server::server(
 		std::unique_ptr< http_request_handler > handler,
-		std::unique_ptr< websocket_service > service,
+		std::unique_ptr< ws_service > service,
 		std::unique_ptr< error_handler > error_handler,
 		boost::asio::ip::address const address,
 		std::uint16_t const port,
@@ -112,7 +112,7 @@ namespace webservice{
 				[this, service = std::move(service)]()mutable{
 						if(!service){
 							service =
-								boost::make_unique< websocket_service >();
+								boost::make_unique< ws_service >();
 						}
 						service->server_ = this;
 						return std::move(service);

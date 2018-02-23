@@ -6,12 +6,12 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__websocket_service_impl__hpp_INCLUDED_
-#define _webservice__websocket_service_impl__hpp_INCLUDED_
+#ifndef _webservice__ws_service_impl__hpp_INCLUDED_
+#define _webservice__ws_service_impl__hpp_INCLUDED_
 
-#include <webservice/websocket_service.hpp>
+#include <webservice/ws_service.hpp>
 
-#include "websocket_session.hpp"
+#include "ws_session.hpp"
 
 #include <shared_mutex>
 
@@ -19,16 +19,16 @@
 namespace webservice{
 
 
-	/// \brief Implementation of websocket_service
-	class websocket_service_impl{
+	/// \brief Implementation of ws_service
+	class ws_service_impl{
 	public:
 		/// \brief Constructor
-		websocket_service_impl(websocket_service& self):
+		ws_service_impl(ws_service& self):
 			self_(self) {}
 
 		/// \brief Called with a unique identifier when a sessions starts
 		void on_open(
-			websocket_server_session* const session,
+			ws_server_session* const session,
 			std::string const& resource
 		){
 			std::unique_lock lock(mutex_);
@@ -41,7 +41,7 @@ namespace webservice{
 
 		/// \brief Called with a unique identifier when a sessions ends
 		void on_close(
-			websocket_server_session* const session,
+			ws_server_session* const session,
 			std::string const& resource
 		){
 			self_.on_close(
@@ -53,7 +53,7 @@ namespace webservice{
 
 		/// \brief Called when a session received a text message
 		void on_text(
-			websocket_server_session* const session,
+			ws_server_session* const session,
 			std::string const& resource,
 			boost::beast::multi_buffer& buffer
 		){
@@ -65,7 +65,7 @@ namespace webservice{
 
 		/// \brief Called when a session received a binary message
 		void on_binary(
-			websocket_server_session* const session,
+			ws_server_session* const session,
 			std::string const& resource,
 			boost::beast::multi_buffer& buffer
 		){
@@ -77,9 +77,9 @@ namespace webservice{
 
 		/// \brief Called when an error occured
 		void on_error(
-			websocket_server_session* const session,
+			ws_server_session* const session,
 			std::string const& resource,
-			websocket_service_error error,
+			ws_service_error error,
 			boost::system::error_code ec
 		){
 			self_.on_error(
@@ -91,7 +91,7 @@ namespace webservice{
 
 		/// \brief Called when an exception was thrown
 		void on_exception(
-			websocket_server_session* const session,
+			ws_server_session* const session,
 			std::string const& resource,
 			std::exception_ptr error
 		)noexcept{
@@ -145,7 +145,7 @@ namespace webservice{
 		){
 			std::shared_lock lock(mutex_);
 			auto const iter = sessions_.find(reinterpret_cast<
-				websocket_server_session* >(identifier));
+				ws_server_session* >(identifier));
 			if(iter == sessions_.end()){
 				return;
 			}
@@ -158,7 +158,7 @@ namespace webservice{
 		/// \brief Send a message to session
 		template < typename Data >
 		void send(
-			websocket_server_session* const session,
+			ws_server_session* const session,
 			Data&& data
 		){
 			session->send(static_cast< Data&& >(data));
@@ -166,13 +166,13 @@ namespace webservice{
 
 
 		/// \brief Reference to the actual object
-		websocket_service& self_;
+		ws_service& self_;
 
 		/// \brief Protect sessions_
 		std::shared_mutex mutex_;
 
 		/// \brief List of sessions registered by open, erased by close
-		std::set< websocket_server_session* > sessions_;
+		std::set< ws_server_session* > sessions_;
 	};
 
 

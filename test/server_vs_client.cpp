@@ -11,7 +11,7 @@
 #include "error_printing_file_request_handler.hpp"
 
 #include <webservice/server.hpp>
-#include <webservice/websocket_client.hpp>
+#include <webservice/ws_client.hpp>
 
 #include <boost/make_unique.hpp>
 
@@ -126,7 +126,7 @@ struct file_request_handler: webservice::error_printing_file_request_handler{
 std::string const test_text = "test text values";
 
 
-struct websocket_service: webservice::error_printing_webservice{
+struct ws_service: webservice::error_printing_webservice{
 	void on_open(std::uintptr_t, std::string const&)override{
 		check(state_t::ws_server_open);
 		send_text(test_text);
@@ -177,8 +177,8 @@ struct websocket_service: webservice::error_printing_webservice{
 };
 
 
-struct websocket_client: webservice::websocket_client{
-	using webservice::websocket_client::websocket_client;
+struct ws_client: webservice::ws_client{
+	using webservice::ws_client::ws_client;
 
 	void on_open()override{
 		check(state_t::ws_client_open);
@@ -232,13 +232,13 @@ int main(){
 	try{
 		webservice::server server(
 			boost::make_unique< file_request_handler >("server_vs_client"),
-			boost::make_unique< websocket_service >(),
+			boost::make_unique< ws_service >(),
 			boost::make_unique< webservice::error_printing_error_handler >(),
 			boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
 		check(state_t::init);
 
-		websocket_client client("127.0.0.1", "1234", "/");
+		ws_client client("127.0.0.1", "1234", "/");
 
 		auto const start = std::chrono::system_clock::now();
 		while(

@@ -9,7 +9,7 @@
 #ifndef _webservice__error_printing_webservice__hpp_INCLUDED_
 #define _webservice__error_printing_webservice__hpp_INCLUDED_
 
-#include <webservice/websocket_service.hpp>
+#include <webservice/ws_service.hpp>
 
 #include <iostream>
 
@@ -17,11 +17,11 @@
 namespace webservice{
 
 
-	struct error_printing_webservice: webservice::websocket_service{
+	struct error_printing_webservice: webservice::ws_service{
 		void on_error(
 			std::uintptr_t,
 			std::string const&,
-			websocket_service_error,
+			ws_service_error,
 			boost::system::error_code ec
 		)override{
 			throw boost::system::system_error(ec);

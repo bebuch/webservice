@@ -105,7 +105,7 @@ struct file_request_handler: webservice::error_printing_file_request_handler{
 };
 
 
-struct websocket_service: webservice::error_printing_webservice{
+struct ws_service: webservice::error_printing_webservice{
 	static std::string const test_text;
 
 	void on_open(std::uintptr_t, std::string const&)override{
@@ -157,7 +157,7 @@ struct websocket_service: webservice::error_printing_webservice{
 	}
 };
 
-std::string const websocket_service::test_text = "test text values";
+std::string const ws_service::test_text = "test text values";
 
 
 void close_server(int signum){
@@ -175,7 +175,7 @@ int main(){
 	try{
 		webservice::server server(
 			boost::make_unique< file_request_handler >("server_vs_browser"),
-			boost::make_unique< websocket_service >(),
+			boost::make_unique< ws_service >(),
 			boost::make_unique< webservice::error_printing_error_handler >(),
 			boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 

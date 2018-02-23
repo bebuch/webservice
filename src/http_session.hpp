@@ -9,7 +9,7 @@
 #ifndef _webservice__http_session__hpp_INCLUDED_
 #define _webservice__http_session__hpp_INCLUDED_
 
-#include "websocket_session.hpp"
+#include "ws_session.hpp"
 
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/beast/websocket.hpp>
@@ -30,7 +30,7 @@ namespace webservice{
 		explicit http_session(
 			boost::asio::ip::tcp::socket&& socket,
 			http_request_handler& handler,
-			websocket_service& service
+			ws_service& service
 		)
 			: socket_(std::move(socket))
 			, handler_(handler)
@@ -122,10 +122,9 @@ namespace webservice{
 
 			// See if it is a WebSocket Upgrade
 			if(boost::beast::websocket::is_upgrade(req_)){
-				// Create a WebSocket websocket_session by transferring the
-				// socket
-				auto session = std::make_shared< websocket_server_session >(
-					websocket_stream(std::move(socket_)), service_);
+				// Create a ws_session by transferring the socket
+				auto session = std::make_shared< ws_server_session >(
+					ws_stream(std::move(socket_)), service_);
 
 				session->do_accept(std::move(req_));
 			}else{
@@ -236,7 +235,7 @@ namespace webservice{
 
 		boost::asio::ip::tcp::socket socket_;
 		http_request_handler& handler_;
-		websocket_service& service_;
+		ws_service& service_;
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
 		boost::asio::steady_timer timer_;
 		boost::beast::flat_buffer buffer_;

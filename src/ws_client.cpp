@@ -6,58 +6,58 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include <webservice/websocket_client.hpp>
+#include <webservice/ws_client.hpp>
 
 #include <boost/make_unique.hpp>
 
-#include "websocket_client_impl.hpp"
+#include "ws_client_impl.hpp"
 
 
 namespace webservice{
 
 
-	class websocket_client_impl;
+	class ws_client_impl;
 
 
-	websocket_client::websocket_client(
+	ws_client::ws_client(
 		std::string host,
 		std::string port,
 		std::string resource
 	)
-		: impl_(boost::make_unique< websocket_client_impl >(
+		: impl_(boost::make_unique< ws_client_impl >(
 			*this, std::move(host), std::move(port), std::move(resource))) {}
 
-	websocket_client::~websocket_client(){}
+	ws_client::~ws_client(){}
 
 
-	void websocket_client::send_text(std::string data){
+	void ws_client::send_text(std::string data){
 		impl_->send(std::make_shared< std::string >(std::move(data)));
 	}
 
-	void websocket_client::send_binary(std::vector< std::uint8_t > data){
+	void ws_client::send_binary(std::vector< std::uint8_t > data){
 		impl_->send(std::make_shared< std::vector< std::uint8_t > >(
 			std::move(data)));
 	}
 
-	void websocket_client::close(boost::beast::string_view reason){
+	void ws_client::close(boost::beast::string_view reason){
 		impl_->send(boost::beast::websocket::close_reason(reason));
 		impl_->close();
 	}
 
 
-	void websocket_client::on_open(){}
+	void ws_client::on_open(){}
 
-	void websocket_client::on_close(){}
+	void ws_client::on_close(){}
 
-	void websocket_client::on_text(boost::beast::multi_buffer& /*buffer*/){}
+	void ws_client::on_text(boost::beast::multi_buffer& /*buffer*/){}
 
-	void websocket_client::on_binary(boost::beast::multi_buffer& /*buffer*/){}
+	void ws_client::on_binary(boost::beast::multi_buffer& /*buffer*/){}
 
-	void websocket_client::on_error(
-		websocket_client_error /*error*/,
+	void ws_client::on_error(
+		ws_client_error /*error*/,
 		boost::system::error_code /*ec*/){}
 
-	void websocket_client::on_exception(std::exception_ptr /*error*/)noexcept{}
+	void ws_client::on_exception(std::exception_ptr /*error*/)noexcept{}
 
 
 }

@@ -6,10 +6,10 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__websocket_service__hpp_INCLUDED_
-#define _webservice__websocket_service__hpp_INCLUDED_
+#ifndef _webservice__ws_service__hpp_INCLUDED_
+#define _webservice__ws_service__hpp_INCLUDED_
 
-#include "websocket_service_error.hpp"
+#include "ws_service_error.hpp"
 
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/string.hpp>
@@ -23,21 +23,21 @@
 namespace webservice{
 
 
-	class websocket_service_impl;
+	class ws_service_impl;
 
 	template < typename Service >
-	class websocket_session;
+	class ws_session;
 
 	class server;
 
 
-	class websocket_service{
+	class ws_service{
 	public:
 		/// \brief Constructor
-		websocket_service();
+		ws_service();
 
 		/// \brief Destructor
-		virtual ~websocket_service();
+		virtual ~ws_service();
 
 
 		/// \brief Send a text message to all sessions
@@ -119,7 +119,7 @@ namespace webservice{
 		virtual void on_error(
 			std::uintptr_t identifier,
 			std::string const& resource,
-			websocket_service_error error,
+			ws_service_error error,
 			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown
@@ -150,14 +150,14 @@ namespace webservice{
 
 	private:
 		/// \brief Pointer to implementation
-		std::unique_ptr< websocket_service_impl > impl_;
+		std::unique_ptr< ws_service_impl > impl_;
 
 		/// \brief Pointer to the server object
 		class server* server_ = nullptr;
 
 		friend class server;
-		friend class websocket_service_impl;
-		friend class websocket_server_session;
+		friend class ws_service_impl;
+		friend class ws_server_session;
 	};
 
 

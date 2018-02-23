@@ -6,10 +6,10 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__websocket_client__hpp_INCLUDED_
-#define _webservice__websocket_client__hpp_INCLUDED_
+#ifndef _webservice__ws_client__hpp_INCLUDED_
+#define _webservice__ws_client__hpp_INCLUDED_
 
-#include <webservice/websocket_client_error.hpp>
+#include <webservice/ws_client_error.hpp>
 
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/string.hpp>
@@ -22,19 +22,19 @@
 namespace webservice{
 
 
-	class websocket_client_impl;
+	class ws_client_impl;
 
-	class websocket_client{
+	class ws_client{
 	public:
 		/// \brief Constructor
-		websocket_client(
+		ws_client(
 			std::string host,
 			std::string port,
 			std::string resource
 		);
 
 		/// \brief Destructor
-		virtual ~websocket_client();
+		virtual ~ws_client();
 
 
 		/// \brief Send a text message
@@ -72,7 +72,7 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_error(
-			websocket_client_error error,
+			ws_client_error error,
 			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown
@@ -83,10 +83,10 @@ namespace webservice{
 
 	private:
 		/// \brief Pointer to implementation
-		std::unique_ptr< websocket_client_impl > impl_;
+		std::unique_ptr< ws_client_impl > impl_;
 
-		friend class websocket_client_impl;
-		friend class websocket_client_session;
+		friend class ws_client_impl;
+		friend class ws_client_session;
 	};
 
 

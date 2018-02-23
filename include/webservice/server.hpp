@@ -10,7 +10,7 @@
 #define _webservice__server__hpp_INCLUDED_
 
 #include "http_request_handler.hpp"
-#include "websocket_service.hpp"
+#include "ws_service.hpp"
 #include "error_handler.hpp"
 
 
@@ -25,14 +25,14 @@ namespace webservice{
 		/// \brief Constructor
 		///
 		/// \param http_handler Handles HTTP sessions
-		/// \param service Handles websocket sessions
+		/// \param service Handles ws sessions
 		/// \param error_handler Handles error in the server
 		/// \param address IP address (IPv4 or IPv6)
 		/// \param port TCP Port
 		/// \param thread_count Count of threads that proccess request parallel
 		server(
 			std::unique_ptr< http_request_handler > http_handler,
-			std::unique_ptr< websocket_service > service,
+			std::unique_ptr< ws_service > service,
 			std::unique_ptr< error_handler > error_handler,
 			boost::asio::ip::address address,
 			std::uint16_t port,

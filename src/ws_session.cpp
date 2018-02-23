@@ -6,11 +6,11 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include "websocket_service_impl.hpp"
-#include "websocket_client_impl.hpp"
+#include "ws_service_impl.hpp"
+#include "ws_client_impl.hpp"
 
-#include <webservice/websocket_service.hpp>
-#include <webservice/websocket_client.hpp>
+#include <webservice/ws_service.hpp>
+#include <webservice/ws_client.hpp>
 
 #include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/websocket.hpp>
@@ -25,14 +25,14 @@ namespace webservice{
 
 
 	template < typename Derived >
-	websocket_session< Derived >::websocket_session(websocket_stream&& ws)
+	ws_session< Derived >::ws_session(ws_stream&& ws)
 		: ws_(std::move(ws))
 		, strand_(ws_.get_executor())
 		, timer_(ws_.get_executor().context(),
 			std::chrono::steady_clock::time_point::max()) {}
 
 	template < typename Derived >
-	void websocket_session< Derived >::on_timer(boost::system::error_code ec){
+	void ws_session< Derived >::on_timer(boost::system::error_code ec){
 		if(ec && ec != boost::asio::error::operation_aborted){
 			this->callback::on_error(error_type::timer, ec);
 			return;
@@ -78,12 +78,12 @@ namespace webservice{
 	}
 
 	template < typename Derived >
-	void websocket_session< Derived >::start_timer(){
+	void ws_session< Derived >::start_timer(){
 		timer_.expires_after(std::chrono::seconds(15));
 	}
 
 	template < typename Derived >
-	void websocket_session< Derived >::activity() {
+	void ws_session< Derived >::activity() {
 		// Note that the connection is alive
 		ping_state_ = 0;
 
@@ -92,7 +92,7 @@ namespace webservice{
 	}
 
 	template < typename Derived >
-	void websocket_session< Derived >::on_ping(boost::system::error_code ec){
+	void ws_session< Derived >::on_ping(boost::system::error_code ec){
 		// Happens when the timer closes the socket
 		if(ec == boost::asio::error::operation_aborted){
 			return;
@@ -115,7 +115,7 @@ namespace webservice{
 	}
 
 	template < typename Derived >
-	void websocket_session< Derived >::do_read(){
+	void ws_session< Derived >::do_read(){
 		start_timer();
 
 		// Read a message into our buffer
@@ -132,13 +132,13 @@ namespace webservice{
 	}
 
 	template < typename Derived >
-	void websocket_session< Derived >::on_read(boost::system::error_code ec){
+	void ws_session< Derived >::on_read(boost::system::error_code ec){
 		// Happens when the timer closes the socket
 		if(ec == boost::asio::error::operation_aborted){
 			return;
 		}
 
-		// This indicates that the websocket_session was closed
+		// This indicates that the ws_session was closed
 		if(ec == boost::beast::websocket::error::closed){
 			return;
 		}
@@ -165,7 +165,7 @@ namespace webservice{
 	}
 
 	template < typename Derived >
-	void websocket_session< Derived >::on_write(boost::system::error_code ec){
+	void ws_session< Derived >::on_write(boost::system::error_code ec){
 		// Happens when the timer closes the socket
 		if(ec == boost::asio::error::operation_aborted){
 			return;
@@ -179,7 +179,7 @@ namespace webservice{
 
 	template < typename Derived >
 	template < typename Data >
-	void websocket_session< Derived >::send(std::shared_ptr< Data > data){
+	void ws_session< Derived >::send(std::shared_ptr< Data > data){
 		ws_.text(std::is_same_v< Data, std::string >);
 		auto buffer = boost::asio::const_buffer(data->data(), data->size());
 		ws_.async_write(
@@ -195,7 +195,7 @@ namespace webservice{
 	}
 
 	template < typename Derived >
-	void websocket_session< Derived >::send(
+	void ws_session< Derived >::send(
 		boost::beast::websocket::close_reason reason
 	){
 		ws_.close(reason);
@@ -203,7 +203,7 @@ namespace webservice{
 	}
 
 	template < typename Derived >
-	void websocket_session< Derived >::close(boost::system::error_code ec){
+	void ws_session< Derived >::close(boost::system::error_code ec){
 		// The timer expired while trying to handshake,
 		// or we sent a ping and it never completed or
 		// we never got back a control frame, so close.
@@ -216,31 +216,31 @@ namespace webservice{
 	}
 
 
-	template void websocket_session< websocket_server_session >
+	template void ws_session< ws_server_session >
 		::send< std::vector< std::uint8_t > >(
 			std::shared_ptr< std::vector< std::uint8_t > > data
 		);
-	template void websocket_session< websocket_server_session >
+	template void ws_session< ws_server_session >
 		::send< std::string >(std::shared_ptr< std::string > data);
 
-	template void websocket_session< websocket_server_session >
+	template void ws_session< ws_server_session >
 		::send(boost::beast::websocket::close_reason reason);
 
 
-	websocket_server_session::websocket_server_session(
-		websocket_stream&& ws,
-		websocket_service& service
+	ws_server_session::ws_server_session(
+		ws_stream&& ws,
+		ws_service& service
 	)
-		: websocket_session< websocket_server_session >(std::move(ws))
+		: ws_session< ws_server_session >(std::move(ws))
 		, service_(service) {}
 
-	websocket_server_session::~websocket_server_session(){
+	ws_server_session::~ws_server_session(){
 		if(is_open_){
 			this->callback::on_close();
 		}
 	}
 
-	void websocket_server_session::do_accept(
+	void ws_server_session::do_accept(
 		boost::beast::http::request< boost::beast::http::string_body > req
 	){
 		// Set the control callback. This will be called
@@ -264,7 +264,7 @@ namespace webservice{
 
 		resource_ = std::string(req.target());
 
-		// Accept the websocket handshake
+		// Accept the WebSocket handshake
 		ws_.async_accept(
 			req,
 			boost::asio::bind_executor(
@@ -275,14 +275,14 @@ namespace webservice{
 				}));
 	}
 
-	void websocket_server_session::on_accept(boost::system::error_code ec){
+	void ws_server_session::on_accept(boost::system::error_code ec){
 		// Happens when the timer closes the socket
 		if(ec == boost::asio::error::operation_aborted){
 			return;
 		}
 
 		if(ec){
-			this->callback::on_error(websocket_service_error::accept, ec);
+			this->callback::on_error(ws_service_error::accept, ec);
 			return;
 		}
 
@@ -294,7 +294,7 @@ namespace webservice{
 	}
 
 
-	void websocket_server_session::on_open()noexcept{
+	void ws_server_session::on_open()noexcept{
 		try{
 			service_.impl_->on_open(this, resource_);
 		}catch(...){
@@ -302,60 +302,60 @@ namespace webservice{
 		}
 	}
 
-	void websocket_server_session::on_close(){
+	void ws_server_session::on_close(){
 		service_.impl_->on_close(this, resource_);
 	}
 
-	void websocket_server_session::on_text(
+	void ws_server_session::on_text(
 		boost::beast::multi_buffer& buffer
 	){
 		service_.impl_->on_text(this, resource_, buffer);
 	}
 
-	void websocket_server_session::on_binary(
+	void ws_server_session::on_binary(
 		boost::beast::multi_buffer& buffer
 	){
 		service_.impl_->on_binary(this, resource_, buffer);
 	}
 
-	void websocket_server_session::on_error(
-		websocket_service_error error,
+	void ws_server_session::on_error(
+		ws_service_error error,
 		boost::system::error_code ec
 	){
 		service_.impl_->on_error(this, resource_, error, ec);
 	}
 
-	void websocket_server_session::on_exception(
+	void ws_server_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
 		service_.impl_->on_exception(this, resource_, error);
 	}
 
 
-	template void websocket_session< websocket_client_session >
+	template void ws_session< ws_client_session >
 		::send< std::vector< std::uint8_t > >(
 			std::shared_ptr< std::vector< std::uint8_t > > data
 		);
-	template void websocket_session< websocket_client_session >
+	template void ws_session< ws_client_session >
 		::send< std::string >(std::shared_ptr< std::string > data);
 
-	template void websocket_session< websocket_client_session >
+	template void ws_session< ws_client_session >
 		::send(boost::beast::websocket::close_reason reason);
 
 
-	websocket_client_session::websocket_client_session(
-		websocket_stream&& ws,
-		websocket_client& client
+	ws_client_session::ws_client_session(
+		ws_stream&& ws,
+		ws_client& client
 	)
-		: websocket_session< websocket_client_session >(std::move(ws))
+		: ws_session< ws_client_session >(std::move(ws))
 		, client_(client) {}
 
-	websocket_client_session::~websocket_client_session(){
+	ws_client_session::~ws_client_session(){
 		this->callback::on_close();
 	}
 
 
-	void websocket_client_session::start(){
+	void ws_client_session::start(){
 		// Set the control callback. This will be called
 		// on every incoming ping, pong, and close frame.
 		ws_.control_callback(
@@ -375,30 +375,30 @@ namespace webservice{
 		do_read();
 	}
 
-	void websocket_client_session::on_close(){
+	void ws_client_session::on_close(){
 		client_.impl_->on_close();
 	}
 
-	void websocket_client_session::on_text(
+	void ws_client_session::on_text(
 		boost::beast::multi_buffer& buffer
 	){
 		client_.impl_->on_text(buffer);
 	}
 
-	void websocket_client_session::on_binary(
+	void ws_client_session::on_binary(
 		boost::beast::multi_buffer& buffer
 	){
 		client_.impl_->on_binary(buffer);
 	}
 
-	void websocket_client_session::on_error(
-		websocket_client_error error,
+	void ws_client_session::on_error(
+		ws_client_error error,
 		boost::system::error_code ec
 	){
 		client_.impl_->on_error(error, ec);
 	}
 
-	void websocket_client_session::on_exception(
+	void ws_client_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
 		client_.impl_->on_exception(error);

@@ -6,11 +6,11 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__websocket_session__hpp_INCLUDED_
-#define _webservice__websocket_session__hpp_INCLUDED_
+#ifndef _webservice__ws_session__hpp_INCLUDED_
+#define _webservice__ws_session__hpp_INCLUDED_
 
-#include <webservice/websocket_service_error.hpp>
-#include <webservice/websocket_client_error.hpp>
+#include <webservice/ws_service_error.hpp>
+#include <webservice/ws_client_error.hpp>
 
 #include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/websocket.hpp>
@@ -26,12 +26,12 @@
 namespace webservice{
 
 
-	class websocket_service;
-	class websocket_client;
-	class websocket_server_session;
-	class websocket_client_session;
+	class ws_service;
+	class ws_client;
+	class ws_server_session;
+	class ws_client_session;
 
-	using websocket_stream =
+	using ws_stream =
 		boost::beast::websocket::stream< boost::asio::ip::tcp::socket >;
 
 
@@ -39,18 +39,18 @@ namespace webservice{
 	struct session_error_type;
 
 	template <>
-	struct session_error_type< websocket_server_session >{
-		using type = websocket_service_error;
+	struct session_error_type< ws_server_session >{
+		using type = ws_service_error;
 	};
 
 	template <>
-	struct session_error_type< websocket_client_session >{
-		using type = websocket_client_error;
+	struct session_error_type< ws_client_session >{
+		using type = ws_client_error;
 	};
 
 
 	template < typename Derived >
-	class websocket_session_callbacks{
+	class ws_session_callbacks{
 	protected:
 		/// \brief Called with a unique identifier when a sessions ends
 		void on_close()noexcept{
@@ -98,12 +98,12 @@ namespace webservice{
 
 	/// \brief Base of WebSocket sessions
 	template < typename Derived >
-	class websocket_session
-		: public websocket_session_callbacks< Derived >
+	class ws_session
+		: public ws_session_callbacks< Derived >
 		, public std::enable_shared_from_this< Derived >{
 	public:
 		/// \brief Take ownership of the socket
-		explicit websocket_session(websocket_stream&& ws);
+		explicit ws_session(ws_stream&& ws);
 
 		/// \brief Called when the timer expires.
 		void on_timer(boost::system::error_code ec);
@@ -138,13 +138,13 @@ namespace webservice{
 
 
 	protected:
-		websocket_stream ws_;
+		ws_stream ws_;
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
 
 
 	private:
 		using error_type = typename session_error_type< Derived >::type;
-		using callback = websocket_session_callbacks< Derived >;
+		using callback = ws_session_callbacks< Derived >;
 
 		boost::asio::steady_timer timer_;
 		boost::beast::multi_buffer buffer_;
@@ -152,16 +152,16 @@ namespace webservice{
 	};
 
 
-	class websocket_server_session
-		: public websocket_session< websocket_server_session >{
+	class ws_server_session
+		: public ws_session< ws_server_session >{
 	public:
 		/// \brief Take ownership of the socket
-		explicit websocket_server_session(
-			websocket_stream&& ws,
-			websocket_service& service);
+		explicit ws_server_session(
+			ws_stream&& ws,
+			ws_service& service);
 
 		/// \brief Destructor
-		~websocket_server_session();
+		~ws_server_session();
 
 
 		/// \brief Start the asynchronous operation
@@ -188,7 +188,7 @@ namespace webservice{
 
 		/// \brief Called when an error occured
 		void on_error(
-			websocket_service_error error,
+			ws_service_error error,
 			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown
@@ -197,24 +197,24 @@ namespace webservice{
 
 	private:
 		using callback
-			= websocket_session_callbacks< websocket_server_session >;
+			= ws_session_callbacks< ws_server_session >;
 
-		websocket_service& service_;
+		ws_service& service_;
 		std::string resource_;
 		bool is_open_ = false;
 	};
 
 
-	class websocket_client_session
-		: public websocket_session< websocket_client_session >{
+	class ws_client_session
+		: public ws_session< ws_client_session >{
 	public:
 		/// \brief Take ownership of the socket
-		explicit websocket_client_session(
-			websocket_stream&& ws,
-			websocket_client& client);
+		explicit ws_client_session(
+			ws_stream&& ws,
+			ws_client& client);
 
 		/// \brief Destructor
-		~websocket_client_session();
+		~ws_client_session();
 
 
 		/// \brief Start the session
@@ -232,7 +232,7 @@ namespace webservice{
 
 		/// \brief Called when an error occured
 		void on_error(
-			websocket_client_error error,
+			ws_client_error error,
 			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown
@@ -241,9 +241,9 @@ namespace webservice{
 
 	private:
 		using callback
-			= websocket_session_callbacks< websocket_client_session >;
+			= ws_session_callbacks< ws_client_session >;
 
-		websocket_client& client_;
+		ws_client& client_;
 	};
 
 
