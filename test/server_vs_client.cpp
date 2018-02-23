@@ -66,13 +66,13 @@ void check(state_t got){
 	switch(state){
 		case state_t::init:
 			pass(state, got);
-			state = state_t::ws_client_open;
-			break;
-		case state_t::ws_client_open:
-			pass(state, got);
 			state = state_t::ws_server_open;
 			break;
 		case state_t::ws_server_open:
+			pass(state, got);
+			state = state_t::ws_client_open;
+			break;
+		case state_t::ws_client_open:
 			pass(state, got);
 			state = state_t::ws_client_text;
 			break;
@@ -144,11 +144,11 @@ struct websocket_service: webservice::error_printing_webservice{
 		check(state_t::ws_server_text);
 		auto const text = boost::beast::buffers_to_string(buffer.data());
 		if(test_text == text){
-			std::cout << "\033[1;32mpass: '"
+			std::cout << "\033[1;32mserver pass: '"
 				<< test_text
 				<< "'\033[0m\n";
 		}else{
-			std::cout << "\033[1;31mfail: expected '"
+			std::cout << "\033[1;31mfail: server expected '"
 				<< test_text << "' but got '" << text
 				<< "'\033[0m\n";
 		}
@@ -164,11 +164,11 @@ struct websocket_service: webservice::error_printing_webservice{
 		check(state_t::ws_server_binary);
 		auto const text = boost::beast::buffers_to_string(buffer.data());
 		if(test_text == text){
-			std::cout << "\033[1;32mpass: '"
+			std::cout << "\033[1;32mserver pass: '"
 				<< test_text
 				<< "'\033[0m\n";
 		}else{
-			std::cout << "\033[1;31mfail: expected '"
+			std::cout << "\033[1;31mfail: server expected '"
 				<< test_text << "' but got '" << text
 				<< "'\033[0m\n";
 		}
@@ -192,11 +192,11 @@ struct websocket_client: webservice::websocket_client{
 		check(state_t::ws_client_text);
 		auto const text = boost::beast::buffers_to_string(buffer.data());
 		if(test_text == text){
-			std::cout << "\033[1;32mpass: '"
+			std::cout << "\033[1;32mclient pass: '"
 				<< test_text
 				<< "'\033[0m\n";
 		}else{
-			std::cout << "\033[1;31mfail: expected '"
+			std::cout << "\033[1;31mfail: client expected '"
 				<< test_text << "' but got '" << text
 				<< "'\033[0m\n";
 		}
@@ -206,11 +206,11 @@ struct websocket_client: webservice::websocket_client{
 		check(state_t::ws_client_binary);
 		auto const text = boost::beast::buffers_to_string(buffer.data());
 		if(test_text == text){
-			std::cout << "\033[1;32mpass: '"
+			std::cout << "\033[1;32mclient pass: '"
 				<< test_text
 				<< "'\033[0m\n";
 		}else{
-			std::cout << "\033[1;31mfail: expected '"
+			std::cout << "\033[1;31mfail: client expected '"
 				<< test_text << "' but got '" << text
 				<< "'\033[0m\n";
 		}
@@ -239,7 +239,6 @@ int main(){
 		check(state_t::init);
 
 		websocket_client client("127.0.0.1", "1234", "/");
-		client.close("close");
 
 		auto const start = std::chrono::system_clock::now();
 		while(

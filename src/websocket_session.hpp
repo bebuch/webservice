@@ -52,15 +52,6 @@ namespace webservice{
 	template < typename Derived >
 	class websocket_session_callbacks{
 	protected:
-		/// \brief Called with a unique identifier when a sessions starts
-		void on_open()noexcept{
-			try{
-				static_cast< Derived* >(this)->on_open();
-			}catch(...){
-				on_exception(std::current_exception());
-			}
-		}
-
 		/// \brief Called with a unique identifier when a sessions ends
 		void on_close()noexcept{
 			try{
@@ -182,16 +173,17 @@ namespace webservice{
 		void on_accept(boost::system::error_code ec);
 
 
-		/// \brief Called with a unique identifier when a sessions starts
-		void on_open();
+		/// \brief Called with when a sessions starts
+		void on_open()noexcept;
 
-		/// \brief Called with a unique identifier when a sessions ends
+
+		/// \brief Called with when a sessions ends
 		void on_close();
 
-		/// \brief Called when a session received a text message
+		/// \brief Called when a text message
 		void on_text(boost::beast::multi_buffer& buffer);
 
-		/// \brief Called when a session received a binary message
+		/// \brief Called when a binary message
 		void on_binary(boost::beast::multi_buffer& buffer);
 
 		/// \brief Called when an error occured
@@ -228,9 +220,6 @@ namespace webservice{
 		/// \brief Start the session
 		void start();
 
-
-		/// \brief Called when the sessions starts
-		void on_open();
 
 		/// \brief Called when the sessions ends
 		void on_close();

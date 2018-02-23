@@ -59,12 +59,18 @@ namespace webservice{
 			auto session = std::make_shared< websocket_client_session >(
 				std::move(ws), self_);
 
-			session_ = session;
-
 			session->start();
+
+			session_ = session;
 
 			// restart io_context if it returned by exception
 			thread_ = std::thread([this]{
+					try{
+						self_.on_open();
+					}catch(...){
+						on_exception(std::current_exception());
+					}
+
 					for(;;){
 						try{
 							ioc_.run();
@@ -78,7 +84,7 @@ namespace webservice{
 
 		/// \brief Destructor
 		~websocket_client_impl(){
-			ioc_.stop();
+			close();
 			if(thread_.joinable()) thread_.join();
 		}
 
@@ -95,11 +101,6 @@ namespace webservice{
 			ioc_.stop();
 		}
 
-
-		/// \brief Called when the sessions starts
-		void on_open(){
-			self_.on_open();
-		}
 
 		/// \brief Called when the sessions ends
 		void on_close(){

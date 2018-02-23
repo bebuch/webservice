@@ -116,8 +116,7 @@ namespace webservice{
 
 	template < typename Derived >
 	void websocket_session< Derived >::do_read(){
-		// Set the timer
-		timer_.expires_after(std::chrono::seconds(15));
+		start_timer();
 
 		// Read a message into our buffer
 		ws_.async_read(
@@ -288,15 +287,19 @@ namespace webservice{
 		}
 
 		is_open_ = true;
-		callback::on_open();
+		on_open();
 
 		// Read a message
 		do_read();
 	}
 
 
-	void websocket_server_session::on_open(){
-		service_.impl_->on_open(this, resource_);
+	void websocket_server_session::on_open()noexcept{
+		try{
+			service_.impl_->on_open(this, resource_);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
 	}
 
 	void websocket_server_session::on_close(){
@@ -369,16 +372,7 @@ namespace webservice{
 		// continuously, this simplifies the code.
 		on_timer({});
 
-		// Set the timer
-		start_timer();
-
-		callback::on_open();
-
 		do_read();
-	}
-
-	void websocket_client_session::on_open(){
-		client_.impl_->on_open();
 	}
 
 	void websocket_client_session::on_close(){
