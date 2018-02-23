@@ -96,7 +96,9 @@ struct file_request_handler: webservice::error_printing_file_request_handler{
 		webservice::http_request&& req,
 		webservice::http_response&& send
 	)override{
-		check(state_t::file_request);
+		if(req.target() != "/favicon.ico"){ // ignore favicon request
+			check(state_t::file_request);
+		}
 		webservice::file_request_handler::operator()(
 			std::move(req), std::move(send));
 	}
