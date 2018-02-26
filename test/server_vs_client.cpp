@@ -90,13 +90,13 @@ void check(state_t got){
 			break;
 		case state_t::ws_server_binary:
 			pass(state, got);
-			state = state_t::ws_server_close;
-			break;
-		case state_t::ws_server_close:
-			pass(state, got);
 			state = state_t::ws_client_close;
 			break;
 		case state_t::ws_client_close:
+			pass(state, got);
+			state = state_t::ws_server_close;
+			break;
+		case state_t::ws_server_close:
 			pass(state, got);
 			state = state_t::exit;
 			break;
@@ -200,6 +200,7 @@ struct ws_client: webservice::ws_client{
 				<< test_text << "' but got '" << text
 				<< "'\033[0m\n";
 		}
+		send_text(test_text);
 	}
 
 	void on_binary(boost::beast::multi_buffer& buffer)override{
@@ -214,7 +215,10 @@ struct ws_client: webservice::ws_client{
 				<< test_text << "' but got '" << text
 				<< "'\033[0m\n";
 		}
-	}};
+		send_binary(std::vector< std::uint8_t >(
+			std::begin(test_text), std::end(test_text)));
+	}
+};
 
 
 void close_server(int signum){
@@ -239,6 +243,7 @@ int main(){
 		check(state_t::init);
 
 		ws_client client("127.0.0.1", "1234", "/");
+		client.connect();
 
 		auto const start = std::chrono::system_clock::now();
 		while(

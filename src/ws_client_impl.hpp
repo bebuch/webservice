@@ -42,9 +42,30 @@ namespace webservice{
 			std::string&& resource
 		)
 			: self_(self)
-			, resolver_(ioc_)
-		{
-			auto results = resolver_.resolve(host, port);
+			, host_(host)
+			, port_(port)
+			, resource_(resource)
+			, resolver_(ioc_) {}
+
+		/// \brief Destructor
+		~ws_client_impl(){
+			send("client shutdown");
+			close();
+			if(thread_.joinable()){
+				thread_.join();
+			}
+		}
+
+
+		/// \brief Connect client to server
+		///
+		/// Does nothing if client is already connected.
+		void connect(){
+			if(is_connected()){
+				return;
+			}
+
+			auto results = resolver_.resolve(host_, port_);
 
 			ws_stream ws(ioc_);
 
@@ -53,7 +74,7 @@ namespace webservice{
 				results.begin(), results.end());
 
 			// Perform the ws handshake
-			ws.handshake(host, resource);
+			ws.handshake(host_, resource_);
 
 			// Create a WebSocket session by transferring the socket
 			auto session = std::make_shared< ws_client_session >(
@@ -62,6 +83,10 @@ namespace webservice{
 			session->start();
 
 			session_ = session;
+
+			if(thread_.joinable()){
+				thread_.join();
+			}
 
 			// restart io_context if it returned by exception
 			thread_ = std::thread([this]{
@@ -82,11 +107,11 @@ namespace webservice{
 				});
 		}
 
-		/// \brief Destructor
-		~ws_client_impl(){
-			close();
-			if(thread_.joinable()) thread_.join();
+		/// \brief true if client is connected to server, false otherwise
+		bool is_connected()const{
+			return static_cast< bool >(session_.lock());
 		}
+
 
 		/// \brief Send a message
 		template < typename Data >
@@ -134,6 +159,10 @@ namespace webservice{
 	private:
 		/// \brief Pointer to implementation
 		ws_client& self_;
+
+		std::string host_;
+		std::string port_;
+		std::string resource_;
 
 		boost::asio::io_context ioc_;
 		boost::asio::ip::tcp::resolver resolver_;

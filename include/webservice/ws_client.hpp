@@ -37,11 +37,21 @@ namespace webservice{
 		virtual ~ws_client();
 
 
+		/// \brief Connect client to server
+		///
+		/// Does nothing if client is already connected.
+		void connect();
+
+		/// \brief true if client is connected to server, false otherwise
+		bool is_connected()const;
+
+
 		/// \brief Send a text message
 		void send_text(std::string data);
 
 		/// \brief Send a binary message
 		void send_binary(std::vector< std::uint8_t > data);
+
 
 		/// \brief Close the sessions
 		void close(boost::beast::string_view reason);

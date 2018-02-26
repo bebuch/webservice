@@ -30,6 +30,15 @@ namespace webservice{
 	ws_client::~ws_client(){}
 
 
+	void ws_client::connect(){
+		impl_->connect();
+	}
+
+	bool ws_client::is_connected()const{
+		return impl_->is_connected();
+	}
+
+
 	void ws_client::send_text(std::string data){
 		impl_->send(std::make_shared< std::string >(std::move(data)));
 	}
@@ -38,6 +47,7 @@ namespace webservice{
 		impl_->send(std::make_shared< std::vector< std::uint8_t > >(
 			std::move(data)));
 	}
+
 
 	void ws_client::close(boost::beast::string_view reason){
 		impl_->send(boost::beast::websocket::close_reason(reason));
