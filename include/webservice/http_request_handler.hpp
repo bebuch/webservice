@@ -32,7 +32,7 @@ namespace webservice{
 	/// \brief Base class of all HTTP request handlers
 	class http_request_handler{
 	public:
-		virtual ~http_request_handler() = default;
+		virtual ~http_request_handler();
 		virtual void operator()(http_request&& req, http_response&& send);
 
 	protected:

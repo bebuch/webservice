@@ -49,11 +49,15 @@ namespace webservice{
 
 		/// \brief Destructor
 		~ws_client_impl(){
+			std::cout << "clientd1\n";
 			send("client shutdown");
+			std::cout << "clientd2\n";
 			close();
+			std::cout << "clientd3\n";
 			if(thread_.joinable()){
 				thread_.join();
 			}
+			std::cout << "clientd4\n";
 		}
 
 
@@ -65,37 +69,47 @@ namespace webservice{
 				return;
 			}
 
-			auto results = resolver_.resolve(host_, port_);
-
-			ws_stream ws(ioc_);
-
-			// Make the connection on the IP address we get from a lookup
-			boost::asio::connect(ws.next_layer(),
-				results.begin(), results.end());
-
-			// Perform the ws handshake
-			ws.handshake(host_, resource_);
-
-			// Create a WebSocket session by transferring the socket
-			auto session = std::make_shared< ws_client_session >(
-				std::move(ws), self_);
-
-			session->start();
-
-			session_ = session;
-
 			if(thread_.joinable()){
 				thread_.join();
 			}
 
+			std::cout << "connect1\n";
+			auto results = resolver_.resolve(host_, port_);
+
+			std::cout << "connect2\n";
+			ws_stream ws(ioc_);
+
+			std::cout << "connect3\n";
+			// Make the connection on the IP address we get from a lookup
+			boost::asio::connect(ws.next_layer(),
+				results.begin(), results.end());
+
+			std::cout << "connect4\n";
+			// Perform the ws handshake
+			ws.handshake(host_, resource_);
+
+			std::cout << "connect5\n";
+			// Create a WebSocket session by transferring the socket
+			auto session = std::make_shared< ws_client_session >(
+				std::move(ws), self_);
+
+			std::cout << "connect6\n";
+			session->start();
+
+			std::cout << "connect7\n";
+			session_ = std::move(session);
+
+			std::cout << "connect8\n";
 			// restart io_context if it returned by exception
 			thread_ = std::thread([this]{
+					std::cout << "connectt1\n";
 					try{
 						self_.on_open();
 					}catch(...){
 						on_exception(std::current_exception());
 					}
 
+					std::cout << "connectt2\n";
 					for(;;){
 						try{
 							ioc_.run();
@@ -104,6 +118,7 @@ namespace webservice{
 							on_exception(std::current_exception());
 						}
 					}
+					std::cout << "connectt3\n";
 				});
 		}
 

@@ -58,8 +58,11 @@ namespace webservice{
 
 		/// \brief Wait until all thread have finished
 		~server_impl(){
+			std::cout << "server1\n";
 			stop();
+			std::cout << "server2\n";
 			block();
+			std::cout << "server3\n";
 		}
 
 

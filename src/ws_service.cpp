@@ -16,7 +16,9 @@ namespace webservice{
 		: impl_(std::make_unique< ws_service_impl >(*this)){}
 
 
-	ws_service::~ws_service(){}
+	ws_service::~ws_service(){
+		std::cout << "service\n";
+	}
 
 
 	void ws_service::on_open(

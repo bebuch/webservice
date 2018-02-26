@@ -24,6 +24,8 @@ namespace webservice{
 		send(not_found(req, req.target()));
 	}
 
+	http_request_handler::~http_request_handler(){}
+
 	void http_request_handler::on_error(
 		http_request_error /*error*/,
 		boost::system::error_code /*ec*/){}

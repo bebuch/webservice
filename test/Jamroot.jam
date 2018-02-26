@@ -75,3 +75,10 @@ exe server_vs_client
 	/webservice//webservice
 	/boost//system
 	;
+
+exe destruction
+	:
+	destruction.cpp
+	/webservice//webservice
+	/boost//system
+	;

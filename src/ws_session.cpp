@@ -119,16 +119,18 @@ namespace webservice{
 		start_timer();
 
 		// Read a message into our buffer
-		ws_.async_read(
-			buffer_,
-			boost::asio::bind_executor(
-				strand_,
-				[this_ = this->shared_from_this()](
-					boost::system::error_code ec,
-					std::size_t /*bytes_transferred*/
-				){
-					this_->on_read(ec);
-				}));
+		if(ws_.is_open()){
+			ws_.async_read(
+				buffer_,
+				boost::asio::bind_executor(
+					strand_,
+					[this_ = this->shared_from_this()](
+						boost::system::error_code ec,
+						std::size_t /*bytes_transferred*/
+					){
+						this_->on_read(ec);
+					}));
+		}
 	}
 
 	template < typename Derived >
@@ -235,9 +237,11 @@ namespace webservice{
 		, service_(service) {}
 
 	ws_server_session::~ws_server_session(){
+		std::cout << "server_session1\n";
 		if(is_open_){
 			this->callback::on_close();
 		}
+		std::cout << "server_session2\n";
 	}
 
 	void ws_server_session::do_accept(
@@ -351,7 +355,9 @@ namespace webservice{
 		, client_(client) {}
 
 	ws_client_session::~ws_client_session(){
+		std::cout << "client_session1\n";
 		this->callback::on_close();
+		std::cout << "client_session2\n";
 	}
 
 
