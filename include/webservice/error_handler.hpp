@@ -19,9 +19,6 @@
 namespace webservice{
 
 
-	class listener;
-
-
 	/// \brief Base class for server error handlers
 	class error_handler{
 	public:

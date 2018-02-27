@@ -17,8 +17,6 @@
 namespace webservice{
 
 
-	class server_impl;
-
 	/// \brief An http and WebSocket server
 	class server{
 	public:
@@ -58,7 +56,7 @@ namespace webservice{
 
 	private:
 		/// \brief Pointer to implementation
-		std::unique_ptr< server_impl > impl_;
+		std::unique_ptr< class server_impl > impl_;
 	};
 
 

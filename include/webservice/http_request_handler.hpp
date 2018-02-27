@@ -24,10 +24,6 @@ namespace webservice{
 	using http_string_response
 		= boost::beast::http::response< boost::beast::http::string_body >;
 
-	class server;
-	class listener;
-	class http_session;
-
 
 	/// \brief Base class of all HTTP request handlers
 	class http_request_handler{
@@ -71,7 +67,6 @@ namespace webservice{
 		class server* server_ = nullptr;
 
 		friend class http_session;
-		friend class listener;
 		friend class server;
 	};
 

@@ -152,8 +152,7 @@ namespace webservice{
 	};
 
 
-	class ws_server_session
-		: public ws_session< ws_server_session >{
+	class ws_server_session: public ws_session< ws_server_session >{
 	public:
 		/// \brief Take ownership of the socket
 		explicit ws_server_session(
@@ -196,8 +195,7 @@ namespace webservice{
 
 
 	private:
-		using callback
-			= ws_session_callbacks< ws_server_session >;
+		using callback = ws_session_callbacks< ws_server_session >;
 
 		ws_service_impl& service_;
 		std::string resource_;
@@ -205,8 +203,7 @@ namespace webservice{
 	};
 
 
-	class ws_client_session
-		: public ws_session< ws_client_session >{
+	class ws_client_session: public ws_session< ws_client_session >{
 	public:
 		/// \brief Take ownership of the socket
 		explicit ws_client_session(
@@ -240,8 +237,7 @@ namespace webservice{
 
 
 	private:
-		using callback
-			= ws_session_callbacks< ws_client_session >;
+		using callback = ws_session_callbacks< ws_client_session >;
 
 		ws_client_impl& client_;
 	};

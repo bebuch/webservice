@@ -23,14 +23,6 @@
 namespace webservice{
 
 
-	class ws_service_impl;
-
-	template < typename Service >
-	class ws_session;
-
-	class server;
-
-
 	class ws_service{
 	public:
 		/// \brief Constructor
@@ -150,7 +142,7 @@ namespace webservice{
 
 	private:
 		/// \brief Pointer to implementation
-		std::unique_ptr< ws_service_impl > impl_;
+		std::unique_ptr< class ws_service_impl > impl_;
 
 		/// \brief Pointer to the server object
 		class server* server_ = nullptr;
@@ -158,7 +150,6 @@ namespace webservice{
 		friend class server;
 		friend class listener;
 		friend class ws_service_impl;
-		friend class ws_server_session;
 	};
 
 

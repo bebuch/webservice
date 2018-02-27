@@ -22,8 +22,6 @@
 namespace webservice{
 
 
-	class ws_client_impl;
-
 	class ws_client{
 	public:
 		/// \brief Constructor
@@ -93,10 +91,9 @@ namespace webservice{
 
 	private:
 		/// \brief Pointer to implementation
-		std::unique_ptr< ws_client_impl > impl_;
+		std::unique_ptr< class ws_client_impl > impl_;
 
 		friend class ws_client_impl;
-		friend class ws_client_session;
 	};
 
 
