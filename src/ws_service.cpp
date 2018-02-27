@@ -30,12 +30,12 @@ namespace webservice{
 	void ws_service::on_text(
 		std::uintptr_t const /*identifier*/,
 		std::string const& /*resource*/,
-		boost::beast::multi_buffer& /*buffer*/){}
+		boost::beast::multi_buffer const& /*buffer*/){}
 
 	void ws_service::on_binary(
 		std::uintptr_t const /*identifier*/,
 		std::string const& /*resource*/,
-		boost::beast::multi_buffer& /*buffer*/){}
+		boost::beast::multi_buffer const& /*buffer*/){}
 
 	void ws_service::on_error(
 		std::uintptr_t /*identifier*/,

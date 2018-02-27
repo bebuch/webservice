@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <thread>
+#include <mutex>
 
 
 namespace webservice{
@@ -42,18 +43,16 @@ namespace webservice{
 			std::string&& resource
 		)
 			: self_(self)
-			, host_(host)
-			, port_(port)
-			, resource_(resource)
+			, host_(std::move(host))
+			, port_(std::move(port))
+			, resource_(std::move(resource))
 			, resolver_(ioc_) {}
 
 		/// \brief Destructor
 		~ws_client_impl(){
 			send("client shutdown");
-			if(thread_.joinable()){
-				thread_.join();
-			}
-			close();
+			stop();
+			block();
 		}
 
 
@@ -61,13 +60,12 @@ namespace webservice{
 		///
 		/// Does nothing if client is already connected.
 		void connect(){
+			std::lock_guard< std::recursive_mutex > lock(mutex_);
 			if(is_connected()){
 				return;
 			}
 
-			if(thread_.joinable()){
-				thread_.join();
-			}
+			block();
 
 			auto results = resolver_.resolve(host_, port_);
 
@@ -115,8 +113,22 @@ namespace webservice{
 			}
 		}
 
-		/// \brief Close the sessions
-		void close(){
+
+		/// \brief Wait on the processing threads
+		///
+		/// This effecivly blocks the current thread until the client is closed.
+		void block()noexcept{
+			std::lock_guard< std::recursive_mutex > lock(mutex_);
+			if(thread_.joinable()){
+				thread_.join();
+			}
+		}
+
+		/// \brief Close the connection as fast as possible
+		///
+		/// This function is not blocking. Call block() if you want to wait
+		/// until all connections are closed.
+		void stop()noexcept{
 			ioc_.stop();
 		}
 
@@ -132,12 +144,12 @@ namespace webservice{
 		}
 
 		/// \brief Called when the session received a text message
-		void on_text(boost::beast::multi_buffer& buffer){
+		void on_text(boost::beast::multi_buffer const& buffer){
 			self_.on_text(buffer);
 		}
 
 		/// \brief Called when the session received a binary message
-		void on_binary(boost::beast::multi_buffer& buffer){
+		void on_binary(boost::beast::multi_buffer const& buffer){
 			self_.on_binary(buffer);
 		}
 
@@ -159,9 +171,11 @@ namespace webservice{
 		/// \brief Pointer to implementation
 		ws_client& self_;
 
-		std::string host_;
-		std::string port_;
-		std::string resource_;
+		std::string const host_;
+		std::string const port_;
+		std::string const resource_;
+
+		std::recursive_mutex mutex_;
 
 		boost::asio::io_context ioc_;
 		boost::asio::ip::tcp::resolver resolver_;

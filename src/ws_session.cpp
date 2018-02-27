@@ -304,13 +304,13 @@ namespace webservice{
 	}
 
 	void ws_server_session::on_text(
-		boost::beast::multi_buffer& buffer
+		boost::beast::multi_buffer const& buffer
 	){
 		service_.on_text(this, resource_, buffer);
 	}
 
 	void ws_server_session::on_binary(
-		boost::beast::multi_buffer& buffer
+		boost::beast::multi_buffer const& buffer
 	){
 		service_.on_binary(this, resource_, buffer);
 	}
@@ -392,13 +392,13 @@ namespace webservice{
 	}
 
 	void ws_client_session::on_text(
-		boost::beast::multi_buffer& buffer
+		boost::beast::multi_buffer const& buffer
 	){
 		client_.on_text(buffer);
 	}
 
 	void ws_client_session::on_binary(
-		boost::beast::multi_buffer& buffer
+		boost::beast::multi_buffer const& buffer
 	){
 		client_.on_binary(buffer);
 	}

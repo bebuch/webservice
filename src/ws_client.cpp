@@ -51,7 +51,6 @@ namespace webservice{
 
 	void ws_client::close(boost::beast::string_view reason){
 		impl_->send(boost::beast::websocket::close_reason(reason));
-		impl_->close();
 	}
 
 
@@ -59,9 +58,9 @@ namespace webservice{
 
 	void ws_client::on_close(){}
 
-	void ws_client::on_text(boost::beast::multi_buffer& /*buffer*/){}
+	void ws_client::on_text(boost::beast::multi_buffer const& /*buffer*/){}
 
-	void ws_client::on_binary(boost::beast::multi_buffer& /*buffer*/){}
+	void ws_client::on_binary(boost::beast::multi_buffer const& /*buffer*/){}
 
 	void ws_client::on_error(
 		ws_client_error /*error*/,

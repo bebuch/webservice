@@ -55,6 +55,18 @@ namespace webservice{
 		void close(boost::beast::string_view reason);
 
 
+		/// \brief Wait on the processing threads
+		///
+		/// This effecivly blocks the current thread until the client is closed.
+		void block()noexcept;
+
+		/// \brief Close the connection as fast as possible
+		///
+		/// This function is not blocking. Call block() if you want to wait
+		/// until all connections are closed.
+		void stop()noexcept;
+
+
 	protected:
 		/// \brief Called when the sessions starts
 		///
@@ -69,12 +81,12 @@ namespace webservice{
 		/// \brief Called when the session received a text message
 		///
 		/// Default implementation does nothing.
-		virtual void on_text(boost::beast::multi_buffer& buffer);
+		virtual void on_text(boost::beast::multi_buffer const& buffer);
 
 		/// \brief Called when the session received a binary message
 		///
 		/// Default implementation does nothing.
-		virtual void on_binary(boost::beast::multi_buffer& buffer);
+		virtual void on_binary(boost::beast::multi_buffer const& buffer);
 
 		/// \brief Called when an error occured
 		///

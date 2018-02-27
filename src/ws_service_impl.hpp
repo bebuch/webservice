@@ -55,7 +55,7 @@ namespace webservice{
 		void on_text(
 			ws_server_session* const session,
 			std::string const& resource,
-			boost::beast::multi_buffer& buffer
+			boost::beast::multi_buffer const& buffer
 		){
 			self_.on_text(
 				reinterpret_cast< std::uintptr_t >(session),
@@ -67,7 +67,7 @@ namespace webservice{
 		void on_binary(
 			ws_server_session* const session,
 			std::string const& resource,
-			boost::beast::multi_buffer& buffer
+			boost::beast::multi_buffer const& buffer
 		){
 			self_.on_binary(
 				reinterpret_cast< std::uintptr_t >(session),

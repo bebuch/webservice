@@ -70,7 +70,7 @@ namespace webservice{
 		}
 
 		/// \brief Called when a session received a text message
-		void on_text(boost::beast::multi_buffer& buffer)noexcept{
+		void on_text(boost::beast::multi_buffer const& buffer)noexcept{
 			try{
 				static_cast< Derived* >(this)->on_text(buffer);
 			}catch(...){
@@ -79,7 +79,7 @@ namespace webservice{
 		}
 
 		/// \brief Called when a session received a binary message
-		void on_binary(boost::beast::multi_buffer& buffer)noexcept{
+		void on_binary(boost::beast::multi_buffer const& buffer)noexcept{
 			try{
 				static_cast< Derived* >(this)->on_binary(buffer);
 			}catch(...){
@@ -187,10 +187,10 @@ namespace webservice{
 		void on_close();
 
 		/// \brief Called when a text message
-		void on_text(boost::beast::multi_buffer& buffer);
+		void on_text(boost::beast::multi_buffer const& buffer);
 
 		/// \brief Called when a binary message
-		void on_binary(boost::beast::multi_buffer& buffer);
+		void on_binary(boost::beast::multi_buffer const& buffer);
 
 		/// \brief Called when an error occured
 		void on_error(
@@ -232,10 +232,10 @@ namespace webservice{
 		void on_close();
 
 		/// \brief Called when the session received a text message
-		void on_text(boost::beast::multi_buffer& buffer);
+		void on_text(boost::beast::multi_buffer const& buffer);
 
 		/// \brief Called when the session received a binary message
-		void on_binary(boost::beast::multi_buffer& buffer);
+		void on_binary(boost::beast::multi_buffer const& buffer);
 
 		/// \brief Called when an error occured
 		void on_error(

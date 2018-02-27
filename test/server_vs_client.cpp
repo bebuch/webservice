@@ -139,7 +139,7 @@ struct ws_service: webservice::error_printing_webservice{
 	void on_text(
 		std::uintptr_t,
 		std::string const&,
-		boost::beast::multi_buffer& buffer
+		boost::beast::multi_buffer const& buffer
 	)override{
 		check(state_t::ws_server_text);
 		auto const text = boost::beast::buffers_to_string(buffer.data());
@@ -159,7 +159,7 @@ struct ws_service: webservice::error_printing_webservice{
 	void on_binary(
 		std::uintptr_t,
 		std::string const&,
-		boost::beast::multi_buffer& buffer
+		boost::beast::multi_buffer const& buffer
 	)override{
 		check(state_t::ws_server_binary);
 		auto const text = boost::beast::buffers_to_string(buffer.data());
@@ -188,7 +188,7 @@ struct ws_client: webservice::ws_client{
 		check(state_t::ws_client_close);
 	}
 
-	void on_text(boost::beast::multi_buffer& buffer)override{
+	void on_text(boost::beast::multi_buffer const& buffer)override{
 		check(state_t::ws_client_text);
 		auto const text = boost::beast::buffers_to_string(buffer.data());
 		if(test_text == text){
@@ -203,7 +203,7 @@ struct ws_client: webservice::ws_client{
 		send_text(test_text);
 	}
 
-	void on_binary(boost::beast::multi_buffer& buffer)override{
+	void on_binary(boost::beast::multi_buffer const& buffer)override{
 		check(state_t::ws_client_binary);
 		auto const text = boost::beast::buffers_to_string(buffer.data());
 		if(test_text == text){
