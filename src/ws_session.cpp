@@ -288,19 +288,15 @@ namespace webservice{
 		}
 
 		is_open_ = true;
-		on_open();
+		this->callback::on_open();
 
 		// Read a message
 		do_read();
 	}
 
 
-	void ws_server_session::on_open()noexcept{
-		try{
-			service_.on_open(this, resource_);
-		}catch(...){
-			on_exception(std::current_exception());
-		}
+	void ws_server_session::on_open(){
+		service_.on_open(this, resource_);
 	}
 
 	void ws_server_session::on_close(){
@@ -352,7 +348,9 @@ namespace webservice{
 		, client_(client) {}
 
 	ws_client_session::~ws_client_session(){
-		this->callback::on_close();
+		if(is_open_){
+			this->callback::on_close();
+		}
 	}
 
 
@@ -373,7 +371,20 @@ namespace webservice{
 		// continuously, this simplifies the code.
 		on_timer({});
 
+		boost::asio::asio_handler_invoke(
+			boost::asio::bind_executor(
+				strand_,
+				[this_ = this->shared_from_this()]{
+					this_->is_open_ = true;
+					this_->callback::on_open();
+				}));
+
 		do_read();
+	}
+
+
+	void ws_client_session::on_open(){
+		client_.on_open();
 	}
 
 	void ws_client_session::on_close(){

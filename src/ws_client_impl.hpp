@@ -90,12 +90,6 @@ namespace webservice{
 
 			// restart io_context if it returned by exception
 			thread_ = std::thread([this]{
-					try{
-						self_.on_open();
-					}catch(...){
-						on_exception(std::current_exception());
-					}
-
 					for(;;){
 						try{
 							ioc_.run();
@@ -126,6 +120,11 @@ namespace webservice{
 			ioc_.stop();
 		}
 
+
+		/// \brief Called when the sessions starts
+		void on_open(){
+			self_.on_open();
+		}
 
 		/// \brief Called when the sessions ends
 		void on_close(){

@@ -52,6 +52,14 @@ namespace webservice{
 	template < typename Derived >
 	class ws_session_callbacks{
 	protected:
+		void on_open()noexcept{
+			try{
+				static_cast< Derived* >(this)->on_open();
+			}catch(...){
+				on_exception(std::current_exception());
+			}
+		}
+
 		/// \brief Called with a unique identifier when a sessions ends
 		void on_close()noexcept{
 			try{
@@ -173,8 +181,7 @@ namespace webservice{
 
 
 		/// \brief Called with when a sessions starts
-		void on_open()noexcept;
-
+		void on_open();
 
 		/// \brief Called with when a sessions ends
 		void on_close();
@@ -218,6 +225,9 @@ namespace webservice{
 		void start();
 
 
+		/// \brief Called when the sessions start
+		void on_open();
+
 		/// \brief Called when the sessions ends
 		void on_close();
 
@@ -240,6 +250,7 @@ namespace webservice{
 		using callback = ws_session_callbacks< ws_client_session >;
 
 		ws_client_impl& client_;
+		bool is_open_ = false;
 	};
 
 
