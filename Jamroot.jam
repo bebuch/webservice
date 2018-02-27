@@ -1,6 +1,5 @@
 import os ;
 local boost = [ os.environ BOOST ] ;
-local json = ../nlohmann/json ;
 
 use-project /boost
 	: $(boost)
@@ -36,7 +35,6 @@ project webservice
 	<toolset>clang:<linkflags>-stdlib=libc++
 
 	<include>$(boost)
-	<include>$(json)/src
 	:
 	usage-requirements <include>include
 	;

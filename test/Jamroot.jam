@@ -1,7 +1,6 @@
 import os ;
 local webservice = .. ;
 local boost = [ os.environ BOOST ] ;
-local json = ../nlohmann/json ;
 
 use-project /webservice
 	: $(webservice)
@@ -43,7 +42,6 @@ project webservice_test
 
 	<include>../include
 	<include>$(boost)
-	<include>$(json)/src
 	:
 	;
 
