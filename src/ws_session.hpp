@@ -26,8 +26,8 @@
 namespace webservice{
 
 
-	class ws_service;
-	class ws_client;
+	class ws_service_impl;
+	class ws_client_impl;
 	class ws_server_session;
 	class ws_client_session;
 
@@ -158,7 +158,7 @@ namespace webservice{
 		/// \brief Take ownership of the socket
 		explicit ws_server_session(
 			ws_stream&& ws,
-			ws_service& service);
+			ws_service_impl& service);
 
 		/// \brief Destructor
 		~ws_server_session();
@@ -199,7 +199,7 @@ namespace webservice{
 		using callback
 			= ws_session_callbacks< ws_server_session >;
 
-		ws_service& service_;
+		ws_service_impl& service_;
 		std::string resource_;
 		bool is_open_ = false;
 	};
@@ -211,7 +211,7 @@ namespace webservice{
 		/// \brief Take ownership of the socket
 		explicit ws_client_session(
 			ws_stream&& ws,
-			ws_client& client);
+			ws_client_impl& client);
 
 		/// \brief Destructor
 		~ws_client_session();
@@ -243,7 +243,7 @@ namespace webservice{
 		using callback
 			= ws_session_callbacks< ws_client_session >;
 
-		ws_client& client_;
+		ws_client_impl& client_;
 	};
 
 

@@ -58,11 +58,8 @@ namespace webservice{
 
 		/// \brief Wait until all thread have finished
 		~server_impl(){
-			std::cout << "server1\n";
 			stop();
-			std::cout << "server2\n";
 			block();
-			std::cout << "server3\n";
 		}
 
 
@@ -120,7 +117,7 @@ namespace webservice{
 						service->server_ = this;
 						return std::move(service);
 					}(),
-				[this, error_handler = std::move(error_handler)]()mutable{
+				[error_handler = std::move(error_handler)]()mutable{
 						if(!error_handler){
 							error_handler =
 								boost::make_unique< class error_handler >();

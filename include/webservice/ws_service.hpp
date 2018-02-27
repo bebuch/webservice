@@ -156,6 +156,7 @@ namespace webservice{
 		class server* server_ = nullptr;
 
 		friend class server;
+		friend class listener;
 		friend class ws_service_impl;
 		friend class ws_server_session;
 	};

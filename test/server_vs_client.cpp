@@ -234,25 +234,29 @@ int main(){
 	std::signal(SIGINT, &close_server);
 
 	try{
-		webservice::server server(
-			boost::make_unique< file_request_handler >("server_vs_client"),
-			boost::make_unique< ws_service >(),
-			boost::make_unique< webservice::error_printing_error_handler >(),
-			boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
+		{
+			using boost::make_unique;
+			webservice::server server(
+				make_unique< file_request_handler >("server_vs_client"),
+				make_unique< ws_service >(),
+				make_unique< webservice::error_printing_error_handler >(),
+				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
-		check(state_t::init);
+			check(state_t::init);
 
-		ws_client client("127.0.0.1", "1234", "/");
-		client.connect();
+			ws_client client("127.0.0.1", "1234", "/");
+			client.connect();
 
-		auto const start = std::chrono::system_clock::now();
-		while(
-			state != state_t::exit &&
-			std::chrono::system_clock::now() < start + std::chrono::seconds(10)
-		){
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			using system_clock = std::chrono::system_clock;
+			auto const start = system_clock::now();
+			while(
+				state != state_t::exit &&
+				system_clock::now() < start + std::chrono::seconds(10)
+			){
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			}
+			server.stop();
 		}
-		server.stop();
 
 		check(state_t::exit);
 

@@ -9,9 +9,6 @@
 #include "ws_service_impl.hpp"
 #include "ws_client_impl.hpp"
 
-#include <webservice/ws_service.hpp>
-#include <webservice/ws_client.hpp>
-
 #include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/websocket.hpp>
 
@@ -19,6 +16,7 @@
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/bind_executor.hpp>
+#include <boost/asio/dispatch.hpp>
 
 
 namespace webservice{
@@ -200,8 +198,9 @@ namespace webservice{
 	void ws_session< Derived >::send(
 		boost::beast::websocket::close_reason reason
 	){
-		ws_.close(reason);
-		close(boost::beast::websocket::error::closed);
+		dispatch(strand_, [this, reason]{
+			ws_.close(reason);
+		});
 	}
 
 	template < typename Derived >
@@ -231,17 +230,15 @@ namespace webservice{
 
 	ws_server_session::ws_server_session(
 		ws_stream&& ws,
-		ws_service& service
+		ws_service_impl& service
 	)
 		: ws_session< ws_server_session >(std::move(ws))
 		, service_(service) {}
 
 	ws_server_session::~ws_server_session(){
-		std::cout << "server_session1\n";
 		if(is_open_){
 			this->callback::on_close();
 		}
-		std::cout << "server_session2\n";
 	}
 
 	void ws_server_session::do_accept(
@@ -300,39 +297,39 @@ namespace webservice{
 
 	void ws_server_session::on_open()noexcept{
 		try{
-			service_.impl_->on_open(this, resource_);
+			service_.on_open(this, resource_);
 		}catch(...){
 			on_exception(std::current_exception());
 		}
 	}
 
 	void ws_server_session::on_close(){
-		service_.impl_->on_close(this, resource_);
+		service_.on_close(this, resource_);
 	}
 
 	void ws_server_session::on_text(
 		boost::beast::multi_buffer& buffer
 	){
-		service_.impl_->on_text(this, resource_, buffer);
+		service_.on_text(this, resource_, buffer);
 	}
 
 	void ws_server_session::on_binary(
 		boost::beast::multi_buffer& buffer
 	){
-		service_.impl_->on_binary(this, resource_, buffer);
+		service_.on_binary(this, resource_, buffer);
 	}
 
 	void ws_server_session::on_error(
 		ws_service_error error,
 		boost::system::error_code ec
 	){
-		service_.impl_->on_error(this, resource_, error, ec);
+		service_.on_error(this, resource_, error, ec);
 	}
 
 	void ws_server_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
-		service_.impl_->on_exception(this, resource_, error);
+		service_.on_exception(this, resource_, error);
 	}
 
 
@@ -349,15 +346,13 @@ namespace webservice{
 
 	ws_client_session::ws_client_session(
 		ws_stream&& ws,
-		ws_client& client
+		ws_client_impl& client
 	)
 		: ws_session< ws_client_session >(std::move(ws))
 		, client_(client) {}
 
 	ws_client_session::~ws_client_session(){
-		std::cout << "client_session1\n";
 		this->callback::on_close();
-		std::cout << "client_session2\n";
 	}
 
 
@@ -382,32 +377,32 @@ namespace webservice{
 	}
 
 	void ws_client_session::on_close(){
-		client_.impl_->on_close();
+		client_.on_close();
 	}
 
 	void ws_client_session::on_text(
 		boost::beast::multi_buffer& buffer
 	){
-		client_.impl_->on_text(buffer);
+		client_.on_text(buffer);
 	}
 
 	void ws_client_session::on_binary(
 		boost::beast::multi_buffer& buffer
 	){
-		client_.impl_->on_binary(buffer);
+		client_.on_binary(buffer);
 	}
 
 	void ws_client_session::on_error(
 		ws_client_error error,
 		boost::system::error_code ec
 	){
-		client_.impl_->on_error(error, ec);
+		client_.on_error(error, ec);
 	}
 
 	void ws_client_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
-		client_.impl_->on_exception(error);
+		client_.on_exception(error);
 	}
 
 
