@@ -180,7 +180,7 @@ namespace webservice{
 	template < typename Derived >
 	template < typename Data >
 	void ws_session< Derived >::send(std::shared_ptr< Data > data){
-		ws_.text(std::is_same_v< Data, std::string >);
+		ws_.text(std::is_same< Data, std::string >::value);
 		auto buffer = boost::asio::const_buffer(data->data(), data->size());
 		ws_.async_write(
 			std::move(buffer),

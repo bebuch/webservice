@@ -31,7 +31,7 @@ namespace webservice{
 			ws_server_session* const session,
 			std::string const& resource
 		){
-			std::unique_lock lock(mutex_);
+			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
 			sessions_.emplace(session);
 			lock.unlock();
 
@@ -47,7 +47,7 @@ namespace webservice{
 			self_.on_close(
 				reinterpret_cast< std::uintptr_t >(session), resource);
 
-			std::unique_lock lock(mutex_);
+			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
 			sessions_.erase(session);
 		}
 
@@ -105,7 +105,7 @@ namespace webservice{
 		/// \brief Send a message to all sessions
 		template < typename Data >
 		void send(Data const& data){
-			std::shared_lock lock(mutex_);
+			std::shared_lock< std::shared_timed_mutex > lock(mutex_);
 			for(auto const& session: sessions_){
 				send(session, data);
 			}
@@ -117,7 +117,7 @@ namespace webservice{
 			std::set< std::uintptr_t > const& identifiers,
 			Data const& data
 		){
-			std::shared_lock lock(mutex_);
+			std::shared_lock< std::shared_timed_mutex > lock(mutex_);
 			auto iter = identifiers.begin();
 			auto const end = identifiers.end();
 			for(auto const session: sessions_){
@@ -143,7 +143,7 @@ namespace webservice{
 			std::uintptr_t const identifier,
 			Data&& data
 		){
-			std::shared_lock lock(mutex_);
+			std::shared_lock< std::shared_timed_mutex > lock(mutex_);
 			auto const iter = sessions_.find(reinterpret_cast<
 				ws_server_session* >(identifier));
 			if(iter == sessions_.end()){
@@ -169,7 +169,10 @@ namespace webservice{
 		ws_service& self_;
 
 		/// \brief Protect sessions_
-		std::shared_mutex mutex_;
+		///
+		/// We don't need the timed-part, but C++14 has no non-timed
+		/// shared_mutex.
+		std::shared_timed_mutex mutex_;
 
 		/// \brief List of sessions registered by open, erased by close
 		std::set< ws_server_session* > sessions_;

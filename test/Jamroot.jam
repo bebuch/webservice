@@ -22,7 +22,7 @@ project webservice_test
 	<define>BOOST_HANA_CONFIG_ENABLE_STRING_UDL
 	<define>BOOST_ASIO_HAS_STD_CHRONO
 
-	<toolset>gcc:<cxxflags>-std=c++11
+	<toolset>gcc:<cxxflags>-std=c++14
 	<toolset>gcc:<cxxflags>-fconstexpr-depth=1024
 	<toolset>gcc:<cxxflags>-Wall
 	<toolset>gcc:<cxxflags>-Wextra
@@ -30,7 +30,7 @@ project webservice_test
 	<toolset>gcc:<linkflags>-lpthread
 	<toolset>gcc:<linkflags>-ldl
 
-	<toolset>clang:<cxxflags>-std=c++11
+	<toolset>clang:<cxxflags>-std=c++14
 	<toolset>clang:<cxxflags>-fconstexpr-depth=1024
 	<toolset>clang:<cxxflags>-Wall
 	<toolset>clang:<cxxflags>-Wextra

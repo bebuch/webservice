@@ -65,7 +65,7 @@ namespace webservice{
 
 		/// \copydoc server::block()
 		void block()noexcept{
-			std::lock_guard lock(mutex);
+			std::lock_guard< std::recursive_mutex > lock(mutex);
 			for(auto& thread: threads_){
 				if(thread.joinable()) thread.join();
 			}
