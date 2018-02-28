@@ -40,7 +40,7 @@ namespace webservice{
 	void ws_service::on_error(
 		std::uintptr_t /*identifier*/,
 		std::string const& /*resource*/,
-		ws_service_error /*error*/,
+		ws_service_location /*location*/,
 		boost::system::error_code /*ec*/){}
 
 	void ws_service::on_exception(

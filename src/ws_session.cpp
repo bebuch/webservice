@@ -32,7 +32,7 @@ namespace webservice{
 	template < typename Derived >
 	void ws_session< Derived >::on_timer(boost::system::error_code ec){
 		if(ec && ec != boost::asio::error::operation_aborted){
-			this->callback::on_error(error_type::timer, ec);
+			this->callback::on_error(location_type::timer, ec);
 			return;
 		}
 
@@ -97,7 +97,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->callback::on_error(error_type::ping, ec);
+			this->callback::on_error(location_type::ping, ec);
 			return;
 		}
 
@@ -144,7 +144,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->callback::on_error(error_type::read, ec);
+			this->callback::on_error(location_type::read, ec);
 		}
 
 		// Note that there is activity
@@ -172,7 +172,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->callback::on_error(error_type::write, ec);
+			this->callback::on_error(location_type::write, ec);
 			return;
 		}
 	}
@@ -283,7 +283,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->callback::on_error(ws_service_error::accept, ec);
+			this->callback::on_error(ws_service_location::accept, ec);
 			return;
 		}
 
@@ -316,10 +316,10 @@ namespace webservice{
 	}
 
 	void ws_server_session::on_error(
-		ws_service_error error,
+		ws_service_location location,
 		boost::system::error_code ec
 	){
-		service_.on_error(this, resource_, error, ec);
+		service_.on_error(this, resource_, location, ec);
 	}
 
 	void ws_server_session::on_exception(
@@ -404,10 +404,10 @@ namespace webservice{
 	}
 
 	void ws_client_session::on_error(
-		ws_client_error error,
+		ws_client_location location,
 		boost::system::error_code ec
 	){
-		client_.on_error(error, ec);
+		client_.on_error(location, ec);
 	}
 
 	void ws_client_session::on_exception(

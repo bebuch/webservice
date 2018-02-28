@@ -9,8 +9,8 @@
 #ifndef _webservice__ws_session__hpp_INCLUDED_
 #define _webservice__ws_session__hpp_INCLUDED_
 
-#include <webservice/ws_service_error.hpp>
-#include <webservice/ws_client_error.hpp>
+#include <webservice/ws_service_location.hpp>
+#include <webservice/ws_client_location.hpp>
 
 #include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/websocket.hpp>
@@ -36,16 +36,16 @@ namespace webservice{
 
 
 	template < typename Derived >
-	struct session_error_type;
+	struct session_location_type;
 
 	template <>
-	struct session_error_type< ws_server_session >{
-		using type = ws_service_error;
+	struct session_location_type< ws_server_session >{
+		using type = ws_service_location;
 	};
 
 	template <>
-	struct session_error_type< ws_client_session >{
-		using type = ws_client_error;
+	struct session_location_type< ws_client_session >{
+		using type = ws_client_location;
 	};
 
 
@@ -151,7 +151,7 @@ namespace webservice{
 
 
 	private:
-		using error_type = typename session_error_type< Derived >::type;
+		using location_type = typename session_location_type< Derived >::type;
 		using callback = ws_session_callbacks< Derived >;
 
 		boost::asio::steady_timer timer_;
@@ -194,7 +194,7 @@ namespace webservice{
 
 		/// \brief Called when an error occured
 		void on_error(
-			ws_service_error error,
+			ws_service_location location,
 			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown
@@ -239,7 +239,7 @@ namespace webservice{
 
 		/// \brief Called when an error occured
 		void on_error(
-			ws_client_error error,
+			ws_client_location location,
 			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown

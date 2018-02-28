@@ -9,7 +9,7 @@
 #ifndef _webservice__error_handler__hpp_INCLUDED_
 #define _webservice__error_handler__hpp_INCLUDED_
 
-#include "http_request_error.hpp"
+#include "http_request_location.hpp"
 
 #include <boost/system/error_code.hpp>
 

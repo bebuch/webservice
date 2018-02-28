@@ -79,13 +79,13 @@ namespace webservice{
 		void on_error(
 			ws_server_session* const session,
 			std::string const& resource,
-			ws_service_error error,
+			ws_service_location location,
 			boost::system::error_code ec
 		){
 			self_.on_error(
 				reinterpret_cast< std::uintptr_t >(session),
 				resource,
-				error,
+				location,
 				ec);
 		}
 

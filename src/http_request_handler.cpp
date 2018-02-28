@@ -27,7 +27,7 @@ namespace webservice{
 	http_request_handler::~http_request_handler(){}
 
 	void http_request_handler::on_error(
-		http_request_error /*error*/,
+		http_request_location /*location*/,
 		boost::system::error_code /*ec*/){}
 
 	void http_request_handler::on_exception(

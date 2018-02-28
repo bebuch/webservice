@@ -21,7 +21,7 @@ namespace webservice{
 		void on_error(
 			std::uintptr_t,
 			std::string const&,
-			ws_service_error,
+			ws_service_location,
 			boost::system::error_code ec
 		)override{
 			throw boost::system::system_error(ec);

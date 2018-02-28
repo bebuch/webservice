@@ -158,10 +158,10 @@ namespace webservice{
 
 		/// \brief Called when an error occured
 		void on_error(
-			ws_client_error error,
+			ws_client_location location,
 			boost::system::error_code ec
 		){
-			self_.on_error(error, ec);
+			self_.on_error(location, ec);
 		}
 
 		/// \brief Called when an exception was thrown

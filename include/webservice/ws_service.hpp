@@ -9,7 +9,7 @@
 #ifndef _webservice__ws_service__hpp_INCLUDED_
 #define _webservice__ws_service__hpp_INCLUDED_
 
-#include "ws_service_error.hpp"
+#include "ws_service_location.hpp"
 
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/string.hpp>
@@ -111,7 +111,7 @@ namespace webservice{
 		virtual void on_error(
 			std::uintptr_t identifier,
 			std::string const& resource,
-			ws_service_error error,
+			ws_service_location location,
 			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown

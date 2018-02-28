@@ -9,7 +9,7 @@
 #ifndef _webservice__ws_client__hpp_INCLUDED_
 #define _webservice__ws_client__hpp_INCLUDED_
 
-#include <webservice/ws_client_error.hpp>
+#include <webservice/ws_client_location.hpp>
 
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/string.hpp>
@@ -92,7 +92,7 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_error(
-			ws_client_error error,
+			ws_client_location location,
 			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown
