@@ -30,7 +30,7 @@ namespace webservice{
 		explicit http_session(
 			boost::asio::ip::tcp::socket&& socket,
 			http_request_handler& handler,
-			ws_service_impl& service
+			ws_service_base_impl& service
 		)
 			: socket_(std::move(socket))
 			, handler_(handler)
@@ -235,7 +235,7 @@ namespace webservice{
 
 		boost::asio::ip::tcp::socket socket_;
 		http_request_handler& handler_;
-		ws_service_impl& service_;
+		ws_service_base_impl& service_;
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
 		boost::asio::steady_timer timer_;
 		boost::beast::flat_buffer buffer_;

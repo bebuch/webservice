@@ -6,10 +6,10 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__ws_service_impl__hpp_INCLUDED_
-#define _webservice__ws_service_impl__hpp_INCLUDED_
+#ifndef _webservice__ws_service_base_impl__hpp_INCLUDED_
+#define _webservice__ws_service_base_impl__hpp_INCLUDED_
 
-#include <webservice/ws_service.hpp>
+#include <webservice/ws_service_base.hpp>
 
 #include "ws_session.hpp"
 
@@ -19,11 +19,11 @@
 namespace webservice{
 
 
-	/// \brief Implementation of ws_service
-	class ws_service_impl{
+	/// \brief Implementation of ws_service_base
+	class ws_service_base_impl{
 	public:
 		/// \brief Constructor
-		ws_service_impl(ws_service& self):
+		ws_service_base_impl(ws_service_base& self):
 			self_(self) {}
 
 		/// \brief Called with a unique identifier when a sessions starts
@@ -166,7 +166,7 @@ namespace webservice{
 
 
 		/// \brief Reference to the actual object
-		ws_service& self_;
+		ws_service_base& self_;
 
 		/// \brief Protect sessions_
 		///

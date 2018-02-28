@@ -22,7 +22,7 @@ namespace webservice{
 	public:
 		listener(
 			std::unique_ptr< http_request_handler > handler,
-			std::unique_ptr< ws_service > service,
+			std::unique_ptr< ws_service_base > service,
 			std::unique_ptr< error_handler > error_handler,
 			boost::asio::io_context& ioc,
 			boost::asio::ip::tcp::endpoint endpoint
@@ -81,7 +81,7 @@ namespace webservice{
 
 	private:
 		std::unique_ptr< http_request_handler > handler_;
-		std::unique_ptr< ws_service > service_;
+		std::unique_ptr< ws_service_base > service_;
 		std::unique_ptr< error_handler > error_handler_;
 		boost::asio::ip::tcp::acceptor acceptor_;
 		boost::asio::ip::tcp::socket socket_;

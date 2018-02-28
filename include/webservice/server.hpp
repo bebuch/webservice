@@ -10,7 +10,7 @@
 #define _webservice__server__hpp_INCLUDED_
 
 #include "http_request_handler.hpp"
-#include "ws_service.hpp"
+#include "ws_service_base.hpp"
 #include "error_handler.hpp"
 
 
@@ -30,7 +30,7 @@ namespace webservice{
 		/// \param thread_count Count of threads that proccess request parallel
 		server(
 			std::unique_ptr< http_request_handler > http_handler,
-			std::unique_ptr< ws_service > service,
+			std::unique_ptr< ws_service_base > service,
 			std::unique_ptr< error_handler > error_handler,
 			boost::asio::ip::address address,
 			std::uint16_t port,

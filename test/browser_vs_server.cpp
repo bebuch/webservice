@@ -117,10 +117,9 @@ struct ws_service: webservice::error_printing_webservice{
 	void on_text(
 		std::uintptr_t,
 		std::string const&,
-		boost::beast::multi_buffer const& buffer
+		std::string&& text
 	)override{
 		check(state_t::ws_text);
-		auto text = boost::beast::buffers_to_string(buffer.data());
 		std::cout << "text: '" << text << "'\n";
 		send_text(std::move(text));
 	}
@@ -128,13 +127,12 @@ struct ws_service: webservice::error_printing_webservice{
 	void on_binary(
 		std::uintptr_t,
 		std::string const&,
-		boost::beast::multi_buffer const& buffer
+		std::vector< std::uint8_t >&& data
 	)override{
 		check(state_t::ws_binary);
-		auto const text = boost::beast::buffers_to_string(buffer.data());
+		std::string text(data.begin(), data.end());
 		std::cout << "binary: '" << text << "'\n";
-		send_binary(std::vector< std::uint8_t >(
-			std::begin(text), std::end(text)));
+		send_binary(data);
 		close("shutdown");
 	}
 };

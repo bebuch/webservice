@@ -6,10 +6,9 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include "ws_service_impl.hpp"
-#include "ws_client_impl.hpp"
+#include "ws_service_base_impl.hpp"
+#include "ws_client_base_impl.hpp"
 
-#include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/websocket.hpp>
 
 #include <boost/asio/strand.hpp>
@@ -178,18 +177,26 @@ namespace webservice{
 	}
 
 	template < typename Derived >
-	template < typename Data >
-	void ws_session< Derived >::send(std::shared_ptr< Data > data){
-		ws_.text(std::is_same< Data, std::string >::value);
-		auto buffer = boost::asio::const_buffer(data->data(), data->size());
+	template < typename Tag >
+	void ws_session< Derived >::send(
+			std::tuple< Tag,
+				boost::asio::const_buffer,
+				std::shared_ptr< boost::any > > data){
+		ws_.text(std::is_same< Tag, text_tag >::value);
 		ws_.async_write(
-			std::move(buffer),
+			std::get< 1 >(data),
 			boost::asio::bind_executor(
 				strand_,
-				[this_ = this->shared_from_this(), data = std::move(data)](
+				[
+					this_ = this->shared_from_this(),
+					data = std::move(std::get< 2 >(data))
+				](
 					boost::system::error_code ec,
 					std::size_t /*bytes_transferred*/
-				){
+				)mutable{
+					// shared_ptr keeps data alive until last write
+					data.reset();
+
 					this_->on_write(ec);
 				}));
 	}
@@ -217,12 +224,15 @@ namespace webservice{
 	}
 
 
-	template void ws_session< ws_server_session >
-		::send< std::vector< std::uint8_t > >(
-			std::shared_ptr< std::vector< std::uint8_t > > data
-		);
-	template void ws_session< ws_server_session >
-		::send< std::string >(std::shared_ptr< std::string > data);
+	template void ws_session< ws_server_session >::send< text_tag >(
+			std::tuple< text_tag,
+				boost::asio::const_buffer,
+				std::shared_ptr< boost::any > > data);
+
+	template void ws_session< ws_server_session >::send< binary_tag >(
+		std::tuple< binary_tag,
+				boost::asio::const_buffer,
+				std::shared_ptr< boost::any > > data);
 
 	template void ws_session< ws_server_session >
 		::send(boost::beast::websocket::close_reason reason);
@@ -230,7 +240,7 @@ namespace webservice{
 
 	ws_server_session::ws_server_session(
 		ws_stream&& ws,
-		ws_service_impl& service
+		ws_service_base_impl& service
 	)
 		: ws_session< ws_server_session >(std::move(ws))
 		, service_(service) {}
@@ -329,32 +339,35 @@ namespace webservice{
 	}
 
 
-	template void ws_session< ws_client_session >
-		::send< std::vector< std::uint8_t > >(
-			std::shared_ptr< std::vector< std::uint8_t > > data
-		);
-	template void ws_session< ws_client_session >
-		::send< std::string >(std::shared_ptr< std::string > data);
+	template void ws_session< ws_client_base_session >::send< text_tag >(
+			std::tuple< text_tag,
+				boost::asio::const_buffer,
+				std::shared_ptr< boost::any > > data);
 
-	template void ws_session< ws_client_session >
+	template void ws_session< ws_client_base_session >::send< binary_tag >(
+		std::tuple< binary_tag,
+				boost::asio::const_buffer,
+				std::shared_ptr< boost::any > > data);
+
+	template void ws_session< ws_client_base_session >
 		::send(boost::beast::websocket::close_reason reason);
 
 
-	ws_client_session::ws_client_session(
+	ws_client_base_session::ws_client_base_session(
 		ws_stream&& ws,
-		ws_client_impl& client
+		ws_client_base_impl& client
 	)
-		: ws_session< ws_client_session >(std::move(ws))
+		: ws_session< ws_client_base_session >(std::move(ws))
 		, client_(client) {}
 
-	ws_client_session::~ws_client_session(){
+	ws_client_base_session::~ws_client_base_session(){
 		if(is_open_){
 			this->callback::on_close();
 		}
 	}
 
 
-	void ws_client_session::start(){
+	void ws_client_base_session::start(){
 		// Set the control callback. This will be called
 		// on every incoming ping, pong, and close frame.
 		ws_.control_callback(
@@ -383,34 +396,34 @@ namespace webservice{
 	}
 
 
-	void ws_client_session::on_open(){
+	void ws_client_base_session::on_open(){
 		client_.on_open();
 	}
 
-	void ws_client_session::on_close(){
+	void ws_client_base_session::on_close(){
 		client_.on_close();
 	}
 
-	void ws_client_session::on_text(
+	void ws_client_base_session::on_text(
 		boost::beast::multi_buffer const& buffer
 	){
 		client_.on_text(buffer);
 	}
 
-	void ws_client_session::on_binary(
+	void ws_client_base_session::on_binary(
 		boost::beast::multi_buffer const& buffer
 	){
 		client_.on_binary(buffer);
 	}
 
-	void ws_client_session::on_error(
+	void ws_client_base_session::on_error(
 		ws_client_location location,
 		boost::system::error_code ec
 	){
 		client_.on_error(location, ec);
 	}
 
-	void ws_client_session::on_exception(
+	void ws_client_base_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
 		client_.on_exception(error);

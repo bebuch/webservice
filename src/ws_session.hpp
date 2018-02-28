@@ -20,16 +20,21 @@
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/bind_executor.hpp>
 
+#include <boost/any.hpp>
+
 #include <memory>
 
 
 namespace webservice{
 
 
-	class ws_service_impl;
-	class ws_client_impl;
+	class binary_tag{};
+	class text_tag{};
+
+	class ws_service_base_impl;
+	class ws_client_base_impl;
 	class ws_server_session;
-	class ws_client_session;
+	class ws_client_base_session;
 
 	using ws_stream =
 		boost::beast::websocket::stream< boost::asio::ip::tcp::socket >;
@@ -44,7 +49,7 @@ namespace webservice{
 	};
 
 	template <>
-	struct session_location_type< ws_client_session >{
+	struct session_location_type< ws_client_base_session >{
 		using type = ws_client_location;
 	};
 
@@ -132,8 +137,11 @@ namespace webservice{
 		void on_write(boost::system::error_code ec);
 
 		/// \brief Send a message
-		template < typename Data >
-		void send(std::shared_ptr< Data > data);
+		template < typename Tag >
+		void send(
+			std::tuple< Tag,
+				boost::asio::const_buffer,
+				std::shared_ptr< boost::any > > data);
 
 		/// \brief Close the session
 		void send(boost::beast::websocket::close_reason reason);
@@ -165,7 +173,7 @@ namespace webservice{
 		/// \brief Take ownership of the socket
 		explicit ws_server_session(
 			ws_stream&& ws,
-			ws_service_impl& service);
+			ws_service_base_impl& service);
 
 		/// \brief Destructor
 		~ws_server_session();
@@ -204,21 +212,21 @@ namespace webservice{
 	private:
 		using callback = ws_session_callbacks< ws_server_session >;
 
-		ws_service_impl& service_;
+		ws_service_base_impl& service_;
 		std::string resource_;
 		bool is_open_ = false;
 	};
 
 
-	class ws_client_session: public ws_session< ws_client_session >{
+	class ws_client_base_session: public ws_session< ws_client_base_session >{
 	public:
 		/// \brief Take ownership of the socket
-		explicit ws_client_session(
+		explicit ws_client_base_session(
 			ws_stream&& ws,
-			ws_client_impl& client);
+			ws_client_base_impl& client);
 
 		/// \brief Destructor
-		~ws_client_session();
+		~ws_client_base_session();
 
 
 		/// \brief Start the session
@@ -247,9 +255,9 @@ namespace webservice{
 
 
 	private:
-		using callback = ws_session_callbacks< ws_client_session >;
+		using callback = ws_session_callbacks< ws_client_base_session >;
 
-		ws_client_impl& client_;
+		ws_client_base_impl& client_;
 		bool is_open_ = false;
 	};
 

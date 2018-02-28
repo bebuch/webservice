@@ -6,10 +6,10 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__ws_client_impl__hpp_INCLUDED_
-#define _webservice__ws_client_impl__hpp_INCLUDED_
+#ifndef _webservice__ws_client_base_impl__hpp_INCLUDED_
+#define _webservice__ws_client_base_impl__hpp_INCLUDED_
 
-#include <webservice/ws_client.hpp>
+#include <webservice/ws_client_base.hpp>
 
 #include "ws_session.hpp"
 
@@ -33,11 +33,11 @@
 namespace webservice{
 
 
-	class ws_client_impl{
+	class ws_client_base_impl{
 	public:
 		/// \brief Constructor
-		ws_client_impl(
-			ws_client& self,
+		ws_client_base_impl(
+			ws_client_base& self,
 			std::string&& host,
 			std::string&& port,
 			std::string&& resource
@@ -52,7 +52,7 @@ namespace webservice{
 			, resolver_(ioc_) {}
 
 		/// \brief Destructor
-		~ws_client_impl(){
+		~ws_client_base_impl(){
 			send("client shutdown");
 			stop();
 			block();
@@ -83,7 +83,7 @@ namespace webservice{
 
 			// Create a WebSocket session by transferring the socket
 			auto session =
-				std::make_shared< ws_client_session >(std::move(ws), *this);
+				std::make_shared< ws_client_base_session >(std::move(ws), *this);
 
 			session->start();
 
@@ -172,7 +172,7 @@ namespace webservice{
 
 	private:
 		/// \brief Pointer to implementation
-		ws_client& self_;
+		ws_client_base& self_;
 
 		std::string const host_;
 		std::string const port_;
@@ -182,7 +182,7 @@ namespace webservice{
 
 		boost::asio::io_context ioc_;
 		boost::asio::ip::tcp::resolver resolver_;
-		std::weak_ptr< ws_client_session > session_;
+		std::weak_ptr< ws_client_base_session > session_;
 		std::thread thread_;
 	};
 

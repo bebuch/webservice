@@ -120,10 +120,9 @@ struct ws_service: webservice::error_printing_webservice{
 	void on_text(
 		std::uintptr_t,
 		std::string const&,
-		boost::beast::multi_buffer const& buffer
+		std::string&& text
 	)override{
 		check(state_t::ws_text);
-		auto const text = boost::beast::buffers_to_string(buffer.data());
 		if(test_text == text){
 			std::cout << "\033[1;32mpass: '"
 				<< test_text
@@ -140,10 +139,10 @@ struct ws_service: webservice::error_printing_webservice{
 	void on_binary(
 		std::uintptr_t,
 		std::string const&,
-		boost::beast::multi_buffer const& buffer
+		std::vector< std::uint8_t >&& data
 	)override{
 		check(state_t::ws_binary);
-		auto const text = boost::beast::buffers_to_string(buffer.data());
+		std::string text(data.begin(), data.end());
 		if(test_text == text){
 			std::cout << "\033[1;32mpass: '"
 				<< test_text

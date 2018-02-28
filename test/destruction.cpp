@@ -7,6 +7,7 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include <webservice/server.hpp>
+#include <webservice/ws_service.hpp>
 #include <webservice/ws_client.hpp>
 
 #include <boost/make_unique.hpp>
