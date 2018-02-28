@@ -45,7 +45,10 @@ namespace webservice{
 			: self_(self)
 			, host_(std::move(host))
 			, port_(std::move(port))
-			, resource_(std::move(resource))
+			, resource_([](std::string&& resource){
+					if(resource.empty()) resource = "/";
+					return std::move(resource);
+				}(std::move(resource)))
 			, resolver_(ioc_) {}
 
 		/// \brief Destructor
