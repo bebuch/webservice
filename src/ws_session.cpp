@@ -22,9 +22,13 @@ namespace webservice{
 
 
 	template < typename Derived >
-	ws_session< Derived >::ws_session(ws_stream&& ws)
+	ws_session< Derived >::ws_session(
+		ws_stream&& ws,
+		boost::optional< std::chrono::milliseconds > websocket_ping_time
+	)
 		: ws_(std::move(ws))
 		, strand_(ws_.get_executor())
+		, websocket_ping_time_(websocket_ping_time)
 		, timer_(ws_.get_executor().context(),
 			std::chrono::steady_clock::time_point::max())
 	{
@@ -33,6 +37,8 @@ namespace webservice{
 
 	template < typename Derived >
 	void ws_session< Derived >::on_timer(boost::system::error_code ec){
+		if(!websocket_ping_time_) return;
+
 		if(std::is_same< Derived, ws_server_session >::value){
 			std::cout << "server on_timer: " << ec.message() << "\n";
 		}else{
@@ -102,7 +108,9 @@ namespace webservice{
 
 	template < typename Derived >
 	void ws_session< Derived >::start_timer(){
-		timer_.expires_after(std::chrono::seconds(5));
+		if(websocket_ping_time_){
+			timer_.expires_after(*websocket_ping_time_);
+		}
 	}
 
 	template < typename Derived >
@@ -273,9 +281,10 @@ namespace webservice{
 
 	ws_server_session::ws_server_session(
 		ws_stream&& ws,
-		ws_service_base_impl& service
+		ws_service_base_impl& service,
+		boost::optional< std::chrono::milliseconds > websocket_ping_time
 	)
-		: ws_session< ws_server_session >(std::move(ws))
+		: ws_session< ws_server_session >(std::move(ws), websocket_ping_time)
 		, service_(service) {}
 
 	ws_server_session::~ws_server_session(){
@@ -404,9 +413,10 @@ namespace webservice{
 
 	ws_client_session::ws_client_session(
 		ws_stream&& ws,
-		ws_client_base_impl& client
+		ws_client_base_impl& client,
+		boost::optional< std::chrono::milliseconds > websocket_ping_time
 	)
-		: ws_session< ws_client_session >(std::move(ws))
+		: ws_session< ws_client_session >(std::move(ws), websocket_ping_time)
 		, client_(client) {}
 
 	ws_client_session::~ws_client_session(){

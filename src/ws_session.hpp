@@ -23,6 +23,8 @@
 
 #include <boost/any.hpp>
 
+#include <boost/optional.hpp>
+
 #include <memory>
 
 
@@ -118,7 +120,7 @@ namespace webservice{
 		, public std::enable_shared_from_this< Derived >{
 	public:
 		/// \brief Take ownership of the socket
-		explicit ws_session(ws_stream&& ws);
+		explicit ws_session(ws_stream&& ws, boost::optional< std::chrono::milliseconds > websocket_ping_time);
 
 		/// \brief Called when the timer expires.
 		void on_timer(boost::system::error_code ec);
@@ -161,6 +163,8 @@ namespace webservice{
 		using location_type = typename session_location_type< Derived >::type;
 		using callback = ws_session_callbacks< Derived >;
 
+		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
+
 		boost::asio::steady_timer timer_;
 		boost::beast::multi_buffer buffer_;
 		char ping_state_ = 0;
@@ -172,7 +176,8 @@ namespace webservice{
 		/// \brief Take ownership of the socket
 		explicit ws_server_session(
 			ws_stream&& ws,
-			ws_service_base_impl& service);
+			ws_service_base_impl& service,
+			boost::optional< std::chrono::milliseconds > websocket_ping_time);
 
 		/// \brief Destructor
 		~ws_server_session();
@@ -222,7 +227,8 @@ namespace webservice{
 		/// \brief Take ownership of the socket
 		explicit ws_client_session(
 			ws_stream&& ws,
-			ws_client_base_impl& client);
+			ws_client_base_impl& client,
+			boost::optional< std::chrono::milliseconds > websocket_ping_time);
 
 		/// \brief Destructor
 		~ws_client_session();

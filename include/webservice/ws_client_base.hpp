@@ -17,6 +17,8 @@
 
 #include <boost/any.hpp>
 
+#include <boost/optional.hpp>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -31,7 +33,9 @@ namespace webservice{
 		ws_client_base(
 			std::string host,
 			std::string port,
-			std::string resource
+			std::string resource,
+			boost::optional< std::chrono::milliseconds > websocket_ping_time
+				= {}
 		);
 
 		/// \brief Destructor

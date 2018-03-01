@@ -30,7 +30,8 @@ namespace webservice{
 		explicit http_session(
 			boost::asio::ip::tcp::socket&& socket,
 			http_request_handler& handler,
-			ws_service_base_impl& service
+			ws_service_base_impl& service,
+			boost::optional< std::chrono::milliseconds > websocket_ping_time
 		)
 			: socket_(std::move(socket))
 			, handler_(handler)
@@ -38,6 +39,7 @@ namespace webservice{
 			, strand_(socket_.get_executor())
 			, timer_(socket_.get_executor().context(),
 				std::chrono::steady_clock::time_point::max())
+			, websocket_ping_time_(websocket_ping_time)
 			{}
 
 		void run(){
@@ -124,7 +126,8 @@ namespace webservice{
 			if(boost::beast::websocket::is_upgrade(req_)){
 				// Create a ws_session by transferring the socket
 				auto session = std::make_shared< ws_server_session >(
-					ws_stream(std::move(socket_)), service_);
+					ws_stream(std::move(socket_)), service_,
+					websocket_ping_time_);
 
 				session->do_accept(std::move(req_));
 			}else{
@@ -238,6 +241,7 @@ namespace webservice{
 		ws_service_base_impl& service_;
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
 		boost::asio::steady_timer timer_;
+		boost::optional< std::chrono::milliseconds > websocket_ping_time_;
 		boost::beast::flat_buffer buffer_;
 		boost::beast::http::request< boost::beast::http::string_body > req_;
 		queue queue_;

@@ -28,13 +28,18 @@ namespace webservice{
 		/// \param address IP address (IPv4 or IPv6)
 		/// \param port TCP Port
 		/// \param thread_count Count of threads that proccess request parallel
+		/// \param websocket_ping_time If not set no pings are send, otherwise
+		///                            a ping is send after this time without
+		///                            activity
 		server(
 			std::unique_ptr< http_request_handler > http_handler,
 			std::unique_ptr< ws_service_base > service,
 			std::unique_ptr< error_handler > error_handler,
 			boost::asio::ip::address address,
 			std::uint16_t port,
-			std::uint8_t thread_count = 1
+			std::uint8_t thread_count = 1,
+			boost::optional< std::chrono::milliseconds > websocket_ping_time
+				= {}
 		);
 
 		/// \brief Close all connections and wait on all processing threads

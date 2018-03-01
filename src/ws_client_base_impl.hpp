@@ -40,7 +40,8 @@ namespace webservice{
 			ws_client_base& self,
 			std::string&& host,
 			std::string&& port,
-			std::string&& resource
+			std::string&& resource,
+			boost::optional< std::chrono::milliseconds > websocket_ping_time
 		)
 			: self_(self)
 			, host_(std::move(host))
@@ -49,7 +50,8 @@ namespace webservice{
 					if(resource.empty()) resource = "/";
 					return std::move(resource);
 				}(std::move(resource)))
-			, resolver_(ioc_) {}
+			, resolver_(ioc_)
+			, websocket_ping_time_(websocket_ping_time) {}
 
 
 		/// \brief Connect client to server
@@ -75,8 +77,8 @@ namespace webservice{
 			ws.handshake(host_, resource_);
 
 			// Create a WebSocket session by transferring the socket
-			auto session =
-				std::make_shared< ws_client_session >(std::move(ws), *this);
+			auto session = std::make_shared< ws_client_session >(
+				std::move(ws), *this, websocket_ping_time_);
 
 			session->start();
 
@@ -175,6 +177,7 @@ namespace webservice{
 
 		boost::asio::io_context ioc_;
 		boost::asio::ip::tcp::resolver resolver_;
+		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
 		std::weak_ptr< ws_client_session > session_;
 		std::thread thread_;
 	};

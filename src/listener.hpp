@@ -25,11 +25,13 @@ namespace webservice{
 			std::unique_ptr< ws_service_base > service,
 			std::unique_ptr< error_handler > error_handler,
 			boost::asio::io_context& ioc,
-			boost::asio::ip::tcp::endpoint endpoint
+			boost::asio::ip::tcp::endpoint endpoint,
+			boost::optional< std::chrono::milliseconds > websocket_ping_time
 		)
 			: handler_(std::move(handler))
 			, service_(std::move(service))
 			, error_handler_(std::move(error_handler))
+			, websocket_ping_time_(websocket_ping_time)
 			, acceptor_(ioc)
 			, socket_(ioc)
 		{
@@ -65,7 +67,8 @@ namespace webservice{
 			}else{
 				// Create the http_session and run it
 				auto session = std::make_shared< http_session >(
-					std::move(socket_), *handler_, *service_->impl_);
+					std::move(socket_), *handler_, *service_->impl_,
+					websocket_ping_time_);
 
 				session->run();
 			}
@@ -83,6 +86,7 @@ namespace webservice{
 		std::unique_ptr< http_request_handler > handler_;
 		std::unique_ptr< ws_service_base > service_;
 		std::unique_ptr< error_handler > error_handler_;
+		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
 		boost::asio::ip::tcp::acceptor acceptor_;
 		boost::asio::ip::tcp::socket socket_;
 	};

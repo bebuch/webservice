@@ -140,9 +140,11 @@ int main(){
 				make_unique< request_handler >(),
 				make_unique< ws_service >(),
 				make_unique< webservice::error_printing_error_handler >(),
-				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
+				boost::asio::ip::make_address("127.0.0.1"), 1234, 1,
+				std::chrono::milliseconds(15000));
 
-			ws_client client("127.0.0.1", "1234", "/");
+			ws_client client("127.0.0.1", "1234", "/",
+				std::chrono::milliseconds(15000));
 			client.connect();
 
 			server.block();
