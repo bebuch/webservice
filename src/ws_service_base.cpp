@@ -49,59 +49,49 @@ namespace webservice{
 		std::exception_ptr /*error*/)noexcept{}
 
 
-	void ws_service_base::send_text(
-		boost::asio::const_buffer const& buffer,
-		std::shared_ptr< boost::any > data
-	){
-		impl_->send(std::make_tuple(text_tag{}, buffer, std::move(data)));
+	void ws_service_base::send_text(shared_const_buffer buffer){
+		impl_->send(std::make_tuple(text_tag{}, std::move(buffer)));
 	}
 
 	void ws_service_base::send_text(
 		std::uintptr_t const identifier,
-		boost::asio::const_buffer const& buffer,
-		std::shared_ptr< boost::any > data
+		shared_const_buffer buffer
 	){
 		impl_->send(
 			identifier,
-			std::make_tuple(text_tag{}, buffer, std::move(data)));
+			std::make_tuple(text_tag{}, std::move(buffer)));
 	}
 
 	void ws_service_base::send_text(
 		std::set< std::uintptr_t > const& identifier,
-		boost::asio::const_buffer const& buffer,
-		std::shared_ptr< boost::any > data
+		shared_const_buffer buffer
 	){
 		impl_->send(
 			identifier,
-			std::make_tuple(text_tag{}, buffer, std::move(data)));
+			std::make_tuple(text_tag{}, std::move(buffer)));
 	}
 
 
-	void ws_service_base::send_binary(
-		boost::asio::const_buffer const& buffer,
-		std::shared_ptr< boost::any > data
-	){
-		impl_->send(std::make_tuple(binary_tag{}, buffer, std::move(data)));
+	void ws_service_base::send_binary(shared_const_buffer buffer){
+		impl_->send(std::make_tuple(binary_tag{}, std::move(buffer)));
 	}
 
 	void ws_service_base::send_binary(
 		std::uintptr_t const identifier,
-		boost::asio::const_buffer const& buffer,
-		std::shared_ptr< boost::any > data
+		shared_const_buffer buffer
 	){
 		impl_->send(
 			identifier,
-			std::make_tuple(binary_tag{}, buffer, std::move(data)));
+			std::make_tuple(binary_tag{}, std::move(buffer)));
 	}
 
 	void ws_service_base::send_binary(
 		std::set< std::uintptr_t > const& identifier,
-		boost::asio::const_buffer const& buffer,
-		std::shared_ptr< boost::any > data
+		shared_const_buffer buffer
 	){
 		impl_->send(
 			identifier,
-			std::make_tuple(binary_tag{}, buffer, std::move(data)));
+			std::make_tuple(binary_tag{}, std::move(buffer)));
 	}
 
 

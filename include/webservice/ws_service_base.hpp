@@ -9,6 +9,7 @@
 #ifndef _webservice__ws_service_base__hpp_INCLUDED_
 #define _webservice__ws_service_base__hpp_INCLUDED_
 
+#include "shared_const_buffer.hpp"
 #include "ws_service_location.hpp"
 
 #include <boost/beast/core/multi_buffer.hpp>
@@ -35,39 +36,31 @@ namespace webservice{
 
 
 		/// \brief Send a text message to all sessions
-		void send_text(
-			boost::asio::const_buffer const& buffer,
-			std::shared_ptr< boost::any > data);
+		void send_text(shared_const_buffer buffer);
 
 		/// \brief Send a text message to session by identifier
 		void send_text(
 			std::uintptr_t identifier,
-			boost::asio::const_buffer const& buffer,
-			std::shared_ptr< boost::any > data);
+			shared_const_buffer buffer);
 
 		/// \brief Send a text message to all sessions by identifier
 		void send_text(
 			std::set< std::uintptr_t > const& identifier,
-			boost::asio::const_buffer const& buffer,
-			std::shared_ptr< boost::any > data);
+			shared_const_buffer buffer);
 
 
 		/// \brief Send a binary message to all sessions
-		void send_binary(
-			boost::asio::const_buffer const& buffer,
-			std::shared_ptr< boost::any > data);
+		void send_binary(shared_const_buffer buffer);
 
 		/// \brief Send a binary message to session by identifier
 		void send_binary(
 			std::uintptr_t identifier,
-			boost::asio::const_buffer const& buffer,
-			std::shared_ptr< boost::any > data);
+			shared_const_buffer buffer);
 
 		/// \brief Send a binary message to all sessions by identifier
 		void send_binary(
 			std::set< std::uintptr_t > const& identifier,
-			boost::asio::const_buffer const& buffer,
-			std::shared_ptr< boost::any > data);
+			shared_const_buffer buffer);
 
 
 		/// \brief Shutdown all sessions

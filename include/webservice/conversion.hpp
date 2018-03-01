@@ -21,72 +21,27 @@
 namespace webservice{
 
 
-	template < typename T, typename = void const* >
-	struct has_data_function: std::false_type{};
-
-	template < typename T >
-	struct has_data_function< T,
-			decltype((void const*)std::declval< T >().data()) >
-		: std::true_type{};
-
-
-	template < typename T, typename = std::size_t >
-	struct has_size_function: std::false_type{};
-
-	template < typename T >
-	struct has_size_function< T,
-			decltype((std::size_t)std::declval< T >().size()) >
-		: std::true_type{};
-
-
-	template < typename T, typename = void const* >
-	struct size_of_data_type: std::integral_constant< std::size_t, 0 >{};
-
-	template < typename T >
-	struct size_of_data_type< T,
-			decltype((void const*)std::declval< T >().data()) >
-		: std::integral_constant<
-			std::size_t, sizeof(*std::declval< T >().data()) >{};
-
-
-	template < typename T >
-	struct to_const_buffer_t{
-		static_assert(
-			has_data_function< T >::value &&
-			has_size_function< T >::value &&
-			size_of_data_type< T >::value == 1,
-			"T must have a .data() and a .size() member function and .data() "
-			"must return a pointer to a type with sizeof equal 1, "
-			"alternatively you can specialize to_const_buffer_t with a "
-			"function operator that takes an object of type T and returns "
-			"a boost::asio::const_buffer");
-
-		boost::asio::const_buffer operator()(T const& data)const{
-			return boost::asio::const_buffer(data.data(), data.size());
-		}
-	};
-
-
-	template < typename T, typename = void >
-	struct has_append_function: std::false_type{};
-
-	template < typename T >
-	struct has_append_function< T,
-			decltype((void)std::declval< T >().append(
-				std::declval< T >().data(), std::size_t{})) >
-		: std::true_type{};
-
-
 	namespace detail{
 
 
-		/// \brief C++14 Workaround helper
+		template < typename T, typename = void >
+		struct has_insert_function: std::false_type{};
+
+		template < typename T >
+		struct has_insert_function< T,
+				decltype((void)std::declval< T >().insert(
+					std::declval< T >().end(),
+					std::declval< typename T::value_type const* >(),
+					std::declval< typename T::value_type const* >()
+				)) >
+			: std::true_type{};
+
+
 		template < typename T, typename = void >
 		struct call_reserve{
 			void operator()(T&, std::size_t s)const{}
 		};
 
-		/// \brief Workaround for C++14 which has no non-const data() member
 		template < typename T >
 		struct call_reserve< T,
 			decltype(std::declval< T >().reserve(std::size_t{})) >
@@ -102,20 +57,15 @@ namespace webservice{
 
 	template < typename T >
 	struct from_multi_buffer_t{
-// 		static_assert(
-// 			std::is_default_constructible< T >::value &&
-// 			has_data_function< T >::value &&
-// 			has_size_function< T >::value &&
-// 			size_of_data_type< T >::value == 1 &&
-// 			has_append_function< T >::value,
-// 			"T must be default constructible and have a .data() and "
-// 			"a .size() member function and .data() "
-// 			"must return a pointer to a type value_type with sizeof equal 1 "
-// 			"and T must have a .append(value_type*, std::size_t) "
-// 			"member function, "
-// 			"alternatively you can specialize from_multi_buffer_t with a "
-// 			"function operator that takes a boost::beast::multi_buffer object "
-// 			"returns an object of type T");
+		static_assert(
+			std::is_default_constructible< T >::value &&
+			detail::has_insert_function< T >::value,
+			"T must be default constructable, have a type member value_type "
+			"with sizeof equal 1 as well as the iterator functions .end() and "
+			".insert(iterator, const value_type*, const value_type*); "
+			"alternatively you can specialize from_multi_buffer_t with a "
+			"function operator that takes a boost::beast::multi_buffer object "
+			"returns an object of type T");
 
 		T operator()(boost::beast::multi_buffer const& buffer)const{
 			T result;
@@ -129,10 +79,8 @@ namespace webservice{
 				iter != end; ++iter
 			){
 				boost::asio::const_buffer buffer(*iter);
-				auto const data = reinterpret_cast< typename
-						std::remove_pointer< decltype(result.data()) >
-							::type const*
-					>(buffer.data());
+				auto const data = reinterpret_cast<
+					typename T::value_type const* >(buffer.data());
 				auto const size = buffer.size();
 				result.insert(result.end(), data, data + size);
 			}

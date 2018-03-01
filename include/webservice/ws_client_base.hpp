@@ -9,7 +9,8 @@
 #ifndef _webservice__ws_client_base__hpp_INCLUDED_
 #define _webservice__ws_client_base__hpp_INCLUDED_
 
-#include <webservice/ws_client_location.hpp>
+#include "shared_const_buffer.hpp"
+#include "ws_client_location.hpp"
 
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/string.hpp>
@@ -47,14 +48,10 @@ namespace webservice{
 
 
 		/// \brief Send a text message
-		void send_text(
-			boost::asio::const_buffer const& buffer,
-			std::shared_ptr< boost::any > data);
+		void send_text(shared_const_buffer buffer);
 
 		/// \brief Send a binary message
-		void send_binary(
-			boost::asio::const_buffer const& buffer,
-			std::shared_ptr< boost::any > data);
+		void send_binary(shared_const_buffer buffer);
 
 
 		/// \brief Close the sessions

@@ -11,6 +11,7 @@
 
 #include <webservice/ws_service_location.hpp>
 #include <webservice/ws_client_location.hpp>
+#include <webservice/shared_const_buffer.hpp>
 
 #include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/websocket.hpp>
@@ -138,10 +139,7 @@ namespace webservice{
 
 		/// \brief Send a message
 		template < typename Tag >
-		void send(
-			std::tuple< Tag,
-				boost::asio::const_buffer,
-				std::shared_ptr< boost::any > > data);
+		void send(std::tuple< Tag, shared_const_buffer > data);
 
 		/// \brief Close the session
 		void send(boost::beast::websocket::close_reason reason);

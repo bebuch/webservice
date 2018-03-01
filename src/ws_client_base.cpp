@@ -39,18 +39,12 @@ namespace webservice{
 	}
 
 
-	void ws_client_base::send_text(
-		boost::asio::const_buffer const& buffer,
-		std::shared_ptr< boost::any > data
-	){
-		impl_->send(std::make_tuple(text_tag{}, buffer, std::move(data)));
+	void ws_client_base::send_text(shared_const_buffer buffer){
+		impl_->send(std::make_tuple(text_tag{}, std::move(buffer)));
 	}
 
-	void ws_client_base::send_binary(
-		boost::asio::const_buffer const& buffer,
-		std::shared_ptr< boost::any > data
-	){
-		impl_->send(std::make_tuple(binary_tag{}, buffer, std::move(data)));
+	void ws_client_base::send_binary(shared_const_buffer buffer){
+		impl_->send(std::make_tuple(binary_tag{}, std::move(buffer)));
 	}
 
 
@@ -63,9 +57,11 @@ namespace webservice{
 
 	void ws_client_base::on_close(){}
 
-	void ws_client_base::on_text(boost::beast::multi_buffer const& /*buffer*/){}
+	void ws_client_base::on_text(
+		boost::beast::multi_buffer const& /*buffer*/){}
 
-	void ws_client_base::on_binary(boost::beast::multi_buffer const& /*buffer*/){}
+	void ws_client_base::on_binary(
+		boost::beast::multi_buffer const& /*buffer*/){}
 
 	void ws_client_base::on_error(
 		ws_client_location /*location*/,

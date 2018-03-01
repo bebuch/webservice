@@ -179,24 +179,17 @@ namespace webservice{
 	template < typename Derived >
 	template < typename Tag >
 	void ws_session< Derived >::send(
-			std::tuple< Tag,
-				boost::asio::const_buffer,
-				std::shared_ptr< boost::any > > data){
+		std::tuple< Tag, shared_const_buffer > data
+	){
 		ws_.text(std::is_same< Tag, text_tag >::value);
 		ws_.async_write(
 			std::get< 1 >(data),
 			boost::asio::bind_executor(
 				strand_,
-				[
-					this_ = this->shared_from_this(),
-					data = std::move(std::get< 2 >(data))
-				](
+				[this_ = this->shared_from_this()](
 					boost::system::error_code ec,
 					std::size_t /*bytes_transferred*/
-				)mutable{
-					// shared_ptr keeps data alive until last write
-					data.reset();
-
+				){
 					this_->on_write(ec);
 				}));
 	}
@@ -225,14 +218,10 @@ namespace webservice{
 
 
 	template void ws_session< ws_server_session >::send< text_tag >(
-			std::tuple< text_tag,
-				boost::asio::const_buffer,
-				std::shared_ptr< boost::any > > data);
+		std::tuple< text_tag, shared_const_buffer > data);
 
 	template void ws_session< ws_server_session >::send< binary_tag >(
-		std::tuple< binary_tag,
-				boost::asio::const_buffer,
-				std::shared_ptr< boost::any > > data);
+		std::tuple< binary_tag, shared_const_buffer > data);
 
 	template void ws_session< ws_server_session >
 		::send(boost::beast::websocket::close_reason reason);
@@ -340,14 +329,10 @@ namespace webservice{
 
 
 	template void ws_session< ws_client_base_session >::send< text_tag >(
-			std::tuple< text_tag,
-				boost::asio::const_buffer,
-				std::shared_ptr< boost::any > > data);
+		std::tuple< text_tag, shared_const_buffer > data);
 
 	template void ws_session< ws_client_base_session >::send< binary_tag >(
-		std::tuple< binary_tag,
-				boost::asio::const_buffer,
-				std::shared_ptr< boost::any > > data);
+		std::tuple< binary_tag, shared_const_buffer > data);
 
 	template void ws_session< ws_client_base_session >
 		::send(boost::beast::websocket::close_reason reason);

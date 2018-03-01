@@ -23,10 +23,6 @@ namespace webservice{
 		typename ReceiveBinaryType = SendBinaryType >
 	class basic_ws_service: public ws_service_base{
 	public:
-		static to_const_buffer_t< SendTextType > text_to_const_buffer;
-
-		static to_const_buffer_t< SendBinaryType > binary_to_const_buffer;
-
 		static from_multi_buffer_t< ReceiveTextType > multi_buffer_to_text;
 
 		static from_multi_buffer_t< ReceiveBinaryType > multi_buffer_to_binary;
@@ -37,17 +33,13 @@ namespace webservice{
 
 		/// \brief Send a text message to all sessions
 		void send_text(SendTextType data){
-			auto buffer = text_to_const_buffer(data);
-			auto keep_alive = std::make_shared< boost::any >(std::move(data));
-			ws_service_base::send_text(buffer, std::move(keep_alive));
+			ws_service_base::send_text(shared_const_buffer(std::move(data)));
 		}
 
 		/// \brief Send a text message to session by identifier
 		void send_text(std::uintptr_t identifier, SendTextType data){
-			auto buffer = text_to_const_buffer(data);
-			auto keep_alive = std::make_shared< boost::any >(std::move(data));
 			ws_service_base::send_text(
-				identifier, buffer, std::move(keep_alive));
+				identifier, shared_const_buffer(std::move(data)));
 		}
 
 		/// \brief Send a text message to all sessions by identifier
@@ -55,26 +47,20 @@ namespace webservice{
 			std::set< std::uintptr_t > const& identifier,
 			SendTextType data
 		){
-			auto buffer = text_to_const_buffer(data);
-			auto keep_alive = std::make_shared< boost::any >(std::move(data));
 			ws_service_base::send_text(
-				identifier, buffer, std::move(keep_alive));
+				identifier, shared_const_buffer(std::move(data)));
 		}
 
 
 		/// \brief Send a binary message to all sessions
 		void send_binary(SendBinaryType data){
-			auto buffer = binary_to_const_buffer(data);
-			auto keep_alive = std::make_shared< boost::any >(std::move(data));
-			ws_service_base::send_binary(buffer, std::move(keep_alive));
+			ws_service_base::send_binary(shared_const_buffer(std::move(data)));
 		}
 
 		/// \brief Send a binary message to session by identifier
 		void send_binary(std::uintptr_t identifier, SendBinaryType data){
-			auto buffer = binary_to_const_buffer(data);
-			auto keep_alive = std::make_shared< boost::any >(std::move(data));
 			ws_service_base::send_binary(
-				identifier, buffer, std::move(keep_alive));
+				identifier, shared_const_buffer(std::move(data)));
 		}
 
 		/// \brief Send a binary message to all sessions by identifier
@@ -82,10 +68,8 @@ namespace webservice{
 			std::set< std::uintptr_t > const& identifier,
 			SendBinaryType data
 		){
-			auto buffer = binary_to_const_buffer(data);
-			auto keep_alive = std::make_shared< boost::any >(std::move(data));
 			ws_service_base::send_binary(
-				identifier, buffer, std::move(keep_alive));
+				identifier, shared_const_buffer(std::move(data)));
 		}
 
 
@@ -127,28 +111,6 @@ namespace webservice{
 		}
 	};
 
-
-	template <
-		typename SendTextType,
-		typename SendBinaryType,
-		typename ReceiveTextType,
-		typename ReceiveBinaryType >
-	to_const_buffer_t< SendTextType > basic_ws_service<
-		SendTextType,
-		SendBinaryType,
-		ReceiveTextType,
-		ReceiveBinaryType >::text_to_const_buffer;
-
-	template <
-		typename SendTextType,
-		typename SendBinaryType,
-		typename ReceiveTextType,
-		typename ReceiveBinaryType >
-	to_const_buffer_t< SendBinaryType > basic_ws_service<
-		SendTextType,
-		SendBinaryType,
-		ReceiveTextType,
-		ReceiveBinaryType >::binary_to_const_buffer;
 
 	template <
 		typename SendTextType,
