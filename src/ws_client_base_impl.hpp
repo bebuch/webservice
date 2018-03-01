@@ -51,13 +51,6 @@ namespace webservice{
 				}(std::move(resource)))
 			, resolver_(ioc_) {}
 
-		/// \brief Destructor
-		~ws_client_base_impl(){
-			send("client shutdown");
-			stop();
-			block();
-		}
-
 
 		/// \brief Connect client to server
 		///

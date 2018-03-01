@@ -16,7 +16,9 @@ namespace webservice{
 		: impl_(std::make_unique< ws_service_base_impl >(*this)){}
 
 
-	ws_service_base::~ws_service_base(){}
+	ws_service_base::~ws_service_base(){
+		impl_->send("server shutdown");
+	}
 
 
 	void ws_service_base::on_open(

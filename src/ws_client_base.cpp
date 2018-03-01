@@ -27,7 +27,11 @@ namespace webservice{
 		: impl_(boost::make_unique< ws_client_base_impl >(
 			*this, std::move(host), std::move(port), std::move(resource))) {}
 
-	ws_client_base::~ws_client_base(){}
+	ws_client_base::~ws_client_base(){
+		impl_->send("client shutdown");
+		impl_->stop();
+		impl_->block();
+	}
 
 
 	void ws_client_base::connect(){
