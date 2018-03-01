@@ -21,10 +21,11 @@ namespace webservice{
 		void on_error(
 			std::uintptr_t,
 			std::string const&,
-			ws_service_location,
+			ws_service_location location,
 			boost::system::error_code ec
 		)override{
-			throw boost::system::system_error(ec);
+			throw boost::system::system_error(ec,
+				"location " + std::string(to_string_view(location)));
 		}
 
 		void on_exception(
@@ -35,12 +36,11 @@ namespace webservice{
 			try{
 				std::rethrow_exception(error);
 			}catch(std::exception const& e){
-				std::cout << "\033[1;31mfail: unexpected exception: "
-					<< e.what()
-					<< "\033[0m\n";
+				std::cout << "\033[1;31mfail ws_service: unexpected exception: "
+					<< e.what() << "\033[0m\n";
 			}catch(...){
-				std::cout
-					<< "\033[1;31mfail: unexpected unknown exception\033[0m\n";
+				std::cout << "\033[1;31mfail ws_service: unexpected unknown "
+					"exception\033[0m\n";
 			}
 		}
 	};

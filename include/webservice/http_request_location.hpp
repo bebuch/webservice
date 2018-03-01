@@ -9,6 +9,8 @@
 #ifndef _webservice__http_request_location__hpp_INCLUDED_
 #define _webservice__http_request_location__hpp_INCLUDED_
 
+#include <boost/beast/core/string.hpp>
+
 
 namespace webservice{
 
@@ -18,6 +20,16 @@ namespace webservice{
 		write,
 		timer
 	};
+
+	constexpr boost::beast::string_view
+	to_string_view(http_request_location location){
+		switch(location){
+			case http_request_location::read: return "read";
+			case http_request_location::write: return "write";
+			case http_request_location::timer: return "timer";
+			default: return "invalid location";
+		}
+	}
 
 
 }

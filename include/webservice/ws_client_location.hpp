@@ -9,6 +9,8 @@
 #ifndef _webservice__ws_client_location__hpp_INCLUDED_
 #define _webservice__ws_client_location__hpp_INCLUDED_
 
+#include <boost/beast/core/string.hpp>
+
 
 namespace webservice{
 
@@ -19,6 +21,17 @@ namespace webservice{
 		timer,
 		ping
 	};
+
+	constexpr boost::beast::string_view
+	to_string_view(ws_client_location location){
+		switch(location){
+			case ws_client_location::read: return "read";
+			case ws_client_location::write: return "write";
+			case ws_client_location::timer: return "timer";
+			case ws_client_location::ping: return "ping";
+			default: return "invalid location";
+		}
+	}
 
 
 }

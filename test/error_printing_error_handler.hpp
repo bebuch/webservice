@@ -26,12 +26,11 @@ namespace webservice{
 			try{
 				std::rethrow_exception(error);
 			}catch(std::exception const& e){
-				std::cout << "\033[1;31mfail: unexpected exception: "
-					<< e.what()
-					<< "\033[0m\n";
+				std::cout << "\033[1;31mfail error_handler: unexpected "
+					"exception: " << e.what() << "\033[0m\n";
 			}catch(...){
-				std::cout
-					<< "\033[1;31mfail: unexpected unknown exception\033[0m\n";
+				std::cout << "\033[1;31mfail error_handler: unexpected "
+					"unknown exception\033[0m\n";
 			}
 		}
 	};

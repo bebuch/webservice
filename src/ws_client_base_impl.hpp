@@ -83,7 +83,7 @@ namespace webservice{
 
 			// Create a WebSocket session by transferring the socket
 			auto session =
-				std::make_shared< ws_client_base_session >(std::move(ws), *this);
+				std::make_shared< ws_client_session >(std::move(ws), *this);
 
 			session->start();
 
@@ -182,7 +182,7 @@ namespace webservice{
 
 		boost::asio::io_context ioc_;
 		boost::asio::ip::tcp::resolver resolver_;
-		std::weak_ptr< ws_client_base_session > session_;
+		std::weak_ptr< ws_client_session > session_;
 		std::thread thread_;
 	};
 

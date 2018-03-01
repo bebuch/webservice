@@ -35,7 +35,7 @@ namespace webservice{
 	class ws_service_base_impl;
 	class ws_client_base_impl;
 	class ws_server_session;
-	class ws_client_base_session;
+	class ws_client_session;
 
 	using ws_stream =
 		boost::beast::websocket::stream< boost::asio::ip::tcp::socket >;
@@ -50,7 +50,7 @@ namespace webservice{
 	};
 
 	template <>
-	struct session_location_type< ws_client_base_session >{
+	struct session_location_type< ws_client_session >{
 		using type = ws_client_location;
 	};
 
@@ -216,15 +216,15 @@ namespace webservice{
 	};
 
 
-	class ws_client_base_session: public ws_session< ws_client_base_session >{
+	class ws_client_session: public ws_session< ws_client_session >{
 	public:
 		/// \brief Take ownership of the socket
-		explicit ws_client_base_session(
+		explicit ws_client_session(
 			ws_stream&& ws,
 			ws_client_base_impl& client);
 
 		/// \brief Destructor
-		~ws_client_base_session();
+		~ws_client_session();
 
 
 		/// \brief Start the session
@@ -253,7 +253,7 @@ namespace webservice{
 
 
 	private:
-		using callback = ws_session_callbacks< ws_client_base_session >;
+		using callback = ws_session_callbacks< ws_client_session >;
 
 		ws_client_base_impl& client_;
 		bool is_open_ = false;

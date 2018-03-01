@@ -20,22 +20,22 @@ namespace webservice{
 		using Base::Base;
 
 		void on_error(
-			http_request_location,
+			http_request_location location,
 			boost::system::error_code ec
 		)override{
-			throw boost::system::system_error(ec);
+			throw boost::system::system_error(ec,
+				"location " + std::string(to_string_view(location)));
 		}
 
 		void on_exception(std::exception_ptr error)noexcept override{
 			try{
 				std::rethrow_exception(error);
 			}catch(std::exception const& e){
-				std::cout << "\033[1;31mfail: unexpected exception: "
-					<< e.what()
-					<< "\033[0m\n";
+				std::cout << "\033[1;31mfail http_request_handler: unexpected "
+					"exception: " << e.what() << "\033[0m\n";
 			}catch(...){
-				std::cout
-					<< "\033[1;31mfail: unexpected unknown exception\033[0m\n";
+				std::cout << "\033[1;31mfail http_request_handler: unexpected "
+					"unknown exception\033[0m\n";
 			}
 		}
 	};
