@@ -43,7 +43,7 @@ struct request_handler
 std::vector< std::uint8_t > binary_data;
 
 void fill_data(){
-	constexpr std::size_t size = 1024*1024*100;
+	constexpr std::size_t size = 1024*1024*16;
 	std::cout << "begin fill\n";
 	binary_data.clear();
 	binary_data.reserve(size);
@@ -59,8 +59,10 @@ struct ws_service: webservice::error_printing_webservice{
 	std::size_t count = 0;
 
 	void on_open(std::uintptr_t, std::string const&)override{
-		fill_data();
-		send_binary(binary_data);
+		std::thread([this]{
+				fill_data();
+				send_binary(binary_data);
+			}).detach();
 	}
 
 	void on_close(std::uintptr_t, std::string const&)override{
@@ -87,8 +89,10 @@ struct ws_service: webservice::error_printing_webservice{
 				<< data.size() << "\033[0m\n";
 			if(count < 10){
 				++count;
-				fill_data();
-				send_binary(binary_data);
+				std::thread([this]{
+						fill_data();
+						send_binary(binary_data);
+					}).detach();
 			}else{
 				close("shutdown");
 			}
