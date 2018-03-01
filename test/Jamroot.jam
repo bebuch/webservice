@@ -87,3 +87,10 @@ exe text_ping_pong
 	/webservice//webservice
 	/boost//system
 	;
+
+exe big_binary_ping_pong
+	:
+	big_binary_ping_pong.cpp
+	/webservice//webservice
+	/boost//system
+	;
