@@ -8,7 +8,7 @@
 //-----------------------------------------------------------------------------
 #include "error_printing_webservice.hpp"
 #include "error_printing_error_handler.hpp"
-#include "error_printing_file_request_handler.hpp"
+#include "error_printing_request_handler.hpp"
 
 #include <webservice/server.hpp>
 #include <webservice/ws_client.hpp>
@@ -107,9 +107,11 @@ void check(state_t got){
 }
 
 
-struct file_request_handler: webservice::error_printing_file_request_handler{
-	using webservice::error_printing_file_request_handler
-		::error_printing_file_request_handler;
+struct request_handler
+	: webservice::error_printing_request_handler<
+		webservice::http_request_handler >
+{
+	using error_printing_request_handler::error_printing_request_handler;
 
 	void operator()(
 		webservice::http_request&& req,
@@ -117,7 +119,7 @@ struct file_request_handler: webservice::error_printing_file_request_handler{
 	)override{
 		std::cout << "\033[1;31mfail: unexpected file request '"
 			<< req.target() << "'\033[0m\n";
-		webservice::file_request_handler::operator()(
+		webservice::http_request_handler::operator()(
 			std::move(req), std::move(send));
 	}
 };
@@ -235,7 +237,7 @@ int main(){
 		{
 			using boost::make_unique;
 			webservice::server server(
-				make_unique< file_request_handler >("server_vs_client"),
+				make_unique< request_handler >(),
 				make_unique< ws_service >(),
 				make_unique< webservice::error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);

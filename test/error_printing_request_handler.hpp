@@ -6,10 +6,8 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__error_printing_file_request_handler__hpp_INCLUDED_
-#define _webservice__error_printing_file_request_handler__hpp_INCLUDED_
-
-#include <webservice/file_request_handler.hpp>
+#ifndef _webservice__error_printing_request_handler__hpp_INCLUDED_
+#define _webservice__error_printing_request_handler__hpp_INCLUDED_
 
 #include <iostream>
 
@@ -17,8 +15,9 @@
 namespace webservice{
 
 
-	struct error_printing_file_request_handler: file_request_handler{
-		using webservice::file_request_handler::file_request_handler;
+	template < typename Base >
+	struct error_printing_request_handler: Base{
+		using Base::Base;
 
 		void on_error(
 			http_request_location,

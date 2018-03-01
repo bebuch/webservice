@@ -8,9 +8,10 @@
 //-----------------------------------------------------------------------------
 #include "error_printing_webservice.hpp"
 #include "error_printing_error_handler.hpp"
-#include "error_printing_file_request_handler.hpp"
+#include "error_printing_request_handler.hpp"
 
 #include <webservice/server.hpp>
+#include <webservice/file_request_handler.hpp>
 
 #include <boost/make_unique.hpp>
 
@@ -88,9 +89,11 @@ void check(state_t got){
 }
 
 
-struct file_request_handler: webservice::error_printing_file_request_handler{
-	using webservice::error_printing_file_request_handler
-		::error_printing_file_request_handler;
+struct request_handler
+	: webservice::error_printing_request_handler<
+		webservice::file_request_handler >
+{
+	using error_printing_request_handler::error_printing_request_handler;
 
 	void operator()(
 		webservice::http_request&& req,
@@ -152,7 +155,7 @@ int main(){
 
 	try{
 		webservice::server server(
-			boost::make_unique< file_request_handler >("browser_vs_server"),
+			boost::make_unique< request_handler >("browser_vs_server"),
 			boost::make_unique< ws_service >(),
 			boost::make_unique< webservice::error_printing_error_handler >(),
 			boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
