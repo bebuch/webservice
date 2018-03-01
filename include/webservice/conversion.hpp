@@ -39,7 +39,7 @@ namespace webservice{
 
 		template < typename T, typename = void >
 		struct call_reserve{
-			void operator()(T&, std::size_t s)const{}
+			void operator()(T&, std::size_t)const{}
 		};
 
 		template < typename T >
