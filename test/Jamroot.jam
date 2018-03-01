@@ -80,3 +80,10 @@ exe destruction
 	/webservice//webservice
 	/boost//system
 	;
+
+exe text_ping_pong
+	:
+	text_ping_pong.cpp
+	/webservice//webservice
+	/boost//system
+	;
