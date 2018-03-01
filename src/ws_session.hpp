@@ -58,6 +58,7 @@ namespace webservice{
 	template < typename Derived >
 	class ws_session_callbacks{
 	protected:
+		/// \brief Called when a session starts
 		void on_open()noexcept{
 			try{
 				static_cast< Derived* >(this)->on_open();
@@ -66,7 +67,7 @@ namespace webservice{
 			}
 		}
 
-		/// \brief Called with a unique identifier when a sessions ends
+		/// \brief Called when a sessions ends
 		void on_close()noexcept{
 			try{
 				static_cast< Derived* >(this)->on_close();
