@@ -11,6 +11,7 @@
 #include "error_printing_request_handler.hpp"
 
 #include <webservice/server.hpp>
+#include <webservice/ws_service.hpp>
 #include <webservice/ws_client.hpp>
 
 #include <boost/make_unique.hpp>
@@ -128,7 +129,9 @@ struct request_handler
 std::string const test_text = "test text values";
 
 
-struct ws_service: webservice::error_printing_webservice{
+struct ws_service
+	: webservice::error_printing_webservice< webservice::ws_service >
+{
 	void on_open(std::uintptr_t, std::string const&)override{
 		check(state_t::ws_server_open);
 		send_text(test_text);

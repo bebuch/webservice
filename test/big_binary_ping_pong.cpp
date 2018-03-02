@@ -11,6 +11,7 @@
 #include "error_printing_request_handler.hpp"
 
 #include <webservice/server.hpp>
+#include <webservice/ws_service.hpp>
 #include <webservice/ws_client.hpp>
 
 #include <boost/make_unique.hpp>
@@ -59,7 +60,9 @@ void fill_data(){
 	std::cout << "\nend fill data vector" << std::endl;
 }
 
-struct ws_service: webservice::error_printing_webservice{
+struct ws_service
+	: webservice::error_printing_webservice< webservice::ws_service >
+{
 	std::size_t count = 0;
 
 	void on_open(std::uintptr_t, std::string const&)override{

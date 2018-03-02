@@ -9,15 +9,23 @@
 #ifndef _webservice__error_printing_webservice__hpp_INCLUDED_
 #define _webservice__error_printing_webservice__hpp_INCLUDED_
 
-#include <webservice/ws_service.hpp>
+#include <webservice/ws_service_location.hpp>
 
+#include <boost/system/error_code.hpp>
+#include <boost/system/system_error.hpp>
+
+#include <exception>
 #include <iostream>
+#include <string>
 
 
 namespace webservice{
 
 
-	struct error_printing_webservice: webservice::ws_service{
+	template < typename Base >
+	struct error_printing_webservice: Base{
+		using Base::Base;
+
 		void on_error(
 			std::uintptr_t,
 			std::string const&,

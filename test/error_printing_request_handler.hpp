@@ -9,7 +9,14 @@
 #ifndef _webservice__error_printing_request_handler__hpp_INCLUDED_
 #define _webservice__error_printing_request_handler__hpp_INCLUDED_
 
+#include <webservice/http_request_location.hpp>
+
+#include <boost/system/error_code.hpp>
+#include <boost/system/system_error.hpp>
+
+#include <exception>
 #include <iostream>
+#include <string>
 
 
 namespace webservice{
