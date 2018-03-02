@@ -9,6 +9,7 @@
 #include "error_printing_webservice.hpp"
 #include "error_printing_error_handler.hpp"
 #include "error_printing_request_handler.hpp"
+#include "error_printing_ws_client.hpp"
 
 #include <webservice/server.hpp>
 #include <webservice/ws_service.hpp>
@@ -93,8 +94,10 @@ struct ws_service
 };
 
 
-struct ws_client: webservice::ws_client{
-	using webservice::ws_client::ws_client;
+struct ws_client
+	: webservice::error_printing_ws_client< webservice::ws_client >
+{
+	using error_printing_ws_client::error_printing_ws_client;
 
 	int count = 0;
 
