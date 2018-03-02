@@ -72,4 +72,5 @@ the webservice libraries implementation.
 ### WebSocket: broken pipe after timeout
 
 If a user defined handler like on_text or on_binary takes to long time, the
-activity timer expires and closes the session with a timeout.
+activity timer expires and closes the session with a timeout. The session can
+not pong while a handler is running.
