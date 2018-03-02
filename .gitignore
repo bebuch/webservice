@@ -1,5 +1,5 @@
 # ignore bin directory
 bin
-test/bin
+**/bin
 **.tmp
 doc/html

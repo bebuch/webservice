@@ -7,7 +7,6 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include <webservice/file_request_handler.hpp>
-#include <webservice/ws_service.hpp>
 #include <webservice/server.hpp>
 
 #include <boost/lexical_cast.hpp>
@@ -25,6 +24,7 @@ void close_server(int signum){
 	std::signal(signum, SIG_DFL);
 	std::cout << "Signal: " << signum << '\n';
 	server->stop();
+	server->block();
 	std::raise(signum);
 }
 
@@ -33,7 +33,7 @@ void print_help(char const* const exec_name){
 	std::cerr << "Usage: " << exec_name
 		<< " <address> <port> <doc_root> <thread_count>\n"
 		<< "Example:\n"
-		<< "    " << exec_name << " 0.0.0.0 8080 . 1\n";
+		<< "    " << exec_name << " 0.0.0.0 8080 http_root_directory 1\n";
 }
 
 
@@ -53,7 +53,6 @@ int main(int argc, char* argv[]){
 		std::string const doc_root = argv[3];
 
 		using webservice::file_request_handler;
-		using webservice::ws_service;
 		using webservice::server;
 		server server(
 			boost::make_unique< file_request_handler >(doc_root),
@@ -61,6 +60,7 @@ int main(int argc, char* argv[]){
 			nullptr, // ignore errors and exceptions
 			address, port, thread_count);
 
+		// Allow to shutdown the server with CTRL+C
 		::server = &server;
 		std::signal(SIGSEGV, &close_server);
 		std::signal(SIGABRT, &close_server);
