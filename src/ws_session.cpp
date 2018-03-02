@@ -160,18 +160,18 @@ namespace webservice{
 			return;
 		}
 
-		if(ec){
-			this->callback::on_error(location_type::read, ec);
-		}
-
 		// Note that there is activity
 		activity();
 
-		// Echo the message
-		if(ws_.got_text()){
-			this->callback::on_text(buffer_);
+		if(ec){
+			this->callback::on_error(location_type::read, ec);
 		}else{
-			this->callback::on_binary(buffer_);
+			// Echo the message
+			if(ws_.got_text()){
+				this->callback::on_text(buffer_);
+			}else{
+				this->callback::on_binary(buffer_);
+			}
 		}
 
 		// Clear the buffer
