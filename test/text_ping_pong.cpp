@@ -127,7 +127,7 @@ struct ws_client
 };
 
 
-void close_server(int signum){
+void signal_handler(int signum){
 	std::signal(signum, SIG_DFL);
 	std::cout << "Signal: " << signum << '\n';
 	std::raise(signum);
@@ -135,9 +135,9 @@ void close_server(int signum){
 
 
 int main(){
-	std::signal(SIGSEGV, &close_server);
-	std::signal(SIGABRT, &close_server);
-	std::signal(SIGINT, &close_server);
+	std::signal(SIGSEGV, &signal_handler);
+	std::signal(SIGABRT, &signal_handler);
+	std::signal(SIGINT, &signal_handler);
 
 	try{
 		{
