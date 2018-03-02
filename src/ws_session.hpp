@@ -169,6 +169,7 @@ namespace webservice{
 		boost::asio::steady_timer timer_;
 		boost::beast::multi_buffer buffer_;
 		char ping_state_ = 0;
+		std::size_t ping_counter_;
 	};
 
 

@@ -68,8 +68,15 @@ namespace webservice{
 				// Set the timer
 				start_timer();
 
+				auto ping_payload =
+					(std::is_same< Derived, ws_server_session >::value
+							? "server " : "client ")
+						+ std::to_string(ping_counter_++);
+
 				// Now send the ping
-				ws_.async_ping({},
+				ws_.async_ping(
+					boost::beast::websocket::ping_data(
+						ping_payload.c_str(), ping_payload.size()),
 					boost::asio::bind_executor(
 						strand_,
 						[this_ = this->shared_from_this()](
@@ -305,22 +312,13 @@ namespace webservice{
 			){
 				switch(kind){
 					case boost::beast::websocket::frame_type::close:
-						std::cout << "server close\n";
+						std::cout << "server close: '" << payload << "'\n";
 					break;
 					case boost::beast::websocket::frame_type::ping: {
-						std::cout << "server ping\n";
-						ws_.async_pong(
-							boost::beast::websocket::ping_data(payload),
-							boost::asio::bind_executor(
-								strand_,
-								[this_ = this->shared_from_this()](
-									boost::system::error_code ec
-								){
-									(void)ec; // TODO: handle error
-								}));
+						std::cout << "server ping: '" << payload << "'\n";
 					} break;
 					case boost::beast::websocket::frame_type::pong:
-						std::cout << "server pong\n";
+						std::cout << "server pong: '" << payload << "'\n";
 					break;
 				}
 				// Note that there is activity
@@ -436,10 +434,10 @@ namespace webservice{
 			){
 				switch(kind){
 					case boost::beast::websocket::frame_type::close:
-						std::cout << "client close\n";
+						std::cout << "client close: '" << payload << "'\n";
 					break;
 					case boost::beast::websocket::frame_type::ping: {
-						std::cout << "client ping\n";
+						std::cout << "client ping: '" << payload << "'\n";
 						ws_.async_pong(
 							boost::beast::websocket::ping_data(payload),
 							boost::asio::bind_executor(
@@ -451,7 +449,7 @@ namespace webservice{
 								}));
 					} break;
 					case boost::beast::websocket::frame_type::pong:
-						std::cout << "client pong\n";
+						std::cout << "client pong: '" << payload << "'\n";
 					break;
 				}
 				// Note that there is activity
