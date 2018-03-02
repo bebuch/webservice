@@ -39,7 +39,8 @@ namespace webservice{
 			std::uint16_t port,
 			std::uint8_t thread_count = 1,
 			boost::optional< std::chrono::milliseconds > websocket_ping_time
-				= {}
+				= {},
+			std::size_t max_read_message_size = 16 * 1024 * 1024
 		);
 
 		/// \brief Close all connections and wait on all processing threads

@@ -41,7 +41,8 @@ namespace webservice{
 			std::string&& host,
 			std::string&& port,
 			std::string&& resource,
-			boost::optional< std::chrono::milliseconds > websocket_ping_time
+			boost::optional< std::chrono::milliseconds > websocket_ping_time,
+			std::size_t max_read_message_size
 		)
 			: self_(self)
 			, host_(std::move(host))
@@ -51,7 +52,8 @@ namespace webservice{
 					return std::move(resource);
 				}(std::move(resource)))
 			, resolver_(ioc_)
-			, websocket_ping_time_(websocket_ping_time) {}
+			, websocket_ping_time_(websocket_ping_time)
+			, max_read_message_size_(max_read_message_size) {}
 
 
 		/// \brief Connect client to server
@@ -68,6 +70,7 @@ namespace webservice{
 			auto results = resolver_.resolve(host_, port_);
 
 			ws_stream ws(ioc_);
+			ws.read_message_max(max_read_message_size_);
 
 			// Make the connection on the IP address we get from a lookup
 			boost::asio::connect(ws.next_layer(),
@@ -178,6 +181,7 @@ namespace webservice{
 		boost::asio::io_context ioc_;
 		boost::asio::ip::tcp::resolver resolver_;
 		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
+		std::size_t const max_read_message_size_;
 		std::weak_ptr< ws_client_session > session_;
 		std::thread thread_;
 	};

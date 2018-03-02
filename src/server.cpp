@@ -29,7 +29,8 @@ namespace webservice{
 			boost::asio::ip::address const address,
 			std::uint16_t const port,
 			std::uint8_t const thread_count,
-			boost::optional< std::chrono::milliseconds > websocket_ping_time
+			boost::optional< std::chrono::milliseconds > websocket_ping_time,
+			std::size_t max_read_message_size
 		)
 			: ioc_{thread_count}
 			, listener_(
@@ -38,7 +39,8 @@ namespace webservice{
 				std::move(error_handler),
 				ioc_,
 				boost::asio::ip::tcp::endpoint{address, port},
-				websocket_ping_time)
+				websocket_ping_time,
+				max_read_message_size)
 		{
 			// Run the I/O service on the requested number of thread_count
 			threads_.reserve(thread_count);
@@ -103,7 +105,8 @@ namespace webservice{
 		boost::asio::ip::address const address,
 		std::uint16_t const port,
 		std::uint8_t const thread_count,
-		boost::optional< std::chrono::milliseconds > websocket_ping_time
+		boost::optional< std::chrono::milliseconds > websocket_ping_time,
+		std::size_t max_read_message_size
 	)
 		: impl_(std::make_unique< server_impl >(
 				[this, handler = std::move(handler)]()mutable{
@@ -132,7 +135,8 @@ namespace webservice{
 				address,
 				port,
 				thread_count,
-				websocket_ping_time
+				websocket_ping_time,
+				max_read_message_size
 			)) {}
 
 	server::~server() = default;

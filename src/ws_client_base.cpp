@@ -23,11 +23,12 @@ namespace webservice{
 		std::string host,
 		std::string port,
 		std::string resource,
-		boost::optional< std::chrono::milliseconds > websocket_ping_time
+		boost::optional< std::chrono::milliseconds > websocket_ping_time,
+		std::size_t max_read_message_size
 	)
 		: impl_(boost::make_unique< ws_client_base_impl >(
 			*this, std::move(host), std::move(port), std::move(resource),
-			websocket_ping_time)) {}
+			websocket_ping_time, max_read_message_size)) {}
 
 	ws_client_base::~ws_client_base(){
 		impl_->send("client shutdown");

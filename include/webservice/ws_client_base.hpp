@@ -36,7 +36,8 @@ namespace webservice{
 			std::string port,
 			std::string resource,
 			boost::optional< std::chrono::milliseconds > websocket_ping_time
-				= {}
+				= {},
+			std::size_t max_read_message_size = 16 * 1024 * 1024
 		);
 
 		/// \brief Destructor
