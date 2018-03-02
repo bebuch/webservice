@@ -35,6 +35,10 @@ namespace webservice{
 		/// \brief Destructor
 		virtual ~ws_service_base();
 
+		ws_service_base(ws_service_base const&) = delete;
+
+		ws_service_base& operator=(ws_service_base const&) = delete;
+
 
 		/// \brief Send a text message to all sessions
 		void send_text(shared_const_buffer buffer);

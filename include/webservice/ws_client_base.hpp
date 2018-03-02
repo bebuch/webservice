@@ -40,6 +40,11 @@ namespace webservice{
 			std::size_t max_read_message_size = 16 * 1024 * 1024
 		);
 
+		ws_client_base(ws_client_base const&) = delete;
+
+		ws_client_base& operator=(ws_client_base const&) = delete;
+
+
 		/// \brief Destructor
 		virtual ~ws_client_base();
 

@@ -28,6 +28,13 @@ namespace webservice{
 	/// \brief Base class of all HTTP request handlers
 	class http_request_handler{
 	public:
+		http_request_handler() = default;
+
+		http_request_handler(http_request_handler const&) = delete;
+
+		http_request_handler& operator=(http_request_handler const&) = delete;
+
+
 		virtual ~http_request_handler();
 		virtual void operator()(http_request&& req, http_response&& send);
 

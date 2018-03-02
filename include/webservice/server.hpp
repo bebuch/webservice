@@ -43,6 +43,10 @@ namespace webservice{
 			std::size_t max_read_message_size = 16 * 1024 * 1024
 		);
 
+		server(server const&) = delete;
+
+		server& operator=(server const&) = delete;
+
 		/// \brief Close all connections and wait on all processing threads
 		///
 		/// Calls close() and block()

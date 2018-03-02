@@ -60,13 +60,6 @@ namespace webservice{
 		}
 
 
-		/// \brief Wait until all thread have finished
-		~server_impl(){
-			stop();
-			block();
-		}
-
-
 		/// \copydoc server::block()
 		void block()noexcept{
 			std::lock_guard< std::recursive_mutex > lock(mutex);
@@ -137,7 +130,10 @@ namespace webservice{
 				max_read_message_size
 			)) {}
 
-	server::~server() = default;
+	server::~server(){
+		impl_->stop();
+		impl_->block();
+	}
 
 
 	void server::block()noexcept{

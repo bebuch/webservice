@@ -22,8 +22,16 @@ namespace webservice{
 	/// \brief Base class for server error handlers
 	class error_handler{
 	public:
+		error_handler() = default;
+
+		error_handler(error_handler const&) = delete;
+
+		error_handler& operator=(error_handler const&) = delete;
+
+
 		/// \brief Destructor
 		virtual ~error_handler();
+
 
 	protected:
 		/// \brief Called when an error occured

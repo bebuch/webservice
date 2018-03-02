@@ -46,13 +46,6 @@ project webservice_test
 	;
 
 
-exe server
-	:
-	server.cpp
-	/webservice//webservice
-	/boost//system
-	;
-
 exe server_vs_browser
 	:
 	server_vs_browser.cpp

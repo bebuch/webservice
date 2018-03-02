@@ -59,6 +59,14 @@ namespace webservice{
 		impl_->send(boost::beast::websocket::close_reason(reason));
 	}
 
+	void ws_client_base::block()noexcept{
+		impl_->block();
+	}
+
+	void ws_client_base::stop()noexcept{
+		impl_->stop();
+	}
+
 
 	void ws_client_base::on_open(){}
 
