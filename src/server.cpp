@@ -65,7 +65,11 @@ namespace webservice{
 			std::lock_guard< std::recursive_mutex > lock(mutex);
 			for(auto& thread: threads_){
 				if(thread.joinable()){
-					thread.join();
+					try{
+						thread.join();
+					}catch(...){
+						listener_.on_exception(std::current_exception());
+					}
 				}
 			}
 		}
