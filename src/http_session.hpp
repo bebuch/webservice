@@ -30,7 +30,7 @@ namespace webservice{
 		explicit http_session(
 			boost::asio::ip::tcp::socket&& socket,
 			http_request_handler& handler,
-			ws_service_base_impl& service,
+			std::unique_ptr< ws_service_base > const& service,
 			boost::optional< std::chrono::milliseconds > websocket_ping_time,
 			std::size_t max_read_message_size
 		)
@@ -125,12 +125,12 @@ namespace webservice{
 			}
 
 			// See if it is a WebSocket Upgrade
-			if(boost::beast::websocket::is_upgrade(req_)){
+			if(service_ && boost::beast::websocket::is_upgrade(req_)){
 				// Create a ws_session by transferring the socket
 				ws_stream ws(std::move(socket_));
 				ws.read_message_max(max_read_message_size_);
 				auto session = std::make_shared< ws_server_session >(
-					std::move(ws), service_, websocket_ping_time_);
+					std::move(ws), *service_->impl_, websocket_ping_time_);
 
 				session->do_accept(std::move(req_));
 			}else{
@@ -241,7 +241,7 @@ namespace webservice{
 
 		boost::asio::ip::tcp::socket socket_;
 		http_request_handler& handler_;
-		ws_service_base_impl& service_;
+		std::unique_ptr< ws_service_base > const& service_;
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
 		boost::asio::steady_timer timer_;
 		boost::optional< std::chrono::milliseconds > websocket_ping_time_;

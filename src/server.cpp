@@ -118,11 +118,9 @@ namespace webservice{
 						return std::move(handler);
 					}(),
 				[this, service = std::move(service)]()mutable{
-						if(!service){
-							service =
-								boost::make_unique< ws_service_base >();
+						if(service){
+							service->server_ = this;
 						}
-						service->server_ = this;
 						return std::move(service);
 					}(),
 				[error_handler = std::move(error_handler)]()mutable{

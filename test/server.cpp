@@ -57,8 +57,9 @@ int main(int argc, char* argv[]){
 		using webservice::server;
 		server server(
 			boost::make_unique< file_request_handler >(doc_root),
-			boost::make_unique< ws_service >(),
-			nullptr, address, port, thread_count);
+			nullptr, // no websocket
+			nullptr, // ignore errors and exceptions
+			address, port, thread_count);
 
 		::server = &server;
 		std::signal(SIGSEGV, &close_server);
@@ -75,5 +76,4 @@ int main(int argc, char* argv[]){
 		std::cerr << "Unknown exception\n";
 		return 1;
 	}
-
 }
