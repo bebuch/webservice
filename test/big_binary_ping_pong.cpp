@@ -49,10 +49,14 @@ void fill_data(){
 	binary_data.reserve(size);
     std::random_device rd;
     std::uniform_int_distribution< std::uint8_t > dist;
+	std::cout << "====================\n";
 	for(std::size_t i = 0; i < size; ++i){
 		binary_data.push_back(dist(rd));
+		if(i % (size / 20) == 0){
+			std::cout << "-" << std::flush;
+		}
 	}
-	std::cout << "end fill data vector\n";
+	std::cout << "\nend fill data vector" << std::endl;
 }
 
 struct ws_service: webservice::error_printing_webservice{
