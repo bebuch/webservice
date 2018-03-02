@@ -44,7 +44,7 @@ std::vector< std::uint8_t > binary_data;
 
 void fill_data(){
 	constexpr std::size_t size = 1024*1024*16;
-	std::cout << "begin fill\n";
+	std::cout << "begin fill data vector\n";
 	binary_data.clear();
 	binary_data.reserve(size);
     std::random_device rd;
@@ -52,7 +52,7 @@ void fill_data(){
 	for(std::size_t i = 0; i < size; ++i){
 		binary_data.push_back(dist(rd));
 	}
-	std::cout << "end fill\n";
+	std::cout << "end fill data vector\n";
 }
 
 struct ws_service: webservice::error_printing_webservice{

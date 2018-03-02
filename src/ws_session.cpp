@@ -39,12 +39,6 @@ namespace webservice{
 	void ws_session< Derived >::on_timer(boost::system::error_code ec){
 		if(!websocket_ping_time_) return;
 
-		if(std::is_same< Derived, ws_server_session >::value){
-			std::cout << "server on_timer: " << ec.message() << "\n";
-		}else{
-			std::cout << "client on_timer: " << ec.message() << "\n";
-		}
-
 		if(ec && ec != boost::asio::error::operation_aborted){
 			this->callback::on_error(location_type::timer, ec);
 			return;
@@ -53,12 +47,6 @@ namespace webservice{
 		// See if the timer really expired since the deadline may have
 		// moved.
 		if(timer_.expiry() <= std::chrono::steady_clock::now()){
-			if(std::is_same< Derived, ws_server_session >::value){
-				std::cout << "server on_timer ping\n";
-			}else{
-				std::cout << "client on_timer ping\n";
-			}
-
 			// If this is the first time the timer expired,
 			// send a ping to see if the other end is there.
 			if(ws_.is_open() && ping_state_ == 0){
@@ -82,20 +70,9 @@ namespace webservice{
 						[this_ = this->shared_from_this()](
 							boost::system::error_code ec
 						){
-							if(std::is_same< Derived, ws_server_session >::value){
-								std::cout << "server send ping: " << ec.message() << "\n";
-							}else{
-								std::cout << "client send ping: " << ec.message() << "\n";
-							}
 							this_->on_ping(ec);
 						}));
 			}else{
-				if(std::is_same< Derived, ws_server_session >::value){
-					std::cout << "server on_timer close\n";
-				}else{
-					std::cout << "client on_timer close\n";
-				}
-
 				close(ec);
 				return;
 			}
@@ -239,12 +216,6 @@ namespace webservice{
 	void ws_session< Derived >::send(
 		boost::beast::websocket::close_reason reason
 	){
-		if(std::is_same< Derived, ws_server_session >::value){
-			std::cout << "server close: " << reason << "\n";
-		}else{
-			std::cout << "client close: " << reason << "\n";
-		}
-
 		ws_.async_close(
 			reason,
 			boost::asio::bind_executor(
@@ -258,12 +229,6 @@ namespace webservice{
 
 	template < typename Derived >
 	void ws_session< Derived >::close(boost::system::error_code ec){
-		if(std::is_same< Derived, ws_server_session >::value){
-			std::cout << "server close next_layer\n";
-		}else{
-			std::cout << "client close next_layer\n";
-		}
-
 		// The timer expired while trying to handshake,
 		// or we sent a ping and it never completed or
 		// we never got back a control frame, so close.
@@ -307,20 +272,9 @@ namespace webservice{
 		// on every incoming ping, pong, and close frame.
 		ws_.control_callback(
 			[this](
-				boost::beast::websocket::frame_type kind,
-				boost::beast::string_view payload
+				boost::beast::websocket::frame_type /*kind*/,
+				boost::beast::string_view /*payload*/
 			){
-				switch(kind){
-					case boost::beast::websocket::frame_type::close:
-						std::cout << "server close: '" << payload << "'\n";
-					break;
-					case boost::beast::websocket::frame_type::ping: {
-						std::cout << "server ping: '" << payload << "'\n";
-					} break;
-					case boost::beast::websocket::frame_type::pong:
-						std::cout << "server pong: '" << payload << "'\n";
-					break;
-				}
 				// Note that there is activity
 				activity();
 			});
@@ -429,29 +383,9 @@ namespace webservice{
 		// on every incoming ping, pong, and close frame.
 		ws_.control_callback(
 			[this](
-				boost::beast::websocket::frame_type kind,
-				boost::beast::string_view payload
+				boost::beast::websocket::frame_type /*kind*/,
+				boost::beast::string_view /*payload*/
 			){
-				switch(kind){
-					case boost::beast::websocket::frame_type::close:
-						std::cout << "client close: '" << payload << "'\n";
-					break;
-					case boost::beast::websocket::frame_type::ping: {
-						std::cout << "client ping: '" << payload << "'\n";
-						ws_.async_pong(
-							boost::beast::websocket::ping_data(payload),
-							boost::asio::bind_executor(
-								strand_,
-								[this_ = this->shared_from_this()](
-									boost::system::error_code ec
-								){
-									(void)ec; // TODO: handle error
-								}));
-					} break;
-					case boost::beast::websocket::frame_type::pong:
-						std::cout << "client pong: '" << payload << "'\n";
-					break;
-				}
 				// Note that there is activity
 				activity();
 			});
