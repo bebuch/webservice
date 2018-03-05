@@ -28,12 +28,13 @@ namespace webservice{
 			std::string, SendBinaryType, std::string, ReceiveBinaryType >;
 	public:
 		using basic_ws_client<
-			std::string, SendBinaryType, std::string, ReceiveBinaryType >::basic_ws_client;
+				std::string, SendBinaryType, std::string, ReceiveBinaryType
+			>::basic_ws_client;
 
 
 		/// \brief Send a json message to all sessions
 		void send_json(nlohmann::json const& data){
-			base::send_text(data.dump());
+			base::send_text(dump(data));
 		}
 
 
@@ -47,8 +48,23 @@ namespace webservice{
 	private:
 		using base::send_text;
 
+		static std::string dump(nlohmann::json const& json){
+			try{
+				return json.dump();
+			}catch(nlohmann::json::exception const& e){
+				throw std::runtime_error(std::string(e.what())
+					+ "; dump failed");
+			}
+		}
+
 		virtual void on_text(std::string&& data){
-			on_json(nlohmann::json::parse(data));
+			on_json([&data]{
+				try{
+					return nlohmann::json::parse(data);
+				}catch(nlohmann::json::exception const& e){
+					throw std::runtime_error(std::string(e.what())
+						+ "; parsed expression '" + data + "'");
+				}}());
 		}
 	};
 

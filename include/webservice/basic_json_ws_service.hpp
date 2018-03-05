@@ -28,17 +28,18 @@ namespace webservice{
 			std::string, SendBinaryType, std::string, ReceiveBinaryType >;
 	public:
 		using basic_ws_service<
-			std::string, SendBinaryType, std::string, ReceiveBinaryType >::basic_ws_service;
+				std::string, SendBinaryType, std::string, ReceiveBinaryType
+			>::basic_ws_service;
 
 
 		/// \brief Send a json message to all sessions
 		void send_json(nlohmann::json const& data){
-			base::send_text(data.dump());
+			base::send_text(dump(data));
 		}
 
 		/// \brief Send a json message to session by identifier
 		void send_json(std::uintptr_t identifier, nlohmann::json const& data){
-			base::send_text(identifier, data.dump());
+			base::send_text(identifier, dump(data));
 		}
 
 		/// \brief Send a json message to all sessions by identifier
@@ -46,7 +47,7 @@ namespace webservice{
 			std::set< std::uintptr_t > const& identifier,
 			nlohmann::json const& data
 		){
-			base::send_text(identifier, data.dump());
+			base::send_text(identifier, dump(data));
 		}
 
 
@@ -63,12 +64,27 @@ namespace webservice{
 	private:
 		using base::send_text;
 
+		static std::string dump(nlohmann::json const& json){
+			try{
+				return json.dump();
+			}catch(nlohmann::json::exception const& e){
+				throw std::runtime_error(std::string(e.what())
+					+ "; dump failed");
+			}
+		}
+
 		virtual void on_text(
 			std::uintptr_t identifier,
 			std::string const& resource,
 			std::string&& data
 		){
-			on_json(identifier, resource, nlohmann::json::parse(data));
+			on_json(identifier, resource, [&data]{
+				try{
+					return nlohmann::json::parse(data);
+				}catch(nlohmann::json::exception const& e){
+					throw std::runtime_error(std::string(e.what())
+						+ "; parsed expression '" + data + "'");
+				}}());
 		}
 	};
 

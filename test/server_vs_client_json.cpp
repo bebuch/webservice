@@ -127,7 +127,7 @@ struct request_handler
 };
 
 
-nlohmann::json const test_json = nlohmann::json::parse("{\"key\":\"value\"}");
+std::string const test_text = "{\"key\":\"value\"}";
 
 
 struct ws_service
@@ -135,7 +135,7 @@ struct ws_service
 {
 	void on_open(std::uintptr_t, std::string const&)override{
 		check(state_t::ws_server_open);
-		send_json(test_json);
+		send_json(nlohmann::json::parse(test_text));
 	}
 
 	void on_close(std::uintptr_t, std::string const&)override{
@@ -148,17 +148,17 @@ struct ws_service
 		nlohmann::json&& text
 	)override{
 		check(state_t::ws_server_json);
-		if(test_json == text){
+		if(nlohmann::json::parse(test_text) == text){
 			std::cout << "\033[1;32mserver pass: '"
-				<< test_json.dump()
+				<< test_text
 				<< "'\033[0m\n";
 		}else{
 			std::cout << "\033[1;31mfail: server expected '"
-				<< test_json.dump() << "' but got '" << text.dump()
+				<< test_text << "' but got '" << text.dump()
 				<< "'\033[0m\n";
 		}
 		send_binary(std::vector< std::uint8_t >(
-			std::begin(test_json), std::end(test_json)));
+			std::begin(test_text), std::end(test_text)));
 	}
 
 	void on_binary(
@@ -168,13 +168,13 @@ struct ws_service
 	)override{
 		check(state_t::ws_server_binary);
 		std::string text(data.begin(), data.end());
-		if(test_json.dump() == text){
+		if(test_text == text){
 			std::cout << "\033[1;32mserver pass: '"
-				<< test_json.dump()
+				<< test_text
 				<< "'\033[0m\n";
 		}else{
 			std::cout << "\033[1;31mfail: server expected '"
-				<< test_json.dump() << "' but got '" << text
+				<< test_text << "' but got '" << text
 				<< "'\033[0m\n";
 		}
 		close("shutdown");
@@ -197,32 +197,32 @@ struct ws_client
 
 	void on_json(nlohmann::json&& text)override{
 		check(state_t::ws_client_json);
-		if(test_json == text){
+		if(nlohmann::json::parse(test_text) == text){
 			std::cout << "\033[1;32mclient pass: '"
-				<< test_json
+				<< test_text
 				<< "'\033[0m\n";
 		}else{
 			std::cout << "\033[1;31mfail: client expected '"
-				<< test_json << "' but got '" << text
+				<< test_text << "' but got '" << text
 				<< "'\033[0m\n";
 		}
-		send_json(test_json);
+		send_json(nlohmann::json::parse(test_text));
 	}
 
 	void on_binary(std::vector< std::uint8_t >&& data)override{
 		check(state_t::ws_client_binary);
 		std::string text(data.begin(), data.end());
-		if(test_json == text){
+		if(test_text == text){
 			std::cout << "\033[1;32mclient pass: '"
-				<< test_json
+				<< test_text
 				<< "'\033[0m\n";
 		}else{
 			std::cout << "\033[1;31mfail: client expected '"
-				<< test_json << "' but got '" << text
+				<< test_text << "' but got '" << text
 				<< "'\033[0m\n";
 		}
 		send_binary(std::vector< std::uint8_t >(
-			std::begin(test_json), std::end(test_json)));
+			std::begin(test_text), std::end(test_text)));
 	}
 };
 
@@ -261,7 +261,6 @@ int main(){
 			){
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			}
-			server.stop();
 		}
 
 		check(state_t::exit);
