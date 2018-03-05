@@ -1,6 +1,7 @@
 import os ;
 local webservice = .. ;
 local boost = [ os.environ BOOST ] ;
+local json = ../../nlohmann/json ;
 
 use-project /webservice
 	: $(webservice)
@@ -65,6 +66,15 @@ exe server_vs_client
 	server_vs_client.cpp
 	/webservice//webservice
 	/boost//system
+	;
+
+exe server_vs_client_json
+	:
+	server_vs_client_json.cpp
+	/webservice//webservice
+	/boost//system
+	:
+	<include>$(json)/single_include
 	;
 
 exe destruction
