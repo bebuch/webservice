@@ -110,7 +110,7 @@ namespace webservice{
 		template < typename Data >
 		void send(Data&& data){
 			if(auto const session = session_.lock()){
-				session->send(static_cast< Data >(data));
+				session->send(static_cast< Data&& >(data));
 			}
 		}
 

@@ -55,9 +55,6 @@ namespace webservice{
 
 
 	private:
-		using ws_client_base::send_text;
-		using ws_client_base::send_binary;
-
 		void on_text(boost::beast::multi_buffer const& buffer)final{
 			on_text(multi_buffer_to_text(buffer));
 		}

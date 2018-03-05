@@ -24,8 +24,8 @@ namespace webservice{
 			std::unique_ptr< http_request_handler > handler,
 			std::unique_ptr< ws_service_base > service,
 			std::unique_ptr< error_handler > error_handler,
-			boost::asio::io_context& ioc,
 			boost::asio::ip::tcp::endpoint endpoint,
+			std::uint8_t thread_count,
 			boost::optional< std::chrono::milliseconds > websocket_ping_time,
 			std::size_t max_read_message_size
 		)
@@ -34,8 +34,9 @@ namespace webservice{
 			, error_handler_(std::move(error_handler))
 			, websocket_ping_time_(websocket_ping_time)
 			, max_read_message_size_(max_read_message_size)
-			, acceptor_(ioc)
-			, socket_(ioc)
+			, ioc_{thread_count}
+			, acceptor_(ioc_)
+			, socket_(ioc_)
 		{
 			// Open the acceptor
 			acceptor_.open(endpoint.protocol());
@@ -79,6 +80,14 @@ namespace webservice{
 			do_accept();
 		}
 
+		void run(){
+			ioc_.run();
+		}
+
+		void stop()noexcept{
+			ioc_.stop();
+		}
+
 		/// \brief Called when an exception in the server occurred
 		virtual void on_exception(std::exception_ptr error)noexcept{
 			error_handler_->on_exception(error);
@@ -90,6 +99,10 @@ namespace webservice{
 		std::unique_ptr< error_handler > error_handler_;
 		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
 		std::size_t const max_read_message_size_;
+
+		/// \brief The io_context is required for all I/O
+		boost::asio::io_context ioc_;
+
 		boost::asio::ip::tcp::acceptor acceptor_;
 		boost::asio::ip::tcp::socket socket_;
 	};

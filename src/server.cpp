@@ -32,13 +32,12 @@ namespace webservice{
 			boost::optional< std::chrono::milliseconds > websocket_ping_time,
 			std::size_t max_read_message_size
 		)
-			: ioc_{thread_count}
-			, listener_(
+			: listener_(
 				std::move(handler),
 				std::move(service),
 				std::move(error_handler),
-				ioc_,
 				boost::asio::ip::tcp::endpoint{address, port},
+				thread_count,
 				websocket_ping_time,
 				max_read_message_size)
 		{
@@ -49,7 +48,7 @@ namespace webservice{
 					// restart io_context if it returned by exception
 					for(;;){
 						try{
-							ioc_.run();
+							listener_.run();
 							return;
 						}catch(...){
 							listener_.on_exception(std::current_exception());
@@ -76,7 +75,7 @@ namespace webservice{
 
 		/// \copydoc server::stop()
 		void stop()noexcept{
-			ioc_.stop();
+			listener_.stop();
 		}
 
 
@@ -86,9 +85,6 @@ namespace webservice{
 
 		/// \brief The worker threads
 		std::vector< std::thread > threads_;
-
-		/// \brief The io_context is required for all I/O
-		boost::asio::io_context ioc_;
 
 		/// \brief Accepts incoming connections and launches the sessions
 		webservice::listener listener_;

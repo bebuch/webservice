@@ -91,9 +91,6 @@ namespace webservice{
 			ReceiveBinaryType&& /*data*/){}
 
 	private:
-		using ws_service_base::send_text;
-		using ws_service_base::send_binary;
-
 		void on_text(
 			std::uintptr_t identifier,
 			std::string const& resource,
