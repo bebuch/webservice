@@ -51,7 +51,6 @@ namespace webservice{
 					if(resource.empty()) resource = "/";
 					return std::move(resource);
 				}(std::move(resource)))
-			, resolver_(ioc_)
 			, websocket_ping_time_(websocket_ping_time)
 			, max_read_message_size_(max_read_message_size) {}
 
@@ -67,7 +66,8 @@ namespace webservice{
 
 			block();
 
-			auto results = resolver_.resolve(host_, port_);
+			boost::asio::ip::tcp::resolver resolver(ioc_);
+			auto results = resolver.resolve(host_, port_);
 
 			ws_stream ws(ioc_);
 			ws.read_message_max(max_read_message_size_);
@@ -183,7 +183,6 @@ namespace webservice{
 		std::recursive_mutex mutex_;
 
 		boost::asio::io_context ioc_;
-		boost::asio::ip::tcp::resolver resolver_;
 		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
 		std::size_t const max_read_message_size_;
 		std::weak_ptr< ws_client_session > session_;
