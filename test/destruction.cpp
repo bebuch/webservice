@@ -43,6 +43,11 @@ int main(){
 		client.send_text("abc");
 		service.send_text("xyz");
 
+		client.connect();
+		client.send_text("abc");
+
+		client.connect();
+
 		return 0;
 	}catch(std::exception const& e){
 		std::cerr << "Exception: " << e.what() << "\n";
