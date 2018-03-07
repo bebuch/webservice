@@ -73,11 +73,11 @@ namespace webservice{
 			}
 		}
 
-		virtual void on_text(
+		void on_text(
 			std::uintptr_t identifier,
 			std::string const& resource,
 			std::string&& data
-		){
+		)final{
 			on_json(identifier, resource, [&data]{
 				try{
 					return nlohmann::json::parse(data);

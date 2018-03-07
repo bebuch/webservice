@@ -57,7 +57,7 @@ namespace webservice{
 			}
 		}
 
-		virtual void on_text(std::string&& data){
+		void on_text(std::string&& data)final{
 			on_json([&data]{
 				try{
 					return nlohmann::json::parse(data);
