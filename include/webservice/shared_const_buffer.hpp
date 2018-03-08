@@ -21,7 +21,9 @@
 namespace webservice{
 
 
-	struct construct_via_data_and_size{};
+	struct construct_via_data_and_size_t{};
+
+	constexpr construct_via_data_and_size_t construct_via_data_and_size{};
 
 	/// \brief A generic reference-counted non-modifiable buffer class
 	class shared_const_buffer{
@@ -39,6 +41,27 @@ namespace webservice{
 			: data_(std::move(data))
 			, buffer_(boost::asio::buffer(
 				*boost::any_cast< std::shared_ptr< T > >(data_))) {}
+
+		/// \brief Move or copy the data to a shared_ptr
+		template < typename T >
+		explicit shared_const_buffer(T&& data, construct_via_data_and_size_t c)
+			: shared_const_buffer(
+				std::make_shared< typename std::decay< T >::type const >(
+					static_cast< T&& >(data)), c) {}
+
+		/// \brief Use the shared_ptr directly
+		template < typename T >
+		explicit shared_const_buffer(
+			std::shared_ptr< T > data,
+			construct_via_data_and_size_t
+		)
+			: data_(std::move(data))
+			, buffer_(boost::asio::buffer(
+					static_cast< void const* >(
+						boost::any_cast< std::shared_ptr< T > >(data_)->data()
+					),
+					boost::any_cast< std::shared_ptr< T > >(data_)->size()
+				)) {}
 
 
 		/// \brief Buffer interface value_type

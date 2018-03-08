@@ -80,4 +80,60 @@ int main(){
 				static_cast< char const* >(buffer.begin()->data())
 					+ buffer.begin()->size())} << '\n';
 	}
+
+	{
+		std::vector< std::uint8_t > data{1, 2, 3, 4, 5};
+		webservice::shared_const_buffer buffer(
+			data, webservice::construct_via_data_and_size);
+		std::cout << "vector< uint8_t >, created from data() and size(): "
+			<< bool_{std::equal(data.begin(), data.end(),
+				static_cast< std::uint8_t const* >(buffer.begin()->data()),
+				static_cast< std::uint8_t const* >(buffer.begin()->data())
+					+ buffer.begin()->size())} << '\n';
+	}
+
+	{
+		std::vector< char > data{1, 2, 3, 4, 5};
+		webservice::shared_const_buffer buffer(
+			data, webservice::construct_via_data_and_size);
+		std::cout << "vector< char >, created from data() and size(): "
+			<< bool_{std::equal(data.begin(), data.end(),
+				static_cast< char const* >(buffer.begin()->data()),
+				static_cast< char const* >(buffer.begin()->data())
+					+ buffer.begin()->size())} << '\n';
+	}
+
+	{
+		std::string data("12345");
+		webservice::shared_const_buffer buffer(
+			data, webservice::construct_via_data_and_size);
+		std::cout << "string, created from data() and size(): "
+			<< bool_{std::equal(data.begin(), data.end(),
+				static_cast< char const* >(buffer.begin()->data()),
+				static_cast< char const* >(buffer.begin()->data())
+					+ buffer.begin()->size())} << '\n';
+	}
+
+	{
+		auto data = std::make_shared< std::string >("12345");
+		webservice::shared_const_buffer buffer(
+			data, webservice::construct_via_data_and_size);
+		std::cout << "shared_ptr< string >, created from data() and size(): "
+			<< bool_{std::equal(data->begin(), data->end(),
+				static_cast< char const* >(buffer.begin()->data()),
+				static_cast< char const* >(buffer.begin()->data())
+					+ buffer.begin()->size())} << '\n';
+	}
+
+	{
+		auto data = std::make_shared< std::string const >("12345");
+		webservice::shared_const_buffer buffer(
+			data, webservice::construct_via_data_and_size);
+		std::cout
+			<< "shared_ptr< string const >, created from data() and size(): "
+			<< bool_{std::equal(data->begin(), data->end(),
+				static_cast< char const* >(buffer.begin()->data()),
+				static_cast< char const* >(buffer.begin()->data())
+					+ buffer.begin()->size())} << '\n';
+	}
 }
