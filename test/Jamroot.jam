@@ -47,6 +47,12 @@ project webservice_test
 	;
 
 
+exe shared_const_buffer
+	:
+	shared_const_buffer.cpp
+	/webservice//webservice
+	;
+
 exe server_vs_browser
 	:
 	server_vs_browser.cpp

@@ -31,14 +31,16 @@ namespace webservice{
 		explicit shared_const_buffer(T&& data)
 			: data_(std::make_shared< typename std::decay< T >::type const >(
 				static_cast< T&& >(data)))
-			, buffer_(boost::asio::buffer(*boost::any_cast< std::shared_ptr<
-				typename std::decay< T >::type const > >(data_))) {}
+			, buffer_(boost::asio::buffer(
+				*boost::any_cast< std::shared_ptr<
+					typename std::decay< T >::type const > >(data_))) {}
 
 		/// \brief Use the shared_ptr directly
 		template < typename T >
 		explicit shared_const_buffer(std::shared_ptr< T > data)
 			: data_(std::move(data))
-			, buffer_(boost::asio::buffer(*data)) {}
+			, buffer_(boost::asio::buffer(
+				*boost::any_cast< std::shared_ptr< T > >(data_))) {}
 
 
 		/// \brief Buffer interface value_type
