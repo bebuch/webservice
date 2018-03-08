@@ -33,7 +33,7 @@ namespace webservice{
 
 
 		/// \brief Send a json message to all sessions
-		void send_json(nlohmann::json const& data){
+		void send_text(nlohmann::json const& data){
 			base::send_text(dump(data));
 		}
 
@@ -42,7 +42,7 @@ namespace webservice{
 		/// \brief Called when a session received a json message
 		///
 		/// Default implementation does nothing.
-		virtual void on_json(nlohmann::json&& /*data*/){}
+		virtual void on_text(nlohmann::json&& /*data*/){}
 
 
 	private:
@@ -58,7 +58,7 @@ namespace webservice{
 		}
 
 		void on_text(std::string&& data)final{
-			on_json([&data]{
+			on_text([&data]{
 				try{
 					return nlohmann::json::parse(data);
 				}catch(nlohmann::json::exception const& e){

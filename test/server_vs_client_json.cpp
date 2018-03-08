@@ -135,14 +135,14 @@ struct ws_service
 {
 	void on_open(std::uintptr_t, std::string const&)override{
 		check(state_t::ws_server_open);
-		send_json(nlohmann::json::parse(test_text));
+		send_text(nlohmann::json::parse(test_text));
 	}
 
 	void on_close(std::uintptr_t, std::string const&)override{
 		check(state_t::ws_server_close);
 	}
 
-	void on_json(
+	void on_text(
 		std::uintptr_t,
 		std::string const&,
 		nlohmann::json&& text
@@ -195,7 +195,7 @@ struct ws_client
 		check(state_t::ws_client_close);
 	}
 
-	void on_json(nlohmann::json&& text)override{
+	void on_text(nlohmann::json&& text)override{
 		check(state_t::ws_client_json);
 		if(nlohmann::json::parse(test_text) == text){
 			std::cout << "\033[1;32mclient pass: '"
@@ -206,7 +206,7 @@ struct ws_client
 				<< test_text << "' but got '" << text
 				<< "'\033[0m\n";
 		}
-		send_json(nlohmann::json::parse(test_text));
+		send_text(nlohmann::json::parse(test_text));
 	}
 
 	void on_binary(std::vector< std::uint8_t >&& data)override{
