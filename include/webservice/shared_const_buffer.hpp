@@ -21,16 +21,18 @@
 namespace webservice{
 
 
+	struct construct_via_data_and_size{};
+
 	/// \brief A generic reference-counted non-modifiable buffer class
 	class shared_const_buffer{
 	public:
 		/// \brief Move or copy the data to a shared_ptr
 		template < typename T >
 		explicit shared_const_buffer(T&& data)
-			: data_(std::make_shared< typename std::decay< T >::type >(
+			: data_(std::make_shared< typename std::decay< T >::type const >(
 				static_cast< T&& >(data)))
 			, buffer_(boost::asio::buffer(*boost::any_cast< std::shared_ptr<
-				typename std::decay< T >::type > >(data_))) {}
+				typename std::decay< T >::type const > >(data_))) {}
 
 		/// \brief Use the shared_ptr directly
 		template < typename T >
