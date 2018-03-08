@@ -29,11 +29,9 @@ namespace webservice{
 		/// \brief Move or copy the data to a shared_ptr
 		template < typename T >
 		explicit shared_const_buffer(T&& data)
-			: data_(std::make_shared< typename std::decay< T >::type const >(
-				static_cast< T&& >(data)))
-			, buffer_(boost::asio::buffer(
-				*boost::any_cast< std::shared_ptr<
-					typename std::decay< T >::type const > >(data_))) {}
+			: shared_const_buffer(
+				std::make_shared< typename std::decay< T >::type const >(
+					static_cast< T&& >(data))) {}
 
 		/// \brief Use the shared_ptr directly
 		template < typename T >
