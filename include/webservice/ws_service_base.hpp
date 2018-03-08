@@ -17,20 +17,18 @@
 
 #include <boost/any.hpp>
 
-#include <memory>
 #include <string>
 #include <chrono>
-#include <vector>
-#include <set>
 
 
 namespace webservice{
 
 
+	class ws_server_session;
+
 	class ws_service_base{
 	public:
-		/// \brief Constructor
-		ws_service_base();
+		ws_service_base() = default;
 
 		/// \brief Destructor
 		virtual ~ws_service_base();
@@ -40,45 +38,19 @@ namespace webservice{
 		ws_service_base& operator=(ws_service_base const&) = delete;
 
 
-		/// \brief Send a text message to all sessions
-		void send_text(shared_const_buffer buffer);
-
-		/// \brief Send a text message to session by identifier
+		/// \brief Send a text message to session
 		void send_text(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			shared_const_buffer buffer);
 
-		/// \brief Send a text message to all sessions by identifier
-		void send_text(
-			std::set< std::uintptr_t > const& identifier,
-			shared_const_buffer buffer);
-
-
-		/// \brief Send a binary message to all sessions
-		void send_binary(shared_const_buffer buffer);
-
-		/// \brief Send a binary message to session by identifier
+		/// \brief Send a binary message to session
 		void send_binary(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			shared_const_buffer buffer);
 
-		/// \brief Send a binary message to all sessions by identifier
-		void send_binary(
-			std::set< std::uintptr_t > const& identifier,
-			shared_const_buffer buffer);
-
-
-		/// \brief Shutdown all sessions
-		void close(boost::beast::string_view reason);
-
-		/// \brief Shutdown session by identifier
+		/// \brief Shutdown session
 		void close(
-			std::uintptr_t identifier,
-			boost::beast::string_view reason);
-
-		/// \brief Shutdown all sessions by identifier
-		void close(
-			std::set< std::uintptr_t > const& identifier,
+			ws_server_session* session,
 			boost::beast::string_view reason);
 
 
@@ -87,21 +59,21 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_open(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& resource);
 
 		/// \brief Called with a unique identifier when a sessions ends
 		///
 		/// Default implementation does nothing.
 		virtual void on_close(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& resource);
 
 		/// \brief Called when a session received a text message
 		///
 		/// Default implementation does nothing.
 		virtual void on_text(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& resource,
 			boost::beast::multi_buffer const& buffer);
 
@@ -109,7 +81,7 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_binary(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& resource,
 			boost::beast::multi_buffer const& buffer);
 
@@ -117,7 +89,7 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_error(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& resource,
 			ws_service_location location,
 			boost::system::error_code ec);
@@ -126,7 +98,7 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_exception(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& resource,
 			std::exception_ptr error)noexcept;
 
@@ -149,15 +121,11 @@ namespace webservice{
 
 
 	private:
-		/// \brief Pointer to implementation
-		std::unique_ptr< class ws_service_base_impl > impl_;
-
 		/// \brief Pointer to the server object
 		class server* server_ = nullptr;
 
+		friend class ws_server_session;
 		friend class server;
-		friend class http_session;
-		friend class ws_service_base_impl;
 	};
 
 

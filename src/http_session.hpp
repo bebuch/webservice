@@ -130,7 +130,7 @@ namespace webservice{
 				ws_stream ws(std::move(socket_));
 				ws.read_message_max(max_read_message_size_);
 				auto session = std::make_shared< ws_server_session >(
-					std::move(ws), *service_->impl_, websocket_ping_time_);
+					std::move(ws), *service_, websocket_ping_time_);
 
 				session->do_accept(std::move(req_));
 			}else{

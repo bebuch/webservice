@@ -9,7 +9,7 @@
 #ifndef _webservice__basic_ws_service__hpp_INCLUDED_
 #define _webservice__basic_ws_service__hpp_INCLUDED_
 
-#include "ws_service_base.hpp"
+#include "checked_ws_service_base.hpp"
 #include "conversion.hpp"
 
 
@@ -21,24 +21,25 @@ namespace webservice{
 		typename SendBinaryType = SendTextType,
 		typename ReceiveTextType = SendTextType,
 		typename ReceiveBinaryType = SendBinaryType >
-	class basic_ws_service: public ws_service_base{
+	class basic_ws_service: public checked_ws_service_base{
 	public:
 		static from_multi_buffer_t< ReceiveTextType > multi_buffer_to_text;
 
 		static from_multi_buffer_t< ReceiveBinaryType > multi_buffer_to_binary;
 
 
-		using ws_service_base::ws_service_base;
+		using checked_ws_service_base::checked_ws_service_base;
 
 
 		/// \brief Send a text message to all sessions
 		void send_text(SendTextType data){
-			ws_service_base::send_text(shared_const_buffer(std::move(data)));
+			checked_ws_service_base::send_text(
+				shared_const_buffer(std::move(data)));
 		}
 
 		/// \brief Send a text message to session by identifier
 		void send_text(std::uintptr_t identifier, SendTextType data){
-			ws_service_base::send_text(
+			checked_ws_service_base::send_text(
 				identifier, shared_const_buffer(std::move(data)));
 		}
 
@@ -47,19 +48,20 @@ namespace webservice{
 			std::set< std::uintptr_t > const& identifier,
 			SendTextType data
 		){
-			ws_service_base::send_text(
+			checked_ws_service_base::send_text(
 				identifier, shared_const_buffer(std::move(data)));
 		}
 
 
 		/// \brief Send a binary message to all sessions
 		void send_binary(SendBinaryType data){
-			ws_service_base::send_binary(shared_const_buffer(std::move(data)));
+			checked_ws_service_base::send_binary(
+				shared_const_buffer(std::move(data)));
 		}
 
 		/// \brief Send a binary message to session by identifier
 		void send_binary(std::uintptr_t identifier, SendBinaryType data){
-			ws_service_base::send_binary(
+			checked_ws_service_base::send_binary(
 				identifier, shared_const_buffer(std::move(data)));
 		}
 
@@ -68,7 +70,7 @@ namespace webservice{
 			std::set< std::uintptr_t > const& identifier,
 			SendBinaryType data
 		){
-			ws_service_base::send_binary(
+			checked_ws_service_base::send_binary(
 				identifier, shared_const_buffer(std::move(data)));
 		}
 

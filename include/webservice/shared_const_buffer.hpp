@@ -60,7 +60,8 @@ namespace webservice{
 					static_cast< void const* >(
 						boost::any_cast< std::shared_ptr< T > >(data_)->data()
 					),
-					boost::any_cast< std::shared_ptr< T > >(data_)->size()
+					boost::any_cast< std::shared_ptr< T > >(data_)->size() *
+					sizeof(*data->data())
 				)) {}
 
 

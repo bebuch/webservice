@@ -6,113 +6,66 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include "ws_service_base_impl.hpp"
+#include <webservice/ws_service_base.hpp>
+
+#include "ws_session.hpp"
 
 
 namespace webservice{
 
 
-	ws_service_base::ws_service_base()
-		: impl_(std::make_unique< ws_service_base_impl >(*this)){}
-
-
-	ws_service_base::~ws_service_base(){
-		impl_->send("server shutdown");
-	}
+	ws_service_base::~ws_service_base() = default;
 
 
 	void ws_service_base::on_open(
-		std::uintptr_t const /*identifier*/,
+		ws_server_session* /*session*/,
 		std::string const& /*resource*/){}
 
 	void ws_service_base::on_close(
-		std::uintptr_t const /*identifier*/,
+		ws_server_session* /*session*/,
 		std::string const& /*resource*/){}
 
 	void ws_service_base::on_text(
-		std::uintptr_t const /*identifier*/,
+		ws_server_session* /*session*/,
 		std::string const& /*resource*/,
 		boost::beast::multi_buffer const& /*buffer*/){}
 
 	void ws_service_base::on_binary(
-		std::uintptr_t const /*identifier*/,
+		ws_server_session* /*session*/,
 		std::string const& /*resource*/,
 		boost::beast::multi_buffer const& /*buffer*/){}
 
 	void ws_service_base::on_error(
-		std::uintptr_t /*identifier*/,
+		ws_server_session* /*session*/,
 		std::string const& /*resource*/,
 		ws_service_location /*location*/,
 		boost::system::error_code /*ec*/){}
 
 	void ws_service_base::on_exception(
-		std::uintptr_t /*identifier*/,
+		ws_server_session* /*session*/,
 		std::string const& /*resource*/,
 		std::exception_ptr /*error*/)noexcept{}
 
 
-	void ws_service_base::send_text(shared_const_buffer buffer){
-		impl_->send(std::make_tuple(text_tag{}, std::move(buffer)));
-	}
-
 	void ws_service_base::send_text(
-		std::uintptr_t const identifier,
+		ws_server_session* session,
 		shared_const_buffer buffer
 	){
-		impl_->send(
-			identifier,
-			std::make_tuple(text_tag{}, std::move(buffer)));
-	}
-
-	void ws_service_base::send_text(
-		std::set< std::uintptr_t > const& identifier,
-		shared_const_buffer buffer
-	){
-		impl_->send(
-			identifier,
-			std::make_tuple(text_tag{}, std::move(buffer)));
-	}
-
-
-	void ws_service_base::send_binary(shared_const_buffer buffer){
-		impl_->send(std::make_tuple(binary_tag{}, std::move(buffer)));
+		session->send(std::make_tuple(text_tag{}, std::move(buffer)));
 	}
 
 	void ws_service_base::send_binary(
-		std::uintptr_t const identifier,
+		ws_server_session* session,
 		shared_const_buffer buffer
 	){
-		impl_->send(
-			identifier,
-			std::make_tuple(binary_tag{}, std::move(buffer)));
-	}
-
-	void ws_service_base::send_binary(
-		std::set< std::uintptr_t > const& identifier,
-		shared_const_buffer buffer
-	){
-		impl_->send(
-			identifier,
-			std::make_tuple(binary_tag{}, std::move(buffer)));
-	}
-
-
-	void ws_service_base::close(boost::beast::string_view reason){
-		impl_->send(boost::beast::websocket::close_reason(reason));
+		session->send(std::make_tuple(binary_tag{}, std::move(buffer)));
 	}
 
 	void ws_service_base::close(
-		std::uintptr_t identifier,
+		ws_server_session* session,
 		boost::beast::string_view reason
 	){
-		impl_->send(identifier, boost::beast::websocket::close_reason(reason));
-	}
-
-	void ws_service_base::close(
-		std::set< std::uintptr_t > const& identifier,
-		boost::beast::string_view reason
-	){
-		impl_->send(identifier, boost::beast::websocket::close_reason(reason));
+		session->send(boost::beast::websocket::close_reason(reason));
 	}
 
 

@@ -136,4 +136,31 @@ int main(){
 				static_cast< char const* >(buffer.begin()->data())
 					+ buffer.begin()->size())} << '\n';
 	}
+
+	{
+		std::vector< int > data{1, 2, 3, 4, 5};
+		webservice::shared_const_buffer buffer(data);
+		std::cout << "vector< int >: "
+			<< bool_{std::equal(
+				reinterpret_cast< char const* >(data.data()),
+				reinterpret_cast< char const* >(data.data())
+					+ data.size() * sizeof(int),
+				static_cast< char const* >(buffer.begin()->data()),
+				static_cast< char const* >(buffer.begin()->data())
+					+ buffer.begin()->size())} << '\n';
+	}
+
+	{
+		std::vector< int > data{1, 2, 3, 4, 5};
+		webservice::shared_const_buffer buffer(
+			data, webservice::construct_via_data_and_size);
+		std::cout << "vector< int >, created from data() and size(): "
+			<< bool_{std::equal(
+				reinterpret_cast< char const* >(data.data()),
+				reinterpret_cast< char const* >(data.data())
+					+ data.size() * sizeof(int),
+				static_cast< char const* >(buffer.begin()->data()),
+				static_cast< char const* >(buffer.begin()->data())
+					+ buffer.begin()->size())} << '\n';
+	}
 }
