@@ -9,11 +9,23 @@
 #ifndef _webservice__json_ws_client__hpp_INCLUDED_
 #define _webservice__json_ws_client__hpp_INCLUDED_
 
-#include "basic_json_ws_client.hpp"
+#include "json_conversion.hpp"
+#include "basic_ws_client.hpp"
 
 
 namespace webservice{
 
+
+	template <
+		typename SendBinaryType,
+		typename ReceiveBinaryType = SendBinaryType >
+	class basic_json_ws_client
+		: public basic_ws_client<
+			nlohmann::json, SendBinaryType, nlohmann::json, ReceiveBinaryType >
+	{
+		using basic_ws_client< nlohmann::json, SendBinaryType,
+			nlohmann::json, ReceiveBinaryType >::basic_ws_client;
+	};
 
 	class json_ws_client
 		: public basic_json_ws_client< std::vector< std::uint8_t > >

@@ -40,15 +40,17 @@ namespace webservice{
 
 
 		/// \brief Send a text message
-		void send_text(SendTextType data){
-			ws_client_base::send_text(
-				text_to_shared_const_buffer(std::move(data)));
+		template < typename SendTextTypeT >
+		void send_text(SendTextTypeT&& data){
+			ws_client_base::send_text(text_to_shared_const_buffer(
+				static_cast< SendTextTypeT&& >(data)));
 		}
 
 		/// \brief Send a binary message
-		void send_binary(SendBinaryType data){
-			ws_client_base::send_binary(
-				binary_to_shared_const_buffer(std::move(data)));
+		template < typename SendBinaryTypeT >
+		void send_binary(SendBinaryTypeT&& data){
+			ws_client_base::send_binary(binary_to_shared_const_buffer(
+				static_cast< SendBinaryTypeT&& >(data)));
 		}
 
 

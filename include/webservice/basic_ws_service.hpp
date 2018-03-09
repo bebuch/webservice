@@ -40,46 +40,58 @@ namespace webservice{
 
 
 		/// \brief Send a text message to all sessions
-		void send_text(SendTextType data){
+		template < typename SendTextTypeT >
+		void send_text(SendTextTypeT&& data){
 			checked_ws_service_base::send_text(
-				text_to_shared_const_buffer(std::move(data)));
+				text_to_shared_const_buffer(
+					static_cast< SendTextTypeT&& >(data)));
 		}
 
 		/// \brief Send a text message to session by identifier
-		void send_text(std::uintptr_t identifier, SendTextType data){
+		template < typename SendTextTypeT >
+		void send_text(std::uintptr_t identifier, SendTextTypeT&& data){
 			checked_ws_service_base::send_text(
-				identifier, text_to_shared_const_buffer(std::move(data)));
+				identifier, text_to_shared_const_buffer(
+					static_cast< SendTextTypeT&& >(data)));
 		}
 
 		/// \brief Send a text message to all sessions by identifier
+		template < typename SendTextTypeT >
 		void send_text(
 			std::set< std::uintptr_t > const& identifier,
-			SendTextType data
+			SendTextTypeT&& data
 		){
 			checked_ws_service_base::send_text(
-				identifier, text_to_shared_const_buffer(std::move(data)));
+				identifier, text_to_shared_const_buffer(
+					static_cast< SendTextTypeT&& >(data)));
 		}
 
 
 		/// \brief Send a binary message to all sessions
-		void send_binary(SendBinaryType data){
+		template < typename SendBinaryTypeT >
+		void send_binary(SendBinaryTypeT&& data){
 			checked_ws_service_base::send_binary(
-				binary_to_shared_const_buffer(std::move(data)));
+				binary_to_shared_const_buffer(
+					static_cast< SendBinaryTypeT&& >(data)));
 		}
 
 		/// \brief Send a binary message to session by identifier
-		void send_binary(std::uintptr_t identifier, SendBinaryType data){
+		template < typename SendBinaryTypeT >
+		void send_binary(std::uintptr_t identifier, SendBinaryTypeT&& data){
 			checked_ws_service_base::send_binary(
-				identifier, binary_to_shared_const_buffer(std::move(data)));
+				identifier, binary_to_shared_const_buffer(
+					static_cast< SendBinaryTypeT&& >(data)));
 		}
 
 		/// \brief Send a binary message to all sessions by identifier
+		template < typename SendBinaryTypeT >
 		void send_binary(
 			std::set< std::uintptr_t > const& identifier,
-			SendBinaryType data
+			SendBinaryTypeT&& data
 		){
 			checked_ws_service_base::send_binary(
-				identifier, binary_to_shared_const_buffer(std::move(data)));
+				identifier, binary_to_shared_const_buffer(
+					static_cast< SendBinaryTypeT&& >(data)));
 		}
 
 
