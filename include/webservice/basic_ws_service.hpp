@@ -23,9 +23,17 @@ namespace webservice{
 		typename ReceiveBinaryType = SendBinaryType >
 	class basic_ws_service: public checked_ws_service_base{
 	public:
-		static from_multi_buffer_t< ReceiveTextType > multi_buffer_to_text;
+		static to_shared_const_buffer_t< SendTextType >
+			text_to_shared_const_buffer;
 
-		static from_multi_buffer_t< ReceiveBinaryType > multi_buffer_to_binary;
+		static to_shared_const_buffer_t< SendBinaryType >
+			binary_to_shared_const_buffer;
+
+		static from_multi_buffer_t< ReceiveTextType >
+			multi_buffer_to_text;
+
+		static from_multi_buffer_t< ReceiveBinaryType >
+			multi_buffer_to_binary;
 
 
 		using checked_ws_service_base::checked_ws_service_base;
@@ -34,13 +42,13 @@ namespace webservice{
 		/// \brief Send a text message to all sessions
 		void send_text(SendTextType data){
 			checked_ws_service_base::send_text(
-				shared_const_buffer(std::move(data)));
+				text_to_shared_const_buffer(std::move(data)));
 		}
 
 		/// \brief Send a text message to session by identifier
 		void send_text(std::uintptr_t identifier, SendTextType data){
 			checked_ws_service_base::send_text(
-				identifier, shared_const_buffer(std::move(data)));
+				identifier, text_to_shared_const_buffer(std::move(data)));
 		}
 
 		/// \brief Send a text message to all sessions by identifier
@@ -49,20 +57,20 @@ namespace webservice{
 			SendTextType data
 		){
 			checked_ws_service_base::send_text(
-				identifier, shared_const_buffer(std::move(data)));
+				identifier, text_to_shared_const_buffer(std::move(data)));
 		}
 
 
 		/// \brief Send a binary message to all sessions
 		void send_binary(SendBinaryType data){
 			checked_ws_service_base::send_binary(
-				shared_const_buffer(std::move(data)));
+				binary_to_shared_const_buffer(std::move(data)));
 		}
 
 		/// \brief Send a binary message to session by identifier
 		void send_binary(std::uintptr_t identifier, SendBinaryType data){
 			checked_ws_service_base::send_binary(
-				identifier, shared_const_buffer(std::move(data)));
+				identifier, binary_to_shared_const_buffer(std::move(data)));
 		}
 
 		/// \brief Send a binary message to all sessions by identifier
@@ -71,7 +79,7 @@ namespace webservice{
 			SendBinaryType data
 		){
 			checked_ws_service_base::send_binary(
-				identifier, shared_const_buffer(std::move(data)));
+				identifier, binary_to_shared_const_buffer(std::move(data)));
 		}
 
 
@@ -110,6 +118,28 @@ namespace webservice{
 		}
 	};
 
+
+	template <
+		typename SendTextType,
+		typename SendBinaryType,
+		typename ReceiveTextType,
+		typename ReceiveBinaryType >
+	to_shared_const_buffer_t< SendTextType > basic_ws_service<
+		SendTextType,
+		SendBinaryType,
+		ReceiveTextType,
+		ReceiveBinaryType >::text_to_shared_const_buffer;
+
+	template <
+		typename SendTextType,
+		typename SendBinaryType,
+		typename ReceiveTextType,
+		typename ReceiveBinaryType >
+	to_shared_const_buffer_t< SendBinaryType > basic_ws_service<
+		SendTextType,
+		SendBinaryType,
+		ReceiveTextType,
+		ReceiveBinaryType >::binary_to_shared_const_buffer;
 
 	template <
 		typename SendTextType,

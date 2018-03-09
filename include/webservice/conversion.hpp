@@ -9,10 +9,9 @@
 #ifndef _webservice__conversion__hpp_INCLUDED_
 #define _webservice__conversion__hpp_INCLUDED_
 
-#include <boost/beast/core/multi_buffer.hpp>
-#include <boost/beast/core/buffers_to_string.hpp>
+#include "shared_const_buffer.hpp"
 
-#include <boost/asio/buffer.hpp>
+#include <boost/beast/core/multi_buffer.hpp>
 
 #include <type_traits>
 #include <utility>
@@ -22,6 +21,15 @@ namespace webservice{
 
 
 	namespace detail{
+
+
+		template < typename T, typename = void >
+		struct buffers_constructible: std::false_type{};
+
+		template < typename T >
+		struct buffers_constructible< T,
+				decltype((void)boost::asio::buffer(std::declval< T >())) >
+			: std::true_type{};
 
 
 		template < typename T, typename = void >
@@ -53,6 +61,21 @@ namespace webservice{
 
 
 	}
+
+
+	template < typename T >
+	struct to_shared_const_buffer_t{
+		static_assert(
+			detail::buffers_constructible< T >::value,
+			"boost::asio::buffer must be callable with an object of type T"
+			"alternatively you can specialize to_shared_const_buffer_t with a "
+			"function operator that takes an object of type T and "
+			"returns a webservice::shared_const_buffer");
+
+		shared_const_buffer operator()(T data)const{
+			return shared_const_buffer(std::move(data));
+		}
+	};
 
 
 	template < typename T >
