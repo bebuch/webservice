@@ -6,8 +6,8 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__checked_ws_handler_base__hpp_INCLUDED_
-#define _webservice__checked_ws_handler_base__hpp_INCLUDED_
+#ifndef _webservice__checked_ws_service_base__hpp_INCLUDED_
+#define _webservice__checked_ws_service_base__hpp_INCLUDED_
 
 #include "ws_handler_base.hpp"
 
@@ -18,13 +18,10 @@
 namespace webservice{
 
 
-	class checked_ws_handler_base: public ws_handler_base{
+	class checked_ws_service_base{
 	public:
-		checked_ws_handler_base();
-
 		/// \brief Destructor
-		~checked_ws_handler_base()override;
-
+		virtual ~checked_ws_service_base();
 
 		/// \brief Send a text message to all sessions
 		void send_text(shared_const_buffer buffer);
@@ -72,23 +69,18 @@ namespace webservice{
 		/// \brief Called with a unique identifier when a sessions starts
 		///
 		/// Default implementation does nothing.
-		virtual void on_open(
-			std::uintptr_t identifier,
-			std::string const& resource);
+		virtual void on_open(std::uintptr_t identifier);
 
 		/// \brief Called with a unique identifier when a sessions ends
 		///
 		/// Default implementation does nothing.
-		virtual void on_close(
-			std::uintptr_t identifier,
-			std::string const& resource);
+		virtual void on_close(std::uintptr_t identifier);
 
 		/// \brief Called when a session received a text message
 		///
 		/// Default implementation does nothing.
 		virtual void on_text(
 			std::uintptr_t identifier,
-			std::string const& resource,
 			boost::beast::multi_buffer const& buffer);
 
 		/// \brief Called when a session received a binary message
@@ -96,7 +88,6 @@ namespace webservice{
 		/// Default implementation does nothing.
 		virtual void on_binary(
 			std::uintptr_t identifier,
-			std::string const& resource,
 			boost::beast::multi_buffer const& buffer);
 
 		/// \brief Called when an error occured
@@ -104,7 +95,6 @@ namespace webservice{
 		/// Default implementation does nothing.
 		virtual void on_error(
 			std::uintptr_t identifier,
-			std::string const& resource,
 			ws_handler_location location,
 			boost::system::error_code ec);
 
@@ -113,63 +103,7 @@ namespace webservice{
 		/// Default implementation does nothing.
 		virtual void on_exception(
 			std::uintptr_t identifier,
-			std::string const& resource,
 			std::exception_ptr error)noexcept;
-
-
-	private:
-		/// \brief Called with a unique identifier when a sessions starts
-		///
-		/// Default implementation does nothing.
-		void on_open(
-			ws_server_session* session,
-			std::string const& resource)final;
-
-		/// \brief Called with a unique identifier when a sessions ends
-		///
-		/// Default implementation does nothing.
-		void on_close(
-			ws_server_session* session,
-			std::string const& resource)final;
-
-		/// \brief Called when a session received a text message
-		///
-		/// Default implementation does nothing.
-		void on_text(
-			ws_server_session* session,
-			std::string const& resource,
-			boost::beast::multi_buffer const& buffer)final;
-
-		/// \brief Called when a session received a binary message
-		///
-		/// Default implementation does nothing.
-		void on_binary(
-			ws_server_session* session,
-			std::string const& resource,
-			boost::beast::multi_buffer const& buffer)final;
-
-		/// \brief Called when an error occured
-		///
-		/// Default implementation does nothing.
-		void on_error(
-			ws_server_session* session,
-			std::string const& resource,
-			ws_handler_location location,
-			boost::system::error_code ec)final;
-
-		/// \brief Called when an exception was thrown
-		///
-		/// Default implementation does nothing.
-		void on_exception(
-			ws_server_session* session,
-			std::string const& resource,
-			std::exception_ptr error)noexcept final;
-
-	private:
-		/// \brief Pointer to implementation
-		std::unique_ptr< class checked_ws_handler_base_impl > impl_;
-
-		friend class checked_ws_handler_base_impl;
 	};
 
 
