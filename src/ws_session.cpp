@@ -225,7 +225,7 @@ namespace webservice{
 					boost::system::error_code ec
 				){
 					if(ec){
-						this_->callback::on_error(location_type::close, ec);
+						this_->on_error(location_type::close, ec);
 					}
 				}));
 	}
