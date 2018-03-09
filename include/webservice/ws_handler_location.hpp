@@ -19,6 +19,7 @@ namespace webservice{
 		accept,
 		read,
 		write,
+		close,
 		timer,
 		ping
 	};
@@ -29,6 +30,7 @@ namespace webservice{
 			case ws_handler_location::accept: return "accept";
 			case ws_handler_location::read: return "read";
 			case ws_handler_location::write: return "write";
+			case ws_handler_location::close: return "close";
 			case ws_handler_location::timer: return "timer";
 			case ws_handler_location::ping: return "ping";
 			default: return "invalid location";

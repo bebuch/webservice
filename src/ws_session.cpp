@@ -224,7 +224,9 @@ namespace webservice{
 				[this_ = this->shared_from_this()](
 					boost::system::error_code ec
 				){
-					(void)ec; // TODO: handler error code
+					if(ec){
+						this_->callback::on_error(location_type::close, ec);
+					}
 				}));
 	}
 

@@ -18,6 +18,7 @@ namespace webservice{
 	enum class ws_client_location{
 		read,
 		write,
+		close,
 		timer,
 		ping
 	};
@@ -27,6 +28,7 @@ namespace webservice{
 		switch(location){
 			case ws_client_location::read: return "read";
 			case ws_client_location::write: return "write";
+			case ws_client_location::close: return "close";
 			case ws_client_location::timer: return "timer";
 			case ws_client_location::ping: return "ping";
 			default: return "invalid location";
