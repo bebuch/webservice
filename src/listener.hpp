@@ -22,7 +22,7 @@ namespace webservice{
 	public:
 		listener(
 			std::unique_ptr< http_request_handler > handler,
-			std::unique_ptr< ws_service_base > service,
+			std::unique_ptr< ws_handler_base > service,
 			std::unique_ptr< error_handler > error_handler,
 			boost::asio::ip::tcp::endpoint endpoint,
 			std::uint8_t thread_count,
@@ -95,7 +95,7 @@ namespace webservice{
 
 	private:
 		std::unique_ptr< http_request_handler > handler_;
-		std::unique_ptr< ws_service_base > service_;
+		std::unique_ptr< ws_handler_base > service_;
 		std::unique_ptr< error_handler > error_handler_;
 		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
 		std::size_t const max_read_message_size_;

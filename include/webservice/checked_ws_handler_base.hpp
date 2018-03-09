@@ -6,10 +6,10 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__checked_ws_service_base__hpp_INCLUDED_
-#define _webservice__checked_ws_service_base__hpp_INCLUDED_
+#ifndef _webservice__checked_ws_handler_base__hpp_INCLUDED_
+#define _webservice__checked_ws_handler_base__hpp_INCLUDED_
 
-#include "ws_service_base.hpp"
+#include "ws_handler_base.hpp"
 
 #include <memory>
 #include <set>
@@ -18,12 +18,12 @@
 namespace webservice{
 
 
-	class checked_ws_service_base: public ws_service_base{
+	class checked_ws_handler_base: public ws_handler_base{
 	public:
-		checked_ws_service_base();
+		checked_ws_handler_base();
 
 		/// \brief Destructor
-		~checked_ws_service_base()override;
+		~checked_ws_handler_base()override;
 
 		/// \brief Send a text message to all sessions
 		void send_text(shared_const_buffer buffer);
@@ -104,7 +104,7 @@ namespace webservice{
 		virtual void on_error(
 			std::uintptr_t identifier,
 			std::string const& resource,
-			ws_service_location location,
+			ws_handler_location location,
 			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown
@@ -153,7 +153,7 @@ namespace webservice{
 		void on_error(
 			ws_server_session* session,
 			std::string const& resource,
-			ws_service_location location,
+			ws_handler_location location,
 			boost::system::error_code ec)final;
 
 		/// \brief Called when an exception was thrown
@@ -166,9 +166,9 @@ namespace webservice{
 
 	private:
 		/// \brief Pointer to implementation
-		std::unique_ptr< class checked_ws_service_base_impl > impl_;
+		std::unique_ptr< class checked_ws_handler_base_impl > impl_;
 
-		friend class checked_ws_service_base_impl;
+		friend class checked_ws_handler_base_impl;
 	};
 
 

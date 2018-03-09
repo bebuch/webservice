@@ -6,10 +6,10 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__basic_ws_service__hpp_INCLUDED_
-#define _webservice__basic_ws_service__hpp_INCLUDED_
+#ifndef _webservice__basic_ws_handler__hpp_INCLUDED_
+#define _webservice__basic_ws_handler__hpp_INCLUDED_
 
-#include "checked_ws_service_base.hpp"
+#include "checked_ws_handler_base.hpp"
 #include "conversion.hpp"
 
 
@@ -21,7 +21,7 @@ namespace webservice{
 		typename SendBinaryType = SendTextType,
 		typename ReceiveTextType = SendTextType,
 		typename ReceiveBinaryType = SendBinaryType >
-	class basic_ws_service: public checked_ws_service_base{
+	class basic_ws_handler: public checked_ws_handler_base{
 	public:
 		static to_shared_const_buffer_t< SendTextType >
 			text_to_shared_const_buffer;
@@ -36,13 +36,13 @@ namespace webservice{
 			multi_buffer_to_binary;
 
 
-		using checked_ws_service_base::checked_ws_service_base;
+		using checked_ws_handler_base::checked_ws_handler_base;
 
 
 		/// \brief Send a text message to all sessions
 		template < typename SendTextTypeT >
 		void send_text(SendTextTypeT&& data){
-			checked_ws_service_base::send_text(
+			checked_ws_handler_base::send_text(
 				text_to_shared_const_buffer(
 					static_cast< SendTextTypeT&& >(data)));
 		}
@@ -50,7 +50,7 @@ namespace webservice{
 		/// \brief Send a text message to session by identifier
 		template < typename SendTextTypeT >
 		void send_text(std::uintptr_t identifier, SendTextTypeT&& data){
-			checked_ws_service_base::send_text(
+			checked_ws_handler_base::send_text(
 				identifier, text_to_shared_const_buffer(
 					static_cast< SendTextTypeT&& >(data)));
 		}
@@ -61,7 +61,7 @@ namespace webservice{
 			std::set< std::uintptr_t > const& identifier,
 			SendTextTypeT&& data
 		){
-			checked_ws_service_base::send_text(
+			checked_ws_handler_base::send_text(
 				identifier, text_to_shared_const_buffer(
 					static_cast< SendTextTypeT&& >(data)));
 		}
@@ -70,7 +70,7 @@ namespace webservice{
 		/// \brief Send a binary message to all sessions
 		template < typename SendBinaryTypeT >
 		void send_binary(SendBinaryTypeT&& data){
-			checked_ws_service_base::send_binary(
+			checked_ws_handler_base::send_binary(
 				binary_to_shared_const_buffer(
 					static_cast< SendBinaryTypeT&& >(data)));
 		}
@@ -78,7 +78,7 @@ namespace webservice{
 		/// \brief Send a binary message to session by identifier
 		template < typename SendBinaryTypeT >
 		void send_binary(std::uintptr_t identifier, SendBinaryTypeT&& data){
-			checked_ws_service_base::send_binary(
+			checked_ws_handler_base::send_binary(
 				identifier, binary_to_shared_const_buffer(
 					static_cast< SendBinaryTypeT&& >(data)));
 		}
@@ -89,7 +89,7 @@ namespace webservice{
 			std::set< std::uintptr_t > const& identifier,
 			SendBinaryTypeT&& data
 		){
-			checked_ws_service_base::send_binary(
+			checked_ws_handler_base::send_binary(
 				identifier, binary_to_shared_const_buffer(
 					static_cast< SendBinaryTypeT&& >(data)));
 		}
@@ -136,7 +136,7 @@ namespace webservice{
 		typename SendBinaryType,
 		typename ReceiveTextType,
 		typename ReceiveBinaryType >
-	to_shared_const_buffer_t< SendTextType > basic_ws_service<
+	to_shared_const_buffer_t< SendTextType > basic_ws_handler<
 		SendTextType,
 		SendBinaryType,
 		ReceiveTextType,
@@ -147,7 +147,7 @@ namespace webservice{
 		typename SendBinaryType,
 		typename ReceiveTextType,
 		typename ReceiveBinaryType >
-	to_shared_const_buffer_t< SendBinaryType > basic_ws_service<
+	to_shared_const_buffer_t< SendBinaryType > basic_ws_handler<
 		SendTextType,
 		SendBinaryType,
 		ReceiveTextType,
@@ -158,7 +158,7 @@ namespace webservice{
 		typename SendBinaryType,
 		typename ReceiveTextType,
 		typename ReceiveBinaryType >
-	from_multi_buffer_t< ReceiveTextType > basic_ws_service<
+	from_multi_buffer_t< ReceiveTextType > basic_ws_handler<
 		SendTextType,
 		SendBinaryType,
 		ReceiveTextType,
@@ -169,7 +169,7 @@ namespace webservice{
 		typename SendBinaryType,
 		typename ReceiveTextType,
 		typename ReceiveBinaryType >
-	from_multi_buffer_t< ReceiveBinaryType > basic_ws_service<
+	from_multi_buffer_t< ReceiveBinaryType > basic_ws_handler<
 		SendTextType,
 		SendBinaryType,
 		ReceiveTextType,

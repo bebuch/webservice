@@ -9,7 +9,7 @@
 #ifndef _webservice__ws_session__hpp_INCLUDED_
 #define _webservice__ws_session__hpp_INCLUDED_
 
-#include <webservice/ws_service_location.hpp>
+#include <webservice/ws_handler_location.hpp>
 #include <webservice/ws_client_location.hpp>
 #include <webservice/shared_const_buffer.hpp>
 
@@ -35,7 +35,7 @@ namespace webservice{
 	class binary_tag{};
 	class text_tag{};
 
-	class ws_service_base;
+	class ws_handler_base;
 	class ws_client_base_impl;
 	class ws_server_session;
 	class ws_client_session;
@@ -49,7 +49,7 @@ namespace webservice{
 
 	template <>
 	struct session_location_type< ws_server_session >{
-		using type = ws_service_location;
+		using type = ws_handler_location;
 	};
 
 	template <>
@@ -178,7 +178,7 @@ namespace webservice{
 		/// \brief Take ownership of the socket
 		explicit ws_server_session(
 			ws_stream&& ws,
-			ws_service_base& service,
+			ws_handler_base& service,
 			boost::optional< std::chrono::milliseconds > websocket_ping_time);
 
 		/// \brief Destructor
@@ -208,7 +208,7 @@ namespace webservice{
 
 		/// \brief Called when an error occured
 		void on_error(
-			ws_service_location location,
+			ws_handler_location location,
 			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown
@@ -218,7 +218,7 @@ namespace webservice{
 	private:
 		using callback = ws_session_callbacks< ws_server_session >;
 
-		ws_service_base& service_;
+		ws_handler_base& service_;
 		std::string resource_;
 		bool is_open_ = false;
 	};

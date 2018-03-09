@@ -6,10 +6,10 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__checked_ws_service_base_impl__hpp_INCLUDED_
-#define _webservice__checked_ws_service_base_impl__hpp_INCLUDED_
+#ifndef _webservice__checked_ws_handler_base_impl__hpp_INCLUDED_
+#define _webservice__checked_ws_handler_base_impl__hpp_INCLUDED_
 
-#include <webservice/checked_ws_service_base.hpp>
+#include <webservice/checked_ws_handler_base.hpp>
 
 #include "ws_session.hpp"
 
@@ -19,11 +19,11 @@
 namespace webservice{
 
 
-	/// \brief Implementation of checked_ws_service_base
-	class checked_ws_service_base_impl{
+	/// \brief Implementation of checked_ws_handler_base
+	class checked_ws_handler_base_impl{
 	public:
 		/// \brief Constructor
-		checked_ws_service_base_impl(checked_ws_service_base& self):
+		checked_ws_handler_base_impl(checked_ws_handler_base& self):
 			self_(self) {}
 
 		/// \brief Called with a unique identifier when a sessions starts
@@ -79,7 +79,7 @@ namespace webservice{
 		void on_error(
 			ws_server_session* const session,
 			std::string const& resource,
-			ws_service_location location,
+			ws_handler_location location,
 			boost::system::error_code ec
 		){
 			self_.on_error(
@@ -166,7 +166,7 @@ namespace webservice{
 
 
 		/// \brief Reference to the actual object
-		checked_ws_service_base& self_;
+		checked_ws_handler_base& self_;
 
 		/// \brief Protect sessions_
 		///

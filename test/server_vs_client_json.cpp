@@ -12,7 +12,7 @@
 #include "error_printing_ws_client.hpp"
 
 #include <webservice/server.hpp>
-#include <webservice/json_ws_service.hpp>
+#include <webservice/json_ws_handler.hpp>
 #include <webservice/json_ws_client.hpp>
 
 #include <boost/make_unique.hpp>
@@ -130,8 +130,8 @@ struct request_handler
 std::string const test_text = "{\"key\":\"value\"}";
 
 
-struct ws_service
-	: webservice::error_printing_webservice< webservice::json_ws_service >
+struct ws_handler
+	: webservice::error_printing_webservice< webservice::json_ws_handler >
 {
 	void on_open(std::uintptr_t, std::string const&)override{
 		check(state_t::ws_server_open);
@@ -244,7 +244,7 @@ int main(){
 			using boost::make_unique;
 			webservice::server server(
 				make_unique< request_handler >(),
-				make_unique< ws_service >(),
+				make_unique< ws_handler >(),
 				make_unique< webservice::error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 

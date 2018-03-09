@@ -9,7 +9,7 @@
 #ifndef _webservice__error_printing_webservice__hpp_INCLUDED_
 #define _webservice__error_printing_webservice__hpp_INCLUDED_
 
-#include <webservice/ws_service_location.hpp>
+#include <webservice/ws_handler_location.hpp>
 
 #include <boost/system/error_code.hpp>
 #include <boost/system/system_error.hpp>
@@ -29,7 +29,7 @@ namespace webservice{
 		void on_error(
 			std::uintptr_t,
 			std::string const&,
-			ws_service_location location,
+			ws_handler_location location,
 			boost::system::error_code ec
 		)override{
 			throw boost::system::system_error(ec,
@@ -44,10 +44,10 @@ namespace webservice{
 			try{
 				std::rethrow_exception(error);
 			}catch(std::exception const& e){
-				std::cout << "\033[1;31mfail ws_service: unexpected exception: "
+				std::cout << "\033[1;31mfail ws_handler: unexpected exception: "
 					<< e.what() << "\033[0m\n";
 			}catch(...){
-				std::cout << "\033[1;31mfail ws_service: unexpected unknown "
+				std::cout << "\033[1;31mfail ws_handler: unexpected unknown "
 					"exception\033[0m\n";
 			}
 		}

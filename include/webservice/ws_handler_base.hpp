@@ -6,11 +6,11 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__ws_service_base__hpp_INCLUDED_
-#define _webservice__ws_service_base__hpp_INCLUDED_
+#ifndef _webservice__ws_handler_base__hpp_INCLUDED_
+#define _webservice__ws_handler_base__hpp_INCLUDED_
 
 #include "shared_const_buffer.hpp"
-#include "ws_service_location.hpp"
+#include "ws_handler_location.hpp"
 
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/string.hpp>
@@ -26,16 +26,16 @@ namespace webservice{
 
 	class ws_server_session;
 
-	class ws_service_base{
+	class ws_handler_base{
 	public:
-		ws_service_base() = default;
+		ws_handler_base() = default;
 
 		/// \brief Destructor
-		virtual ~ws_service_base();
+		virtual ~ws_handler_base();
 
-		ws_service_base(ws_service_base const&) = delete;
+		ws_handler_base(ws_handler_base const&) = delete;
 
-		ws_service_base& operator=(ws_service_base const&) = delete;
+		ws_handler_base& operator=(ws_handler_base const&) = delete;
 
 
 		/// \brief Send a text message to session
@@ -91,7 +91,7 @@ namespace webservice{
 		virtual void on_error(
 			ws_server_session* session,
 			std::string const& resource,
-			ws_service_location location,
+			ws_handler_location location,
 			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown

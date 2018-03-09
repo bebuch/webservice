@@ -6,19 +6,19 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__ws_service__hpp_INCLUDED_
-#define _webservice__ws_service__hpp_INCLUDED_
+#ifndef _webservice__ws_handler__hpp_INCLUDED_
+#define _webservice__ws_handler__hpp_INCLUDED_
 
-#include "basic_ws_service.hpp"
+#include "basic_ws_handler.hpp"
 
 
 namespace webservice{
 
 
-	class ws_service
-		: public basic_ws_service< std::string, std::vector< std::uint8_t > >
+	class ws_handler
+		: public basic_ws_handler< std::string, std::vector< std::uint8_t > >
 	{
-		using basic_ws_service::basic_ws_service;
+		using basic_ws_handler::basic_ws_handler;
 	};
 
 

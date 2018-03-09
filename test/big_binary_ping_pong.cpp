@@ -12,7 +12,7 @@
 #include "error_printing_ws_client.hpp"
 
 #include <webservice/server.hpp>
-#include <webservice/ws_service.hpp>
+#include <webservice/ws_handler.hpp>
 #include <webservice/ws_client.hpp>
 
 #include <boost/make_unique.hpp>
@@ -61,8 +61,8 @@ void fill_data(){
 	std::cout << "\nend fill data vector" << std::endl;
 }
 
-struct ws_service
-	: webservice::error_printing_webservice< webservice::ws_service >
+struct ws_handler
+	: webservice::error_printing_webservice< webservice::ws_handler >
 {
 	std::size_t count = 0;
 
@@ -159,7 +159,7 @@ int main(){
 			using boost::make_unique;
 			webservice::server server(
 				make_unique< request_handler >(),
-				make_unique< ws_service >(),
+				make_unique< ws_handler >(),
 				make_unique< webservice::error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1,
 				std::chrono::milliseconds(4000));

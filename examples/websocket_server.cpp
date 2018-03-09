@@ -7,7 +7,7 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include <webservice/file_request_handler.hpp>
-#include <webservice/ws_service.hpp>
+#include <webservice/ws_handler.hpp>
 #include <webservice/server.hpp>
 
 #include <boost/lexical_cast.hpp>
@@ -19,7 +19,7 @@
 #include <csignal>
 
 
-struct mirror_ws_service: webservice::ws_service{
+struct mirror_ws_handler: webservice::ws_handler{
 	void on_open(
 		std::uintptr_t const identifier, // unique identifier of the session
 		std::string const& resource      // target of the session ("/path")
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]){
 		using webservice::server;
 		server server(
 			boost::make_unique< file_request_handler >(doc_root),
-			boost::make_unique< mirror_ws_service >(),
+			boost::make_unique< mirror_ws_handler >(),
 			nullptr, // ignore errors and exceptions
 			address, port, thread_count);
 

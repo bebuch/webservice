@@ -8,7 +8,7 @@
 //-----------------------------------------------------------------------------
 #include "ws_client_base_impl.hpp"
 
-#include <webservice/ws_service_base.hpp>
+#include <webservice/ws_handler_base.hpp>
 
 #include <boost/beast/websocket.hpp>
 
@@ -254,7 +254,7 @@ namespace webservice{
 
 	ws_server_session::ws_server_session(
 		ws_stream&& ws,
-		ws_service_base& service,
+		ws_handler_base& service,
 		boost::optional< std::chrono::milliseconds > websocket_ping_time
 	)
 		: ws_session< ws_server_session >(std::move(ws), websocket_ping_time)
@@ -308,7 +308,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->callback::on_error(ws_service_location::accept, ec);
+			this->callback::on_error(ws_handler_location::accept, ec);
 			return;
 		}
 
@@ -341,7 +341,7 @@ namespace webservice{
 	}
 
 	void ws_server_session::on_error(
-		ws_service_location location,
+		ws_handler_location location,
 		boost::system::error_code ec
 	){
 		service_.on_error(this, resource_, location, ec);
