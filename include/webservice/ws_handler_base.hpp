@@ -127,8 +127,6 @@ namespace webservice{
 	private:
 		/// \brief Pointer to the server object
 		class server* server_ = nullptr;
-
-		friend class ws_server_session;
 	};
 
 
