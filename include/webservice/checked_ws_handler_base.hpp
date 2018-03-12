@@ -18,6 +18,10 @@
 namespace webservice{
 
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif
 	class checked_ws_handler_base: public ws_handler_base{
 	public:
 		checked_ws_handler_base();
@@ -171,6 +175,9 @@ namespace webservice{
 
 		friend class checked_ws_handler_base_impl;
 	};
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 
 }

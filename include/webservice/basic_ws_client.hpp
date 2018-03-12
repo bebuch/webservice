@@ -16,6 +16,10 @@
 namespace webservice{
 
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif
 	template <
 		typename SendTextType,
 		typename SendBinaryType = SendTextType,
@@ -75,6 +79,9 @@ namespace webservice{
 			on_binary(multi_buffer_to_binary(buffer));
 		}
 	};
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 
 	template <
