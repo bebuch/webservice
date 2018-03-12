@@ -107,12 +107,12 @@ namespace webservice{
 							handler =
 								boost::make_unique< http_request_handler >();
 						}
-						handler->server_ = this;
+						handler->set_server(*this);
 						return std::move(handler);
 					}(),
 				[this, service = std::move(service)]()mutable{
 						if(service){
-							service->server_ = this;
+							service->set_server(*this);
 						}
 						return std::move(service);
 					}(),

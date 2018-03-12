@@ -69,4 +69,9 @@ namespace webservice{
 	}
 
 
+	void ws_handler_base::set_server(class server& server)noexcept{
+		server_ = &server;
+	}
+
+
 }

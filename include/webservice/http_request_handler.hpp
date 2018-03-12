@@ -38,6 +38,11 @@ namespace webservice{
 		virtual ~http_request_handler();
 		virtual void operator()(http_request&& req, http_response&& send);
 
+
+		/// \brief Set the owning server
+		void set_server(class server& server)noexcept;
+
+
 	protected:
 		/// \brief Called when an error occured
 		///
@@ -74,7 +79,6 @@ namespace webservice{
 		class server* server_ = nullptr;
 
 		friend class http_session;
-		friend class server;
 	};
 
 	/// \brief Returns a bad request response

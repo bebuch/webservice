@@ -54,7 +54,6 @@ namespace webservice{
 			boost::beast::string_view reason);
 
 
-	protected:
 		/// \brief Called with a unique identifier when a sessions starts
 		///
 		/// Default implementation does nothing.
@@ -103,6 +102,11 @@ namespace webservice{
 			std::exception_ptr error)noexcept;
 
 
+		/// \brief Set the owning server
+		void set_server(class server& server)noexcept;
+
+
+	protected:
 		/// \brief Get reference to const server
 		///
 		/// Must not be called before a server is initialized with this service.
@@ -125,7 +129,6 @@ namespace webservice{
 		class server* server_ = nullptr;
 
 		friend class ws_server_session;
-		friend class server;
 	};
 
 

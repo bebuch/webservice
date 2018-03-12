@@ -7,7 +7,6 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include <webservice/service_ws_handler.hpp>
-#include <webservice/ws_service_base.hpp>
 
 #include "ws_session.hpp"
 
@@ -19,9 +18,9 @@ namespace webservice{
 
 	struct service_ws_handler_impl{
 		std::shared_timed_mutex mutex;
-		std::map< std::string, std::unique_ptr< ws_service_base > > services;
+		std::map< std::string, std::unique_ptr< ws_handler_base > > services;
 
-		ws_service_base* find_service(std::string const& resource)const{
+		ws_handler_base* find_service(std::string const& resource)const{
 			auto iter = services.find(resource);
 			if(iter != services.end()){
 				return iter->second.get();
@@ -40,13 +39,25 @@ namespace webservice{
 
 	void service_ws_handler::add_service(
 		std::string name,
-		std::unique_ptr< class ws_service_base > service
+		std::unique_ptr< class ws_handler_base > service
 	){
 		std::unique_lock< std::shared_timed_mutex > lock(impl_->mutex);
+		auto r = impl_->services.emplace(std::move(name), std::move(service));
+		if(r.second){
+			r.first->second->set_server(server());
+		}else{
+			throw std::logic_error("service '" + name + "' already exists");
+		}
 	}
 
 	void service_ws_handler::erase_service(std::string name){
 		std::unique_lock< std::shared_timed_mutex > lock(impl_->mutex);
+		auto iter = impl_->services.find(name);
+		if(iter != impl_->services.end()){
+			impl_->services.erase(iter);
+		}else{
+			throw std::logic_error("service '" + name + "' doesn't exist");
+		}
 	}
 
 
@@ -57,74 +68,26 @@ namespace webservice{
 		std::shared_lock< std::shared_timed_mutex > lock(impl_->mutex);
 		auto service = impl_->find_service(resource);
 		if(service == nullptr){
-			return;
+			on_unknown_service(session, resource);
+		}else{
+			try{
+				service->on_open(session, resource);
+			}catch(...){
+				service->on_exception(session, resource, std::current_exception());
+			}
 		}
-		service->on_open(session);
 	}
 
-	void service_ws_handler::on_close(
+	void service_ws_handler::on_unknown_service(
 		ws_server_session* session,
 		std::string const& resource
 	){
-		std::shared_lock< std::shared_timed_mutex > lock(impl_->mutex);
-		auto service = impl_->find_service(resource);
-		if(service == nullptr){
-			return;
+		try{
+			session->send(boost::beast::websocket::close_reason(
+				"unknown target: " + resource));
+		}catch(...){
+			on_exception(session, resource, std::current_exception());
 		}
-		service->on_close(session);
-	}
-
-	void service_ws_handler::on_text(
-		ws_server_session* session,
-		std::string const& resource,
-		boost::beast::multi_buffer const& buffer
-	){
-		std::shared_lock< std::shared_timed_mutex > lock(impl_->mutex);
-		auto service = impl_->find_service(resource);
-		if(service == nullptr){
-			return;
-		}
-		service->on_text(session, buffer);
-	}
-
-	void service_ws_handler::on_binary(
-		ws_server_session* session,
-		std::string const& resource,
-		boost::beast::multi_buffer const& buffer
-	){
-		std::shared_lock< std::shared_timed_mutex > lock(impl_->mutex);
-		auto service = impl_->find_service(resource);
-		if(service == nullptr){
-			return;
-		}
-		service->on_binary(session, buffer);
-	}
-
-	void service_ws_handler::on_error(
-		ws_server_session* session,
-		std::string const& resource,
-		ws_handler_location location,
-		boost::system::error_code ec
-	){
-		std::shared_lock< std::shared_timed_mutex > lock(impl_->mutex);
-		auto service = impl_->find_service(resource);
-		if(service == nullptr){
-			return;
-		}
-		service->on_error(session, location, ec);
-	}
-
-	void service_ws_handler::on_exception(
-		ws_server_session* session,
-		std::string const& resource,
-		std::exception_ptr error
-	)noexcept{
-		std::shared_lock< std::shared_timed_mutex > lock(impl_->mutex);
-		auto service = impl_->find_service(resource);
-		if(service == nullptr){
-			return;
-		}
-		service->on_exception(session, error);
 	}
 
 
