@@ -6,7 +6,7 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include "error_printing_webservice.hpp"
+#include "error_printing_ws_handler.hpp"
 #include "error_printing_error_handler.hpp"
 #include "error_printing_request_handler.hpp"
 #include "error_printing_ws_client.hpp"
@@ -131,7 +131,7 @@ std::string const test_text = "test text values";
 
 
 struct ws_handler
-	: webservice::error_printing_webservice< webservice::ws_handler >
+	: webservice::error_printing_ws_handler< webservice::ws_handler >
 {
 	void on_open(std::uintptr_t, std::string const&)override{
 		check(state_t::ws_server_open);

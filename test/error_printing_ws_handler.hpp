@@ -6,8 +6,8 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__error_printing_webservice__hpp_INCLUDED_
-#define _webservice__error_printing_webservice__hpp_INCLUDED_
+#ifndef _webservice__error_printing_ws_handler__hpp_INCLUDED_
+#define _webservice__error_printing_ws_handler__hpp_INCLUDED_
 
 #include <webservice/ws_handler_location.hpp>
 
@@ -23,7 +23,7 @@ namespace webservice{
 
 
 	template < typename Base >
-	struct error_printing_webservice: Base{
+	struct error_printing_ws_handler: Base{
 		using Base::Base;
 
 		void on_error(
