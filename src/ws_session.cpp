@@ -323,36 +323,41 @@ namespace webservice{
 
 
 	void ws_server_session::on_open(){
-		service_.on_open(this, resource_);
+		service_.get().on_open(this, resource_);
 	}
 
 	void ws_server_session::on_close(){
-		service_.on_close(this, resource_);
+		service_.get().on_close(this, resource_);
 	}
 
 	void ws_server_session::on_text(
 		boost::beast::multi_buffer const& buffer
 	){
-		service_.on_text(this, resource_, buffer);
+		service_.get().on_text(this, resource_, buffer);
 	}
 
 	void ws_server_session::on_binary(
 		boost::beast::multi_buffer const& buffer
 	){
-		service_.on_binary(this, resource_, buffer);
+		service_.get().on_binary(this, resource_, buffer);
 	}
 
 	void ws_server_session::on_error(
 		ws_handler_location location,
 		boost::system::error_code ec
 	){
-		service_.on_error(this, resource_, location, ec);
+		service_.get().on_error(this, resource_, location, ec);
 	}
 
 	void ws_server_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
-		service_.on_exception(this, resource_, error);
+		service_.get().on_exception(this, resource_, error);
+	}
+
+
+	void ws_server_session::rebind(ws_handler_base& service)noexcept{
+		service_ = service;
 	}
 
 

@@ -215,10 +215,14 @@ namespace webservice{
 		void on_exception(std::exception_ptr error)noexcept;
 
 
+		/// \brief Bind session to another ws_handler
+		void rebind(ws_handler_base& service)noexcept;
+
+
 	private:
 		using callback = ws_session_callbacks< ws_server_session >;
 
-		ws_handler_base& service_;
+		std::reference_wrapper< ws_handler_base > service_;
 		std::string resource_;
 		bool is_open_ = false;
 	};
