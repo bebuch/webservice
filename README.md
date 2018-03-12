@@ -18,28 +18,35 @@ files from there. If you need another kind of http request handler derive from
 a request.
 
 For WebSocket services you always need to write your own service derived from
-`ws_service`. `ws_service` handles text messages as `std::string` and binary
-messages as `std::vector< std::uint64_t >`. If you want other types derive from
-`basic_ws_service` and set the template parameters to your wanted types. If you
-don't need a WebSocket server pass a `nullptr`.
+`ws_handler_base`. `ws_handler` is derived from it and handles text messages as
+`std::string` and binary messages as `std::vector< std::uint64_t >`. If you
+want other types, derive from `basic_ws_handler` and set the template
+parameters to your wanted types. If you don't need a WebSocket server pass
+a `nullptr`.
 
-The `ws_client` class is simmiar to `ws_service` on the server side.
+The `ws_client` class is simmiar to `ws_handler` on the server side.
 
 For server error handling purpose you can pass an `error_handler` derived
 object or a `nullptr` if you wish to ignore errors and execptions in the
 server.
 
-### Server interface `ws_service` and client interface `ws_client`
+### Server interface `ws_handler` and client interface `ws_client`
 
 Use `send_text` and `send_binary` to send messages. Derive from the classes to
 implement your own handler functions `on_open`, `on_close`, `on_text` and
 `on_binary`.
 
-A `ws_client` has always only one session while a `ws_service` must handler
-multiple sessions. Therefore the `ws_service` functions get and take an
+A `ws_client` has always only one session while a `ws_handler` must handler
+multiple sessions. Therefore the `ws_handler` functions get and take an
 additional parameter identifier which is unique per session. The handler
 functions take another additional parameter resource which is the request
 target.
+
+If you need more than one kind of WebSocket service, you can use a
+`service_ws_handler` object and add `ws_handler_base` derived services to it.
+The http resource maps to it. You should derive your added service handling
+objects from `ws_service` or `basic_ws_service` which are equivalent to
+`ws_handler` and `basic_ws_handler`, except for the missing resource parameter.
 
 ### WebSocket timeouts and read message limits
 
