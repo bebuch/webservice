@@ -12,6 +12,7 @@
 #include "error_printing_ws_client.hpp"
 
 #include <webservice/server.hpp>
+#include <webservice/service_ws_handler.hpp>
 #include <webservice/json_ws_service.hpp>
 #include <webservice/json_ws_client.hpp>
 
@@ -129,6 +130,40 @@ struct request_handler
 
 std::string const test_text = "{\"key\":\"value\"}";
 
+struct service_ws_handler: webservice::service_ws_handler{
+	void on_error(
+		webservice::ws_server_session*,
+		std::string const&,
+		webservice::ws_handler_location location,
+		boost::system::error_code ec
+	)override{
+		throw boost::system::system_error(ec,
+			"location " + std::string(to_string_view(location)));
+	}
+
+	void on_exception(
+		webservice::ws_server_session*,
+		std::string const&,
+		std::exception_ptr error
+	)noexcept override{
+		try{
+			std::rethrow_exception(error);
+		}catch(std::exception const& e){
+			std::cout << "\033[1;31mfail ws_handler: unexpected exception: "
+				<< e.what() << "\033[0m\n";
+		}catch(...){
+			std::cout << "\033[1;31mfail ws_handler: unexpected unknown "
+				"exception\033[0m\n";
+		}
+	}
+
+	void on_unknown_service(
+		webservice::ws_server_session*,
+		std::string const& resource
+	)override{
+		throw std::runtime_error("unknown service: " + resource);
+	}
+};
 
 struct ws_service
 	: webservice::error_printing_ws_service< webservice::json_ws_service >
@@ -240,11 +275,15 @@ int main(){
 	try{
 		{
 			using boost::make_unique;
+			auto ws_handler_ptr = make_unique< service_ws_handler >();
+			auto& ws_handler = *ws_handler_ptr;
 			webservice::server server(
 				make_unique< request_handler >(),
-				make_unique< ws_service >(),
+				std::move(ws_handler_ptr),
 				make_unique< webservice::error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
+
+			ws_handler.add_service("/", make_unique< ws_service >());
 
 			check(state_t::init);
 
