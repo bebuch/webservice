@@ -44,19 +44,6 @@ namespace webservice{
 
 
 	protected:
-		/// \brief Called when an error occured
-		///
-		/// Default implementation does nothing.
-		virtual void on_error(
-			http_request_location location,
-			boost::system::error_code ec);
-
-		/// \brief Called when an exception occurred
-		///
-		/// Default implementation does nothing.
-		virtual void on_exception(std::exception_ptr error)noexcept;
-
-
 		/// \brief Get reference to const server
 		///
 		/// Must not be called before a server is initialized with this service.
@@ -75,6 +62,19 @@ namespace webservice{
 
 
 	private:
+		/// \brief Called when an error occured
+		///
+		/// Default implementation does nothing.
+		virtual void on_error(
+			http_request_location location,
+			boost::system::error_code ec);
+
+		/// \brief Called when an exception occurred
+		///
+		/// Default implementation does nothing.
+		virtual void on_exception(std::exception_ptr error)noexcept;
+
+
 		/// \brief Pointer to the server object
 		class server* server_ = nullptr;
 

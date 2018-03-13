@@ -58,7 +58,7 @@ namespace webservice{
 		}
 
 
-	protected:
+	private:
 		/// \brief Called when the session received a text message
 		///
 		/// Default implementation does nothing.
@@ -70,7 +70,6 @@ namespace webservice{
 		virtual void on_binary(ReceiveBinaryType&& /*data*/){}
 
 
-	private:
 		void on_text(boost::beast::multi_buffer const& buffer)final{
 			on_text(multi_buffer_to_text(buffer));
 		}

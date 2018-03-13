@@ -31,7 +31,7 @@ namespace webservice{
 		using basic_ws_handler< SendTextType, SendBinaryType,
 			ReceiveTextType, ReceiveBinaryType >::basic_ws_handler;
 
-	protected:
+	private:
 		/// \brief Called with a unique identifier when a sessions starts
 		///
 		/// Default implementation does nothing.
@@ -72,7 +72,6 @@ namespace webservice{
 			std::exception_ptr /*error*/)noexcept{}
 
 
-	private:
 		/// \brief Called with a unique identifier when a sessions starts
 		///
 		/// Default implementation does nothing.

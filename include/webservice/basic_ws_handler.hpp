@@ -99,7 +99,7 @@ namespace webservice{
 		}
 
 
-	protected:
+	private:
 		/// \brief Called when a session received a text message
 		///
 		/// Default implementation does nothing.
@@ -116,7 +116,7 @@ namespace webservice{
 			std::string const& /*resource*/,
 			ReceiveBinaryType&& /*data*/){}
 
-	private:
+
 		void on_text(
 			std::uintptr_t identifier,
 			std::string const& resource,

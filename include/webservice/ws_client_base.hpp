@@ -81,7 +81,7 @@ namespace webservice{
 		void stop()noexcept;
 
 
-	protected:
+	private:
 		/// \brief Called when the sessions starts
 		///
 		/// Default implementation does nothing.
@@ -115,7 +115,6 @@ namespace webservice{
 		virtual void on_exception(std::exception_ptr error)noexcept;
 
 
-	private:
 		/// \brief Pointer to implementation
 		std::unique_ptr< class ws_client_base_impl > impl_;
 

@@ -72,7 +72,7 @@ namespace webservice{
 			boost::beast::string_view reason);
 
 
-	protected:
+	private:
 		/// \brief Called with a unique identifier when a sessions starts
 		///
 		/// Default implementation does nothing.
@@ -121,7 +121,6 @@ namespace webservice{
 			std::exception_ptr error)noexcept;
 
 
-	private:
 		/// \brief Called with a unique identifier when a sessions starts
 		///
 		/// Default implementation does nothing.
@@ -169,7 +168,7 @@ namespace webservice{
 			std::string const& resource,
 			std::exception_ptr error)noexcept final;
 
-	private:
+
 		/// \brief Pointer to implementation
 		std::unique_ptr< class checked_ws_handler_base_impl > impl_;
 

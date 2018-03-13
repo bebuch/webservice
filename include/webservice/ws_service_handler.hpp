@@ -46,7 +46,7 @@ namespace webservice{
 		void erase_service(std::string name);
 
 
-	protected:
+	private:
 		/// \brief Rebinds the session to a service
 		void on_open(
 			ws_server_session* session,
@@ -60,7 +60,6 @@ namespace webservice{
 			std::string const& resource);
 
 
-	private:
 		/// \brief Pointer to implementation
 		std::unique_ptr< struct ws_service_handler_impl > impl_;
 	};
