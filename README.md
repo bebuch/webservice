@@ -43,7 +43,7 @@ functions take another additional parameter resource which is the request
 target.
 
 If you need more than one kind of WebSocket service, you can use a
-`service_ws_handler` object and add `ws_handler_base` derived services to it.
+`ws_service_handler` object and add `ws_handler_base` derived services to it.
 The http resource maps to it. You should derive your added service handling
 objects from `ws_service` or `basic_ws_service` which are equivalent to
 `ws_handler` and `basic_ws_handler`, except for the missing resource parameter.
