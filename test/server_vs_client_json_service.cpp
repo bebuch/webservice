@@ -12,7 +12,7 @@
 #include "error_printing_ws_client.hpp"
 
 #include <webservice/server.hpp>
-#include <webservice/service_ws_handler.hpp>
+#include <webservice/ws_service_handler.hpp>
 #include <webservice/json_ws_service.hpp>
 #include <webservice/json_ws_client.hpp>
 
@@ -130,7 +130,7 @@ struct request_handler
 
 std::string const test_text = "{\"key\":\"value\"}";
 
-struct service_ws_handler: webservice::service_ws_handler{
+struct ws_service_handler: webservice::ws_service_handler{
 	void on_error(
 		webservice::ws_server_session*,
 		std::string const&,
@@ -275,7 +275,7 @@ int main(){
 	try{
 		{
 			using boost::make_unique;
-			auto ws_handler_ptr = make_unique< service_ws_handler >();
+			auto ws_handler_ptr = make_unique< ws_service_handler >();
 			auto& ws_handler = *ws_handler_ptr;
 			webservice::server server(
 				make_unique< request_handler >(),

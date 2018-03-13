@@ -6,8 +6,8 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#ifndef _webservice__service_ws_handler__hpp_INCLUDED_
-#define _webservice__service_ws_handler__hpp_INCLUDED_
+#ifndef _webservice__ws_service_handler__hpp_INCLUDED_
+#define _webservice__ws_service_handler__hpp_INCLUDED_
 
 #include "ws_handler_base.hpp"
 
@@ -18,13 +18,13 @@
 namespace webservice{
 
 
-	class service_ws_handler: public ws_handler_base{
+	class ws_service_handler: public ws_handler_base{
 	public:
 		/// \brief Constructor
-		service_ws_handler();
+		ws_service_handler();
 
 		/// \brief Destructor
-		~service_ws_handler()override;
+		~ws_service_handler()override;
 
 
 		/// \brief Add ws_handler_base that is used for sessions with resource
@@ -62,7 +62,7 @@ namespace webservice{
 
 	private:
 		/// \brief Pointer to implementation
-		std::unique_ptr< struct service_ws_handler_impl > impl_;
+		std::unique_ptr< struct ws_service_handler_impl > impl_;
 	};
 
 

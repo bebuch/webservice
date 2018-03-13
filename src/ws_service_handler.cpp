@@ -6,7 +6,7 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include <webservice/service_ws_handler.hpp>
+#include <webservice/ws_service_handler.hpp>
 
 #include "ws_session.hpp"
 
@@ -16,7 +16,7 @@
 namespace webservice{
 
 
-	struct service_ws_handler_impl{
+	struct ws_service_handler_impl{
 		std::shared_timed_mutex mutex;
 		std::map< std::string, std::unique_ptr< ws_handler_base > > services;
 
@@ -31,13 +31,13 @@ namespace webservice{
 	};
 
 
-	service_ws_handler::service_ws_handler()
-		: impl_(std::make_unique< service_ws_handler_impl >()){}
+	ws_service_handler::ws_service_handler()
+		: impl_(std::make_unique< ws_service_handler_impl >()){}
 
-	service_ws_handler::~service_ws_handler() = default;
+	ws_service_handler::~ws_service_handler() = default;
 
 
-	void service_ws_handler::add_service(
+	void ws_service_handler::add_service(
 		std::string name,
 		std::unique_ptr< class ws_handler_base > service
 	){
@@ -50,7 +50,7 @@ namespace webservice{
 		}
 	}
 
-	void service_ws_handler::erase_service(std::string name){
+	void ws_service_handler::erase_service(std::string name){
 		std::unique_lock< std::shared_timed_mutex > lock(impl_->mutex);
 		auto iter = impl_->services.find(name);
 		if(iter != impl_->services.end()){
@@ -61,7 +61,7 @@ namespace webservice{
 	}
 
 
-	void service_ws_handler::on_open(
+	void ws_service_handler::on_open(
 		ws_server_session* session,
 		std::string const& resource
 	){
@@ -79,7 +79,7 @@ namespace webservice{
 		}
 	}
 
-	void service_ws_handler::on_unknown_service(
+	void ws_service_handler::on_unknown_service(
 		ws_server_session* session,
 		std::string const& resource
 	){
