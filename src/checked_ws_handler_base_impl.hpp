@@ -14,6 +14,7 @@
 #include "ws_session.hpp"
 
 #include <shared_mutex>
+#include <condition_variable>
 
 
 namespace webservice{
@@ -26,17 +27,23 @@ namespace webservice{
 		checked_ws_handler_base_impl(checked_ws_handler_base& self):
 			self_(self) {}
 
+
 		/// \brief Called with a unique identifier when a sessions starts
 		void on_open(
 			ws_server_session* const session,
 			std::string const& resource
 		){
-			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-			sessions_.emplace(session);
-			lock.unlock();
+			if(!shutdown_){
+				std::unique_lock< std::shared_timed_mutex > lock(mutex_);
+				sessions_.emplace(session);
+				lock.unlock();
 
-			self_.on_open(
-				reinterpret_cast< std::uintptr_t >(session), resource);
+				auto identifier = reinterpret_cast< std::uintptr_t >(session);
+				self_.on_open(identifier, resource);
+			}else{
+				session->rebind(nullptr);
+				session->send("handler shutdown");
+			}
 		}
 
 		/// \brief Called with a unique identifier when a sessions ends
@@ -49,6 +56,9 @@ namespace webservice{
 
 			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
 			sessions_.erase(session);
+
+			lock.unlock();
+			shutdown_condition_.notify_one();
 		}
 
 		/// \brief Called when a session received a text message
@@ -154,6 +164,19 @@ namespace webservice{
 		}
 
 
+		/// \brief Set shutdown flag, close all sessions and wait until they are
+		///        closed
+		void shutdown(){
+			shutdown_ = true;
+			send("handler shutdown");
+
+			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
+			shutdown_condition_.wait(lock, [this]{
+				return sessions_.empty();
+			});
+		}
+
+
 	private:
 		/// \brief Send a message to session
 		template < typename Data >
@@ -164,6 +187,12 @@ namespace webservice{
 			session->send(static_cast< Data&& >(data));
 		}
 
+
+		/// \brief If it is true, new sessions are closed immediately
+		std::atomic< bool > shutdown_{false};
+
+		/// \brief Shutdown must wait unit all sessions have closed
+		std::condition_variable_any shutdown_condition_;
 
 		/// \brief Reference to the actual object
 		checked_ws_handler_base& self_;

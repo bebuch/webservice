@@ -216,13 +216,13 @@ namespace webservice{
 
 
 		/// \brief Bind session to another ws_handler
-		void rebind(ws_handler_base& service)noexcept;
+		void rebind(ws_handler_base* service)noexcept;
 
 
 	private:
 		using callback = ws_session_callbacks< ws_server_session >;
 
-		std::reference_wrapper< ws_handler_base > service_;
+		std::atomic< ws_handler_base* > service_;
 		std::string resource_;
 		bool is_open_ = false;
 	};

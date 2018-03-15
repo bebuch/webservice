@@ -19,7 +19,9 @@ namespace webservice{
 		: impl_(std::make_unique< checked_ws_handler_base_impl >(*this)){}
 
 
-	checked_ws_handler_base::~checked_ws_handler_base() = default;
+	checked_ws_handler_base::~checked_ws_handler_base(){
+		impl_->shutdown();
+	}
 
 
 	void checked_ws_handler_base::on_open(

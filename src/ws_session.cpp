@@ -260,7 +260,7 @@ namespace webservice{
 		boost::optional< std::chrono::milliseconds > websocket_ping_time
 	)
 		: ws_session< ws_server_session >(std::move(ws), websocket_ping_time)
-		, service_(service) {}
+		, service_(&service) {}
 
 	ws_server_session::~ws_server_session(){
 		if(is_open_){
@@ -323,40 +323,58 @@ namespace webservice{
 
 
 	void ws_server_session::on_open(){
-		service_.get().on_open(this, resource_);
+		ws_handler_base* service = service_;
+		if(service){
+			service->on_open(this, resource_);
+		}
 	}
 
 	void ws_server_session::on_close(){
-		service_.get().on_close(this, resource_);
+		ws_handler_base* service = service_;
+		if(service){
+			service->on_close(this, resource_);
+		}
 	}
 
 	void ws_server_session::on_text(
 		boost::beast::multi_buffer const& buffer
 	){
-		service_.get().on_text(this, resource_, buffer);
+		ws_handler_base* service = service_;
+		if(service){
+			service->on_text(this, resource_, buffer);
+		}
 	}
 
 	void ws_server_session::on_binary(
 		boost::beast::multi_buffer const& buffer
 	){
-		service_.get().on_binary(this, resource_, buffer);
+		ws_handler_base* service = service_;
+		if(service){
+			service->on_binary(this, resource_, buffer);
+		}
 	}
 
 	void ws_server_session::on_error(
 		ws_handler_location location,
 		boost::system::error_code ec
 	){
-		service_.get().on_error(this, resource_, location, ec);
+		ws_handler_base* service = service_;
+		if(service){
+			service->on_error(this, resource_, location, ec);
+		}
 	}
 
 	void ws_server_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
-		service_.get().on_exception(this, resource_, error);
+		ws_handler_base* service = service_;
+		if(service){
+			service->on_exception(this, resource_, error);
+		}
 	}
 
 
-	void ws_server_session::rebind(ws_handler_base& service)noexcept{
+	void ws_server_session::rebind(ws_handler_base* service)noexcept{
 		service_ = service;
 	}
 

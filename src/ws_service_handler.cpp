@@ -71,7 +71,7 @@ namespace webservice{
 			on_unknown_service(session, resource);
 		}else{
 			try{
-				session->rebind(*service);
+				session->rebind(service);
 				service->on_open(session, resource);
 			}catch(...){
 				service->on_exception(session, resource, std::current_exception());
