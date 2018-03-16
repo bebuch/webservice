@@ -85,6 +85,12 @@ namespace webservice{
 		}
 
 
+		/// \brief Run one task in server threads
+		void run_one()noexcept{
+			listener_.run_one();
+		}
+
+
 	private:
 		/// \brief Protect thread joins
 		std::recursive_mutex mutex;
@@ -153,6 +159,10 @@ namespace webservice{
 
 	void server::async(std::function< void() > fn){
 		impl_->async(std::move(fn));
+	}
+
+	void server::run_one()noexcept{
+		impl_->run_one();
 	}
 
 

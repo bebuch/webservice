@@ -68,6 +68,10 @@ namespace webservice{
 		void async(std::function< void() > fn);
 
 
+		/// \brief Run one task in server threads
+		void run_one()noexcept;
+
+
 	private:
 		/// \brief Pointer to implementation
 		std::unique_ptr< class server_impl > impl_;

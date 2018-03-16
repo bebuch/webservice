@@ -10,11 +10,11 @@
 #define _webservice__checked_ws_handler_base_impl__hpp_INCLUDED_
 
 #include <webservice/checked_ws_handler_base.hpp>
+#include <webservice/server.hpp>
 
 #include "ws_session.hpp"
 
 #include <shared_mutex>
-#include <condition_variable>
 
 
 namespace webservice{
@@ -56,9 +56,6 @@ namespace webservice{
 
 			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
 			sessions_.erase(session);
-
-			lock.unlock();
-			shutdown_condition_.notify_one();
 		}
 
 		/// \brief Called when a session received a text message
@@ -170,10 +167,14 @@ namespace webservice{
 			shutdown_ = true;
 			send("handler shutdown");
 
-			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-			shutdown_condition_.wait(lock, [this]{
-				return sessions_.empty();
-			});
+			for(;;){
+				std::unique_lock< std::shared_timed_mutex > lock(mutex_);
+				if(sessions_.empty()){
+					break;
+				}
+				lock.unlock();
+				self_.server().run_one();
+			}
 		}
 
 
@@ -190,9 +191,6 @@ namespace webservice{
 
 		/// \brief If it is true, new sessions are closed immediately
 		std::atomic< bool > shutdown_{false};
-
-		/// \brief Shutdown must wait unit all sessions have closed
-		std::condition_variable_any shutdown_condition_;
 
 		/// \brief Reference to the actual object
 		checked_ws_handler_base& self_;
