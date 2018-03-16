@@ -13,6 +13,8 @@
 
 #include "http_session.hpp"
 
+#include <boost/asio/defer.hpp>
+
 
 namespace webservice{
 
@@ -65,7 +67,7 @@ namespace webservice{
 				try{
 					error_handler_->on_error(ec);
 				}catch(...){
-					error_handler_->on_exception(std::current_exception());
+					on_exception(std::current_exception());
 				}
 			}else{
 				// Create the http_session and run it
@@ -88,10 +90,24 @@ namespace webservice{
 			ioc_.stop();
 		}
 
+
+		/// \brief Execute a function async via server threads
+		void async(std::function< void() >&& fn){
+			boost::asio::defer(ioc_, [this, fn = std::move(fn)]()noexcept{
+					try{
+						fn();
+					}catch(...){
+						on_exception(std::current_exception());
+					}
+				});
+		}
+
+
 		/// \brief Called when an exception in the server occurred
-		virtual void on_exception(std::exception_ptr error)noexcept{
+		void on_exception(std::exception_ptr error)noexcept{
 			error_handler_->on_exception(error);
 		}
+
 
 	private:
 		std::unique_ptr< http_request_handler > handler_;

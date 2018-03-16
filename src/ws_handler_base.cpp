@@ -7,6 +7,7 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include <webservice/ws_handler_base.hpp>
+#include <webservice/server.hpp>
 
 #include "ws_session.hpp"
 
@@ -66,6 +67,10 @@ namespace webservice{
 		boost::beast::string_view reason
 	){
 		session->send(boost::beast::websocket::close_reason(reason));
+	}
+
+	void ws_handler_base::async(std::function< void() > fn){
+		server().async(std::move(fn));
 	}
 
 

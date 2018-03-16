@@ -22,6 +22,7 @@
 #include <boost/asio/strand.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/bind_executor.hpp>
+#include <boost/asio/defer.hpp>
 
 #include <memory>
 #include <string>
@@ -135,6 +136,18 @@ namespace webservice{
 		/// until all connections are closed.
 		void stop()noexcept{
 			ioc_.stop();
+		}
+
+
+		/// \brief Execute a function async via client threads
+		void async(std::function< void() >&& fn){
+			boost::asio::defer(ioc_, [this, fn = std::move(fn)]()noexcept{
+					try{
+						fn();
+					}catch(...){
+						on_exception(std::current_exception());
+					}
+				});
 		}
 
 

@@ -81,6 +81,10 @@ namespace webservice{
 		void stop()noexcept;
 
 
+		/// \brief Execute a function async via client threads
+		void async(std::function< void() > fn);
+
+
 	private:
 		/// \brief Called when the sessions starts
 		///

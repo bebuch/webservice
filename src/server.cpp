@@ -79,6 +79,12 @@ namespace webservice{
 		}
 
 
+		/// \brief Execute a function async via server threads
+		void async(std::function< void() >&& fn){
+			listener_.async(std::move(fn));
+		}
+
+
 	private:
 		/// \brief Protect thread joins
 		std::recursive_mutex mutex;
@@ -142,6 +148,11 @@ namespace webservice{
 
 	void server::stop()noexcept{
 		impl_->stop();
+	}
+
+
+	void server::async(std::function< void() > fn){
+		impl_->async(std::move(fn));
 	}
 
 

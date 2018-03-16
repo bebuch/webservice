@@ -68,6 +68,11 @@ namespace webservice{
 	}
 
 
+	void ws_client_base::async(std::function< void() > fn){
+		impl_->async(std::move(fn));
+	}
+
+
 	void ws_client_base::on_open(){}
 
 	void ws_client_base::on_close(){}
