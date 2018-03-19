@@ -21,6 +21,8 @@
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/bind_executor.hpp>
 
+#include <boost/circular_buffer.hpp>
+
 #include <boost/any.hpp>
 
 #include <boost/optional.hpp>
@@ -122,7 +124,9 @@ namespace webservice{
 		, public std::enable_shared_from_this< Derived >{
 	public:
 		/// \brief Take ownership of the socket
-		explicit ws_session(ws_stream&& ws, boost::optional< std::chrono::milliseconds > websocket_ping_time);
+		explicit ws_session(
+			ws_stream&& ws,
+			boost::optional< std::chrono::milliseconds > websocket_ping_time);
 
 		/// \brief Called when the timer expires.
 		void on_timer(boost::system::error_code ec);
@@ -162,12 +166,20 @@ namespace webservice{
 
 
 	private:
+		void do_write();
+
 		using location_type = typename session_location_type< Derived >::type;
 		using callback = ws_session_callbacks< Derived >;
 
 		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
 
-		std::mutex send_mutex_;
+		struct write_data{
+			bool is_text;
+			shared_const_buffer data;
+		};
+		std::mutex write_mutex_;
+		boost::circular_buffer< write_data > write_list_;
+
 		boost::asio::steady_timer timer_;
 		boost::beast::multi_buffer buffer_;
 		char ping_state_ = 0;
