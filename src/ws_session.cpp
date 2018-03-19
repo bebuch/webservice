@@ -200,6 +200,7 @@ namespace webservice{
 	void ws_session< Derived >::send(
 		std::tuple< Tag, shared_const_buffer > data
 	){
+		std::lock_guard< std::mutex > lock(send_mutex_);
 		ws_.text(std::is_same< Tag, text_tag >::value);
 		ws_.async_write(
 			std::get< 1 >(data),

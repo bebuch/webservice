@@ -27,6 +27,7 @@
 
 #include <memory>
 #include <chrono>
+#include <mutex>
 
 
 namespace webservice{
@@ -166,6 +167,7 @@ namespace webservice{
 
 		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
 
+		std::mutex send_mutex_;
 		boost::asio::steady_timer timer_;
 		boost::beast::multi_buffer buffer_;
 		char ping_state_ = 0;
