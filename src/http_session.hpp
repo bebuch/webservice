@@ -11,6 +11,8 @@
 
 #include "ws_session.hpp"
 
+#include <boost/circular_buffer.hpp>
+
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/beast/websocket.hpp>
 
@@ -196,11 +198,14 @@ namespace webservice{
 	private:
 		// This queue is used for HTTP pipelining.
 		class queue{
+			/// \brief Maximum number of responses we will queue
+			static constexpr std::size_t limit = 64;
+
 		public:
-			explicit queue(){
-				static_assert(limit > 0, "queue limit must be positive");
-				items_.reserve(limit);
-			}
+			static_assert(limit > 0, "queue limit must be positive");
+
+			explicit queue():
+				items_(limit) {}
 
 			// Returns `true` if we have reached the queue limit
 			bool is_full()const{
@@ -212,7 +217,7 @@ namespace webservice{
 			bool on_write(){
 				BOOST_ASSERT(!items_.empty());
 				auto const was_full = is_full();
-				items_.erase(items_.begin());
+				items_.pop_front();
 				if(!items_.empty()){
 					(*items_.front())();
 				}
@@ -232,10 +237,8 @@ namespace webservice{
 
 
 		private:
-			/// \brief Maximum number of responses we will queue
-			static constexpr std::size_t limit = 64;
-
-			std::vector< std::unique_ptr< http_session_work > > items_;
+			boost::circular_buffer< std::unique_ptr< http_session_work > >
+				items_;
 		};
 
 
