@@ -78,6 +78,10 @@ namespace webservice{
 
 
 	private:
+		/// \brief Don't accept new connections, send close to all existing
+		///        connections
+		void do_shutdown()noexcept;
+
 		/// \brief Called with a unique identifier when a sessions starts
 		///
 		/// Default implementation does nothing.

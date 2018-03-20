@@ -102,15 +102,7 @@ namespace webservice{
 
 
 	checked_ws_handler_base::~checked_ws_handler_base(){
-		shutdown();
-	}
-
-
-	void checked_ws_handler_base::shutdown()noexcept{
-		if(!impl_->shutdown_.exchange(true)){
-			impl_->send("handler shutdown");
-		}
-
+		do_shutdown();
 		for(;;){
 			std::unique_lock< std::shared_timed_mutex > lock(impl_->mutex_);
 			if(impl_->sessions_.empty()){
@@ -118,6 +110,18 @@ namespace webservice{
 			}
 			lock.unlock();
 			server().run_one();
+		}
+	}
+
+	void checked_ws_handler_base::shutdown()noexcept{
+		do_shutdown();
+	}
+
+	void checked_ws_handler_base::do_shutdown()noexcept{
+		if(!impl_->shutdown_.exchange(true)){
+			try{
+				impl_->send("handler shutdown");
+			}catch(...){}
 		}
 	}
 

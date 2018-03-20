@@ -17,6 +17,7 @@ namespace webservice{
 
 
 	struct ws_service_handler_impl{
+		std::atomic< bool > shutdown_{false};
 		std::shared_timed_mutex mutex;
 		std::map< std::string, std::unique_ptr< ws_handler_base > > services;
 
@@ -42,6 +43,11 @@ namespace webservice{
 		std::unique_ptr< class ws_handler_base > service
 	){
 		std::unique_lock< std::shared_timed_mutex > lock(impl_->mutex);
+		if(impl_->shutdown_){
+			throw std::runtime_error("can not add service(" + name
+				+ ") after shutdown");
+		}
+
 		auto r = impl_->services.emplace(std::move(name), std::move(service));
 		if(r.second){
 			r.first->second->set_server(server());
@@ -60,6 +66,14 @@ namespace webservice{
 		}
 	}
 
+	void ws_service_handler::shutdown()noexcept{
+		if(!impl_->shutdown_.exchange(true)){
+			std::shared_lock< std::shared_timed_mutex > lock(impl_->mutex);
+			for(auto& service: impl_->services){
+				service.second->shutdown();
+			}
+		}
+	}
 
 	void ws_service_handler::on_open(
 		ws_server_session* session,

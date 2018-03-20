@@ -46,6 +46,10 @@ namespace webservice{
 		void erase_service(std::string name);
 
 
+		/// \brief Call shutdown on all services and don't accept any new ones
+		void shutdown()noexcept override;
+
+
 	private:
 		/// \brief Rebinds the session to a service
 		void on_open(
