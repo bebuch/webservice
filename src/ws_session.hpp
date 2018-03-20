@@ -39,7 +39,7 @@ namespace webservice{
 	class text_tag{};
 
 	class ws_handler_base;
-	class ws_client_base_impl;
+	class ws_client_base;
 	class ws_server_session;
 	class ws_client_session;
 
@@ -247,7 +247,7 @@ namespace webservice{
 		/// \brief Take ownership of the socket
 		explicit ws_client_session(
 			ws_stream&& ws,
-			ws_client_base_impl& client,
+			ws_client_base& client,
 			boost::optional< std::chrono::milliseconds > websocket_ping_time);
 
 		/// \brief Destructor
@@ -282,7 +282,7 @@ namespace webservice{
 	private:
 		using callback = ws_session_callbacks< ws_client_session >;
 
-		ws_client_base_impl& client_;
+		ws_client_base& client_;
 		bool is_open_ = false;
 	};
 

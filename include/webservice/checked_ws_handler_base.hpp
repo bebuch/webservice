@@ -179,9 +179,7 @@ namespace webservice{
 
 
 		/// \brief Pointer to implementation
-		std::unique_ptr< class checked_ws_handler_base_impl > impl_;
-
-		friend class checked_ws_handler_base_impl;
+		std::unique_ptr< struct checked_ws_handler_base_impl > impl_;
 	};
 #ifdef __clang__
 #pragma clang diagnostic pop

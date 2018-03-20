@@ -17,8 +17,7 @@
 namespace webservice{
 
 
-	class server_impl{
-	public:
+	struct server_impl{
 		/// \brief Constructor
 		///
 		/// Run the IO context on all threads.
@@ -59,46 +58,8 @@ namespace webservice{
 		}
 
 
-		/// \copydoc server::block()
-		void block()noexcept{
-			std::lock_guard< std::recursive_mutex > lock(mutex);
-			for(auto& thread: threads_){
-				if(thread.joinable()){
-					try{
-						thread.join();
-					}catch(...){
-						listener_.on_exception(std::current_exception());
-					}
-				}
-			}
-		}
-
-		/// \copydoc server::stop()
-		void stop()noexcept{
-			listener_.stop();
-		}
-
-		/// \copydoc server::shutdown()
-		void shutdown()noexcept{
-			listener_.shutdown();
-		}
-
-
-		/// \brief Execute a function async via server threads
-		void async(std::function< void() >&& fn){
-			listener_.async(std::move(fn));
-		}
-
-
-		/// \brief Run one task in server threads
-		void run_one()noexcept{
-			listener_.run_one();
-		}
-
-
-	private:
 		/// \brief Protect thread joins
-		std::recursive_mutex mutex;
+		std::recursive_mutex mutex_;
 
 		/// \brief The worker threads
 		std::vector< std::thread > threads_;
@@ -148,30 +109,39 @@ namespace webservice{
 			)) {}
 
 	server::~server(){
-		impl_->stop();
-		impl_->block();
+		stop();
+		block();
 	}
 
 
 	void server::block()noexcept{
-		impl_->block();
+		std::lock_guard< std::recursive_mutex > lock(impl_->mutex_);
+		for(auto& thread: impl_->threads_){
+			if(thread.joinable()){
+				try{
+					thread.join();
+				}catch(...){
+					impl_->listener_.on_exception(std::current_exception());
+				}
+			}
+		}
 	}
 
 	void server::stop()noexcept{
-		impl_->stop();
+		impl_->listener_.stop();
 	}
 
 	void server::shutdown()noexcept{
-		impl_->shutdown();
+		impl_->listener_.shutdown();
 	}
 
 
 	void server::async(std::function< void() > fn){
-		impl_->async(std::move(fn));
+		impl_->listener_.async(std::move(fn));
 	}
 
 	void server::run_one()noexcept{
-		impl_->run_one();
+		impl_->listener_.run_one();
 	}
 
 

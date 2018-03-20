@@ -85,7 +85,6 @@ namespace webservice{
 		void async(std::function< void() > fn);
 
 
-	private:
 		/// \brief Called when the sessions starts
 		///
 		/// Default implementation does nothing.
@@ -119,10 +118,9 @@ namespace webservice{
 		virtual void on_exception(std::exception_ptr error)noexcept;
 
 
+	private:
 		/// \brief Pointer to implementation
-		std::unique_ptr< class ws_client_base_impl > impl_;
-
-		friend class ws_client_base_impl;
+		std::unique_ptr< struct ws_client_base_impl > impl_;
 	};
 
 

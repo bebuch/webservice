@@ -6,9 +6,10 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include "ws_client_base_impl.hpp"
+#include "ws_session.hpp"
 
 #include <webservice/ws_handler_base.hpp>
+#include <webservice/ws_client_base.hpp>
 
 #include <boost/beast/websocket.hpp>
 
@@ -423,7 +424,7 @@ namespace webservice{
 
 	ws_client_session::ws_client_session(
 		ws_stream&& ws,
-		ws_client_base_impl& client,
+		ws_client_base& client,
 		boost::optional< std::chrono::milliseconds > websocket_ping_time
 	)
 		: ws_session< ws_client_session >(std::move(ws), websocket_ping_time)
