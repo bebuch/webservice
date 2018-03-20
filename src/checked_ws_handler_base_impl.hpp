@@ -163,9 +163,10 @@ namespace webservice{
 
 		/// \brief Set shutdown flag, close all sessions and wait until they are
 		///        closed
-		void shutdown(){
-			shutdown_ = true;
-			send("handler shutdown");
+		void shutdown()noexcept{
+			if(shutdown_.exchange(true)){
+				send("handler shutdown");
+			}
 
 			for(;;){
 				std::unique_lock< std::shared_timed_mutex > lock(mutex_);

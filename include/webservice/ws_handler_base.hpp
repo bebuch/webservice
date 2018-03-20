@@ -106,6 +106,10 @@ namespace webservice{
 			std::exception_ptr error)noexcept;
 
 
+		/// \brief Shutdown hint called by the server
+		virtual void shutdown()noexcept;
+
+
 		/// \brief Set the owning server
 		void set_server(class server& server)noexcept;
 

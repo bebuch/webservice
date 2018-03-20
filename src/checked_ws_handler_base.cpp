@@ -24,6 +24,11 @@ namespace webservice{
 	}
 
 
+	void checked_ws_handler_base::shutdown()noexcept{
+		impl_->shutdown();
+	}
+
+
 	void checked_ws_handler_base::on_open(
 		std::uintptr_t const /*identifier*/,
 		std::string const& /*resource*/){}

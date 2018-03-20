@@ -287,6 +287,19 @@ namespace webservice{
 		, service_(&service) {}
 
 	ws_server_session::~ws_server_session(){
+		if(ws_.is_open()){
+			try{
+				ws_.close("server shutdown");
+				if(ws_.next_layer().is_open()){
+					ws_.next_layer().shutdown(
+						boost::asio::ip::tcp::socket::shutdown_both);
+					ws_.next_layer().close();
+				}
+			}catch(...){
+				this->callback::on_exception(std::current_exception());
+			}
+		}
+
 		if(is_open_){
 			this->callback::on_close();
 		}
@@ -422,6 +435,19 @@ namespace webservice{
 		, client_(client) {}
 
 	ws_client_session::~ws_client_session(){
+		if(ws_.is_open()){
+			try{
+				ws_.close("client shutdown");
+				if(ws_.next_layer().is_open()){
+					ws_.next_layer().shutdown(
+						boost::asio::ip::tcp::socket::shutdown_both);
+					ws_.next_layer().close();
+				}
+			}catch(...){
+				this->callback::on_exception(std::current_exception());
+			}
+		}
+
 		if(is_open_){
 			this->callback::on_close();
 		}

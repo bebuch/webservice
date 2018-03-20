@@ -71,6 +71,11 @@ namespace webservice{
 			std::set< std::uintptr_t > const& identifier,
 			boost::beast::string_view reason);
 
+	protected:
+		/// \brief Don't accept new connections, send close to all existing
+		///        connections
+		void shutdown()noexcept override;
+
 
 	private:
 		/// \brief Called with a unique identifier when a sessions starts

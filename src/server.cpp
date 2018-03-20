@@ -78,6 +78,11 @@ namespace webservice{
 			listener_.stop();
 		}
 
+		/// \copydoc server::shutdown()
+		void shutdown()noexcept{
+			listener_.shutdown();
+		}
+
 
 		/// \brief Execute a function async via server threads
 		void async(std::function< void() >&& fn){
@@ -154,6 +159,10 @@ namespace webservice{
 
 	void server::stop()noexcept{
 		impl_->stop();
+	}
+
+	void server::shutdown()noexcept{
+		impl_->shutdown();
 	}
 
 

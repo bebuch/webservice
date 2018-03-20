@@ -46,6 +46,18 @@ namespace webservice{
 			, max_read_message_size_(max_read_message_size)
 			{}
 
+		~http_session(){
+			try{
+				if(socket_.is_open()){
+					socket_.shutdown(
+						boost::asio::ip::tcp::socket::shutdown_both);
+					socket_.close();
+				}
+			}catch(...){
+				handler_.on_exception(std::current_exception());
+			}
+		}
+
 		void run(){
 			// Run the timer. The timer is operated
 			// continuously, this simplifies the code.

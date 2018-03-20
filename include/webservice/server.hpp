@@ -57,12 +57,20 @@ namespace webservice{
 		/// This effecivly blocks the current thread until the server is closed.
 		void block()noexcept;
 
-		/// \brief Close all connections as fast as possible
+		/// \brief Cancal all operations
+		///
+		/// This function is not blocking. Call block() if you want to wait
+		/// until all operations are canceled.
+		///
+		/// This function doesn't close the connections properly! Use
+		/// shutdown() for this.
+		void stop()noexcept;
+
+		/// \brief Don't accept new connections and async tasks
 		///
 		/// This function is not blocking. Call block() if you want to wait
 		/// until all connections are closed.
-		void stop()noexcept;
-
+		void shutdown()noexcept;
 
 		/// \brief Execute a function async via server threads
 		void async(std::function< void() > fn);

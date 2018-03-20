@@ -63,6 +63,10 @@ namespace webservice{
 		}
 
 		void on_accept(boost::system::error_code ec){
+			if(ec == boost::asio::error::operation_aborted){
+				return;
+			}
+
 			if(ec){
 				try{
 					error_handler_->on_error(ec);
@@ -87,12 +91,30 @@ namespace webservice{
 		}
 
 		void stop()noexcept{
+			shutdown_ = true;
 			ioc_.stop();
+		}
+
+		void shutdown()noexcept{
+			shutdown_ = true;
+
+			// Don't accept new sessions
+			acceptor_.close();
+
+			// Destroy the websocket service
+			if(service_){
+				service_->shutdown();
+			}
 		}
 
 
 		/// \brief Execute a function async via server threads
 		void async(std::function< void() >&& fn){
+			if(shutdown_){
+				throw std::runtime_error(
+					"server shutdown prevents new async operations");
+			}
+
 			boost::asio::defer(ioc_, [this, fn = std::move(fn)]()noexcept{
 					try{
 						fn();
@@ -129,6 +151,7 @@ namespace webservice{
 		/// \brief The io_context is required for all I/O
 		boost::asio::io_context ioc_;
 
+		std::atomic< bool > shutdown_{false};
 		boost::asio::ip::tcp::acceptor acceptor_;
 		boost::asio::ip::tcp::socket socket_;
 	};
