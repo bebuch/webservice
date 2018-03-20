@@ -107,7 +107,7 @@ namespace webservice{
 
 
 	void checked_ws_handler_base::shutdown()noexcept{
-		if(impl_->shutdown_.exchange(true)){
+		if(!impl_->shutdown_.exchange(true)){
 			impl_->send("handler shutdown");
 		}
 
