@@ -47,14 +47,14 @@ namespace webservice{
 			{}
 
 		~http_session(){
-			try{
-				if(socket_.is_open()){
+			if(socket_.is_open()){
+				try{
 					socket_.shutdown(
 						boost::asio::ip::tcp::socket::shutdown_both);
 					socket_.close();
+				}catch(...){
+					handler_.on_exception(std::current_exception());
 				}
-			}catch(...){
-				handler_.on_exception(std::current_exception());
 			}
 		}
 

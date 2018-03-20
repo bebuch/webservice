@@ -43,6 +43,10 @@ namespace webservice{
 			// Open the acceptor
 			acceptor_.open(endpoint.protocol());
 
+			// Allow port reuse
+			acceptor_.set_option(
+				boost::asio::ip::tcp::acceptor::reuse_address(true));
+
 			// Bind to the server address
 			acceptor_.bind(endpoint);
 
