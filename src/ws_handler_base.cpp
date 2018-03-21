@@ -71,10 +71,6 @@ namespace webservice{
 		session->send(boost::beast::websocket::close_reason(reason));
 	}
 
-	void ws_handler_base::async(std::function< void() > fn){
-		server().async(std::move(fn));
-	}
-
 
 	void ws_handler_base::set_server(class server& server)noexcept{
 		server_ = &server;

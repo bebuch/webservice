@@ -135,9 +135,8 @@ namespace webservice{
 		impl_->listener_.shutdown();
 	}
 
-
-	void server::async(std::function< void() > fn){
-		impl_->listener_.async(std::move(fn));
+	boost::asio::executor server::get_executor(){
+		return impl_->listener_.get_executor();
 	}
 
 	void server::run_one()noexcept{

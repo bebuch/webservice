@@ -54,10 +54,6 @@ namespace webservice{
 			boost::beast::string_view reason);
 
 
-		/// \brief Execute a function async via server threads
-		void async(std::function< void() > fn);
-
-
 		/// \brief Called with a unique identifier when a sessions starts
 		///
 		/// Default implementation does nothing.

@@ -13,6 +13,8 @@
 #include "ws_handler_base.hpp"
 #include "error_handler.hpp"
 
+#include <boost/asio/executor.hpp>
+
 
 namespace webservice{
 
@@ -72,8 +74,8 @@ namespace webservice{
 		/// until all connections are closed.
 		void shutdown()noexcept;
 
-		/// \brief Execute a function async via server threads
-		void async(std::function< void() > fn);
+		/// \brief Get executor
+		boost::asio::executor get_executor();
 
 
 		/// \brief Run one task in server threads

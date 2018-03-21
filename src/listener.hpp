@@ -13,8 +13,6 @@
 
 #include "http_session.hpp"
 
-#include <boost/asio/defer.hpp>
-
 
 namespace webservice{
 
@@ -112,20 +110,9 @@ namespace webservice{
 		}
 
 
-		/// \brief Execute a function async via server threads
-		void async(std::function< void() >&& fn){
-			if(shutdown_){
-				throw std::runtime_error(
-					"server shutdown prevents new async operations");
-			}
-
-			boost::asio::defer(ioc_, [this, fn = std::move(fn)]()noexcept{
-					try{
-						fn();
-					}catch(...){
-						on_exception(std::current_exception());
-					}
-				});
+		/// \brief Get executor of the io_context
+		boost::asio::executor get_executor(){
+			return ioc_.get_executor();
 		}
 
 
