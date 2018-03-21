@@ -181,7 +181,6 @@ namespace webservice{
 		void do_write();
 
 		using location_type = typename session_location_type< Derived >::type;
-		using callback = ws_session_callbacks< Derived >;
 
 		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
 
