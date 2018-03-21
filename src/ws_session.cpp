@@ -76,7 +76,16 @@ namespace webservice{
 							this_->on_ping(ec);
 						}));
 			}else{
-				close(ec);
+				// The timer expired while trying to handshake,
+				// or we sent a ping and it never completed or
+				// we never got back a control frame, so close.
+
+				// Closing the socket cancels all outstanding operations.
+				// They will complete with boost::asio::error::operation_aborted
+				using socket = boost::asio::ip::tcp::socket;
+				ws_.next_layer().shutdown(socket::shutdown_both, ec);
+				ws_.next_layer().close(ec);
+
 				return;
 			}
 		}
@@ -253,19 +262,6 @@ namespace webservice{
 						this_->on_error(location_type::close, ec);
 					}
 				}));
-	}
-
-	template < typename Derived >
-	void ws_session< Derived >::close(boost::system::error_code ec){
-		// The timer expired while trying to handshake,
-		// or we sent a ping and it never completed or
-		// we never got back a control frame, so close.
-
-		// Closing the socket cancels all outstanding operations.
-		// They will complete with boost::asio::error::operation_aborted
-		ws_.next_layer().shutdown(
-			boost::asio::ip::tcp::socket::shutdown_both, ec);
-		ws_.next_layer().close(ec);
 	}
 
 
