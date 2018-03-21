@@ -43,7 +43,7 @@ namespace webservice{
 		if(!websocket_ping_time_) return;
 
 		if(ec && ec != boost::asio::error::operation_aborted){
-			this->call_on_error(location_type::timer, ec);
+			derived().on_error(location_type::timer, ec);
 			return;
 		}
 
@@ -126,7 +126,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->call_on_error(location_type::ping, ec);
+			derived().on_error(location_type::ping, ec);
 			return;
 		}
 
@@ -176,13 +176,13 @@ namespace webservice{
 		activity();
 
 		if(ec){
-			this->call_on_error(location_type::read, ec);
+			derived().on_error(location_type::read, ec);
 		}else{
 			// Echo the message
 			if(ws_.got_text()){
-				this->call_on_text(buffer_);
+				derived().on_text(buffer_);
 			}else{
-				this->call_on_binary(buffer_);
+				derived().on_binary(buffer_);
 			}
 		}
 
@@ -201,7 +201,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->call_on_error(location_type::write, ec);
+			derived().on_error(location_type::write, ec);
 		}
 
 		std::lock_guard< std::mutex > lock(write_mutex_);
@@ -288,12 +288,12 @@ namespace webservice{
 			try{
 				ws_.close("server shutdown");
 			}catch(...){
-				this->call_on_exception(std::current_exception());
+				on_exception(std::current_exception());
 			}
 		}
 
 		if(is_open_){
-			this->call_on_close();
+			on_close();
 		}
 	}
 
@@ -339,57 +339,77 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->call_on_error(ws_handler_location::accept, ec);
+			on_error(ws_handler_location::accept, ec);
 			return;
 		}
 
 		is_open_ = true;
-		this->call_on_open();
+		on_open();
 
 		// Read a message
 		do_read();
 	}
 
 
-	void ws_server_session::on_open(){
+	void ws_server_session::on_open()noexcept{
 		ws_handler_base* service = service_;
 		if(service){
-			service->on_open(this, resource_);
+			try{
+				service->on_open(this, resource_);
+			}catch(...){
+				on_exception(std::current_exception());
+			}
 		}
 	}
 
-	void ws_server_session::on_close(){
+	void ws_server_session::on_close()noexcept{
 		ws_handler_base* service = service_;
 		if(service){
-			service->on_close(this, resource_);
+			try{
+				service->on_close(this, resource_);
+			}catch(...){
+				on_exception(std::current_exception());
+			}
 		}
 	}
 
 	void ws_server_session::on_text(
 		boost::beast::multi_buffer const& buffer
-	){
+	)noexcept{
 		ws_handler_base* service = service_;
 		if(service){
-			service->on_text(this, resource_, buffer);
+			try{
+				service->on_text(this, resource_, buffer);
+			}catch(...){
+				on_exception(std::current_exception());
+			}
 		}
 	}
 
 	void ws_server_session::on_binary(
 		boost::beast::multi_buffer const& buffer
-	){
+	)noexcept{
 		ws_handler_base* service = service_;
 		if(service){
-			service->on_binary(this, resource_, buffer);
+			try{
+				service->on_binary(this, resource_, buffer);
+			}catch(...){
+				on_exception(std::current_exception());
+			}
 		}
 	}
 
 	void ws_server_session::on_error(
 		ws_handler_location location,
 		boost::system::error_code ec
-	){
+	)noexcept{
 		ws_handler_base* service = service_;
 		if(service){
-			service->on_error(this, resource_, location, ec);
+			try{
+				service->on_error(this, resource_, location, ec);
+			}catch(...){
+				on_exception(std::current_exception());
+			}
 		}
 	}
 
@@ -431,12 +451,12 @@ namespace webservice{
 			try{
 				ws_.close("client shutdown");
 			}catch(...){
-				this->call_on_exception(std::current_exception());
+				on_exception(std::current_exception());
 			}
 		}
 
 		if(is_open_){
-			this->call_on_close();
+			on_close();
 		}
 	}
 
@@ -463,38 +483,58 @@ namespace webservice{
 				strand_,
 				[this_ = this->shared_from_this()]{
 					this_->is_open_ = true;
-					this_->call_on_open();
+					this_->on_open();
 				}));
 
 		do_read();
 	}
 
 
-	void ws_client_session::on_open(){
-		client_.on_open();
+	void ws_client_session::on_open()noexcept{
+		try{
+			client_.on_open();
+		}catch(...){
+			on_exception(std::current_exception());
+		}
 	}
 
-	void ws_client_session::on_close(){
-		client_.on_close();
+	void ws_client_session::on_close()noexcept{
+		try{
+			client_.on_close();
+		}catch(...){
+			on_exception(std::current_exception());
+		}
 	}
 
 	void ws_client_session::on_text(
 		boost::beast::multi_buffer const& buffer
-	){
-		client_.on_text(buffer);
+	)noexcept{
+		try{
+			client_.on_text(buffer);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
 	}
 
 	void ws_client_session::on_binary(
 		boost::beast::multi_buffer const& buffer
-	){
-		client_.on_binary(buffer);
+	)noexcept{
+		try{
+			client_.on_binary(buffer);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
 	}
 
 	void ws_client_session::on_error(
 		ws_client_location location,
 		boost::system::error_code ec
-	){
-		client_.on_error(location, ec);
+	)noexcept{
+		try{
+			client_.on_error(location, ec);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
 	}
 
 	void ws_client_session::on_exception(

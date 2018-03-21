@@ -64,74 +64,9 @@ namespace webservice{
 	};
 
 
-	template < typename Derived >
-	class ws_session_callbacks{
-	protected:
-		/// \brief Called when a session starts
-		void call_on_open()noexcept{
-			try{
-				derived()->on_open();
-			}catch(...){
-				call_on_exception(std::current_exception());
-			}
-		}
-
-		/// \brief Called when a sessions ends
-		void call_on_close()noexcept{
-			try{
-				derived()->on_close();
-			}catch(...){
-				call_on_exception(std::current_exception());
-			}
-		}
-
-		/// \brief Called when a session received a text message
-		void call_on_text(boost::beast::multi_buffer const& buffer)noexcept{
-			try{
-				derived()->on_text(buffer);
-			}catch(...){
-				call_on_exception(std::current_exception());
-			}
-		}
-
-		/// \brief Called when a session received a binary message
-		void call_on_binary(boost::beast::multi_buffer const& buffer)noexcept{
-			try{
-				derived()->on_binary(buffer);
-			}catch(...){
-				call_on_exception(std::current_exception());
-			}
-		}
-
-		/// \brief Called when an error occured
-		template < typename Error >
-		void call_on_error(Error error, boost::system::error_code ec)noexcept{
-			try{
-				derived()->on_error(error, ec);
-			}catch(...){
-				call_on_exception(std::current_exception());
-			}
-		}
-
-		/// \brief Called when an exception was thrown
-		void call_on_exception(std::exception_ptr error)noexcept{
-			derived()->on_exception(error);
-		}
-
-
-	private:
-		/// \brief This as actual type
-		Derived* derived(){
-			return static_cast< Derived* >(this);
-		}
-	};
-
-
 	/// \brief Base of WebSocket sessions
 	template < typename Derived >
-	class ws_session
-		: public ws_session_callbacks< Derived >
-		, public std::enable_shared_from_this< Derived >{
+	class ws_session: public std::enable_shared_from_this< Derived >{
 	public:
 		/// \brief Take ownership of the socket
 		explicit ws_session(
@@ -175,6 +110,11 @@ namespace webservice{
 
 
 	private:
+		/// \brief This as actual type
+		Derived& derived(){
+			return static_cast< Derived& >(*this);
+		}
+
 		void do_write();
 
 		using location_type = typename session_location_type< Derived >::type;
@@ -217,21 +157,21 @@ namespace webservice{
 
 
 		/// \brief Called with when a sessions starts
-		void on_open();
+		void on_open()noexcept;
 
 		/// \brief Called with when a sessions ends
-		void on_close();
+		void on_close()noexcept;
 
 		/// \brief Called when a text message
-		void on_text(boost::beast::multi_buffer const& buffer);
+		void on_text(boost::beast::multi_buffer const& buffer)noexcept;
 
 		/// \brief Called when a binary message
-		void on_binary(boost::beast::multi_buffer const& buffer);
+		void on_binary(boost::beast::multi_buffer const& buffer)noexcept;
 
 		/// \brief Called when an error occured
 		void on_error(
 			ws_handler_location location,
-			boost::system::error_code ec);
+			boost::system::error_code ec)noexcept;
 
 		/// \brief Called when an exception was thrown
 		void on_exception(std::exception_ptr error)noexcept;
@@ -242,8 +182,6 @@ namespace webservice{
 
 
 	private:
-		using callback = ws_session_callbacks< ws_server_session >;
-
 		std::atomic< ws_handler_base* > service_;
 		std::string resource_;
 		bool is_open_ = false;
@@ -267,29 +205,27 @@ namespace webservice{
 
 
 		/// \brief Called when the sessions start
-		void on_open();
+		void on_open()noexcept;
 
 		/// \brief Called when the sessions ends
-		void on_close();
+		void on_close()noexcept;
 
 		/// \brief Called when the session received a text message
-		void on_text(boost::beast::multi_buffer const& buffer);
+		void on_text(boost::beast::multi_buffer const& buffer)noexcept;
 
 		/// \brief Called when the session received a binary message
-		void on_binary(boost::beast::multi_buffer const& buffer);
+		void on_binary(boost::beast::multi_buffer const& buffer)noexcept;
 
 		/// \brief Called when an error occured
 		void on_error(
 			ws_client_location location,
-			boost::system::error_code ec);
+			boost::system::error_code ec)noexcept;
 
 		/// \brief Called when an exception was thrown
 		void on_exception(std::exception_ptr error)noexcept;
 
 
 	private:
-		using callback = ws_session_callbacks< ws_client_session >;
-
 		ws_client_base& client_;
 		bool is_open_ = false;
 	};
