@@ -43,7 +43,7 @@ namespace webservice{
 		if(!websocket_ping_time_) return;
 
 		if(ec && ec != boost::asio::error::operation_aborted){
-			this->callback::on_error(location_type::timer, ec);
+			this->callback::call_on_error(location_type::timer, ec);
 			return;
 		}
 
@@ -117,7 +117,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->callback::on_error(location_type::ping, ec);
+			this->callback::call_on_error(location_type::ping, ec);
 			return;
 		}
 
@@ -167,13 +167,13 @@ namespace webservice{
 		activity();
 
 		if(ec){
-			this->callback::on_error(location_type::read, ec);
+			this->callback::call_on_error(location_type::read, ec);
 		}else{
 			// Echo the message
 			if(ws_.got_text()){
-				this->callback::on_text(buffer_);
+				this->callback::call_on_text(buffer_);
 			}else{
-				this->callback::on_binary(buffer_);
+				this->callback::call_on_binary(buffer_);
 			}
 		}
 
@@ -192,7 +192,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->callback::on_error(location_type::write, ec);
+			this->callback::call_on_error(location_type::write, ec);
 		}
 
 		std::lock_guard< std::mutex > lock(write_mutex_);
@@ -292,12 +292,12 @@ namespace webservice{
 			try{
 				ws_.close("server shutdown");
 			}catch(...){
-				this->callback::on_exception(std::current_exception());
+				this->callback::call_on_exception(std::current_exception());
 			}
 		}
 
 		if(is_open_){
-			this->callback::on_close();
+			this->callback::call_on_close();
 		}
 	}
 
@@ -343,12 +343,12 @@ namespace webservice{
 		}
 
 		if(ec){
-			this->callback::on_error(ws_handler_location::accept, ec);
+			this->callback::call_on_error(ws_handler_location::accept, ec);
 			return;
 		}
 
 		is_open_ = true;
-		this->callback::on_open();
+		this->callback::call_on_open();
 
 		// Read a message
 		do_read();
@@ -435,12 +435,12 @@ namespace webservice{
 			try{
 				ws_.close("client shutdown");
 			}catch(...){
-				this->callback::on_exception(std::current_exception());
+				this->callback::call_on_exception(std::current_exception());
 			}
 		}
 
 		if(is_open_){
-			this->callback::on_close();
+			this->callback::call_on_close();
 		}
 	}
 
@@ -467,7 +467,7 @@ namespace webservice{
 				strand_,
 				[this_ = this->shared_from_this()]{
 					this_->is_open_ = true;
-					this_->callback::on_open();
+					this_->callback::call_on_open();
 				}));
 
 		do_read();

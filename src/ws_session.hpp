@@ -46,6 +46,9 @@ namespace webservice{
 	using ws_stream =
 		boost::beast::websocket::stream< boost::asio::ip::tcp::socket >;
 
+	using ws_strand =
+		boost::asio::strand< boost::asio::io_context::executor_type >;
+
 
 	template < typename Derived >
 	struct session_location_type;
@@ -65,54 +68,61 @@ namespace webservice{
 	class ws_session_callbacks{
 	protected:
 		/// \brief Called when a session starts
-		void on_open()noexcept{
+		void call_on_open()noexcept{
 			try{
-				static_cast< Derived* >(this)->on_open();
+				derived()->on_open();
 			}catch(...){
-				on_exception(std::current_exception());
+				call_on_exception(std::current_exception());
 			}
 		}
 
 		/// \brief Called when a sessions ends
-		void on_close()noexcept{
+		void call_on_close()noexcept{
 			try{
-				static_cast< Derived* >(this)->on_close();
+				derived()->on_close();
 			}catch(...){
-				on_exception(std::current_exception());
+				call_on_exception(std::current_exception());
 			}
 		}
 
 		/// \brief Called when a session received a text message
-		void on_text(boost::beast::multi_buffer const& buffer)noexcept{
+		void call_on_text(boost::beast::multi_buffer const& buffer)noexcept{
 			try{
-				static_cast< Derived* >(this)->on_text(buffer);
+				derived()->on_text(buffer);
 			}catch(...){
-				on_exception(std::current_exception());
+				call_on_exception(std::current_exception());
 			}
 		}
 
 		/// \brief Called when a session received a binary message
-		void on_binary(boost::beast::multi_buffer const& buffer)noexcept{
+		void call_on_binary(boost::beast::multi_buffer const& buffer)noexcept{
 			try{
-				static_cast< Derived* >(this)->on_binary(buffer);
+				derived()->on_binary(buffer);
 			}catch(...){
-				on_exception(std::current_exception());
+				call_on_exception(std::current_exception());
 			}
 		}
 
 		/// \brief Called when an error occured
 		template < typename Error >
-		void on_error(Error error, boost::system::error_code ec)noexcept{
+		void call_on_error(Error error, boost::system::error_code ec)noexcept{
 			try{
-				static_cast< Derived* >(this)->on_error(error, ec);
+				derived()->on_error(error, ec);
 			}catch(...){
-				on_exception(std::current_exception());
+				call_on_exception(std::current_exception());
 			}
 		}
 
 		/// \brief Called when an exception was thrown
-		void on_exception(std::exception_ptr error)noexcept{
-			static_cast< Derived* >(this)->on_exception(error);
+		void call_on_exception(std::exception_ptr error)noexcept{
+			derived()->on_exception(error);
+		}
+
+
+	private:
+		/// \brief This as actual type
+		Derived* derived(){
+			return static_cast< Derived* >(this);
 		}
 	};
 
@@ -161,8 +171,10 @@ namespace webservice{
 
 
 	protected:
+		/// \brief The websocket stream
 		ws_stream ws_;
-		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
+
+		ws_strand strand_;
 
 
 	private:
