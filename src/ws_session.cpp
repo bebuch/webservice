@@ -30,8 +30,9 @@ namespace webservice{
 	)
 		: ws_(std::move(ws))
 		, strand_(ws_.get_executor())
-		, websocket_ping_time_(websocket_ping_time)
+		, write_strand_(ws_.get_executor())
 		, write_list_(64)
+		, websocket_ping_time_(websocket_ping_time)
 		, timer_(ws_.get_executor().context(),
 			std::chrono::steady_clock::time_point::max())
 	{
@@ -204,7 +205,6 @@ namespace webservice{
 			derived().on_error(location_type::write, ec);
 		}
 
-		std::lock_guard< std::mutex > lock(write_mutex_);
 		write_list_.pop_front();
 		if(!write_list_.empty()){
 			do_write();
@@ -216,20 +216,26 @@ namespace webservice{
 	void ws_session< Derived >::send(
 		std::tuple< Tag, shared_const_buffer > data
 	){
-		std::lock_guard< std::mutex > lock(write_mutex_);
-		if(write_list_.full()){
-			throw std::runtime_error("write buffer is full");
-		}
+		boost::asio::asio_handler_invoke(boost::asio::bind_executor(
+			write_strand_,
+			[
+				this_ = this->shared_from_this(),
+				data = std::move(std::get< 1 >(data))
+			]()mutable{
+				if(this_->write_list_.full()){
+					throw std::runtime_error("write buffer is full");
+				}
 
-		bool was_empty = write_list_.empty();
+				bool was_empty = this_->write_list_.empty();
 
-		constexpr bool is_text = std::is_same< Tag, text_tag >::value;
-		write_list_.push_back(
-			write_data{is_text, std::move(std::get< 1 >(data))});
+				constexpr bool is_text = std::is_same< Tag, text_tag >::value;
+				this_->write_list_.push_back(
+					write_data{is_text, std::move(data)});
 
-		if(was_empty){
-			do_write();
-		}
+				if(was_empty){
+					this_->do_write();
+				}
+			}));
 	}
 
 	template < typename Derived >
@@ -238,7 +244,7 @@ namespace webservice{
 		ws_.async_write(
 			std::move(write_list_.front().data),
 			boost::asio::bind_executor(
-				strand_,
+				write_strand_,
 				[this_ = this->shared_from_this()](
 					boost::system::error_code ec,
 					std::size_t /*bytes_transferred*/

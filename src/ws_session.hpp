@@ -119,14 +119,14 @@ namespace webservice{
 
 		using location_type = typename session_location_type< Derived >::type;
 
-		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
-
 		struct write_data{
 			bool is_text;
 			shared_const_buffer data;
 		};
-		std::mutex write_mutex_;
+		ws_strand write_strand_;
 		boost::circular_buffer< write_data > write_list_;
+
+		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
 
 		boost::asio::steady_timer timer_;
 		boost::beast::multi_buffer buffer_;
