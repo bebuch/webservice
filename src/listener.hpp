@@ -123,11 +123,12 @@ namespace webservice{
 
 
 		/// \brief Run one task in server threads
-		void run_one()noexcept{
+		std::size_t run_one()noexcept{
 			try{
-				ioc_.run_one();
+				return ioc_.run_one();
 			}catch(...){
 				on_exception(std::current_exception());
+				return 1;
 			}
 		}
 

@@ -109,7 +109,10 @@ namespace webservice{
 				break;
 			}
 			lock.unlock();
-			server().run_one();
+
+			assert(server() != nullptr);
+
+			server()->run_one();
 		}
 	}
 

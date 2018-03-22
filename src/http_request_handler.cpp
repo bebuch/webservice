@@ -75,8 +75,8 @@ namespace webservice{
 	}
 
 
-	void http_request_handler::set_server(class server& server)noexcept{
-		server_ = &server;
+	void http_request_handler::set_server(class server* server){
+		server_ = server;
 	}
 
 

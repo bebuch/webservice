@@ -40,6 +40,8 @@ namespace webservice{
 
 		/// \brief Erase ws_handler_base with name
 		///
+		/// \attention A service must not remove itself!
+		///
 		/// \throw std::logic_error if no ws_handler_base with name did exist
 		///
 		/// Thread safe: Yes.

@@ -85,12 +85,12 @@ namespace webservice{
 							handler =
 								boost::make_unique< http_request_handler >();
 						}
-						handler->set_server(*this);
+						handler->set_server(this);
 						return std::move(handler);
 					}(),
 				[this, service = std::move(service)]()mutable{
 						if(service){
-							service->set_server(*this);
+							service->set_server(this);
 						}
 						return std::move(service);
 					}(),
@@ -139,8 +139,8 @@ namespace webservice{
 		return impl_->listener_.get_executor();
 	}
 
-	void server::run_one()noexcept{
-		impl_->listener_.run_one();
+	std::size_t server::run_one()noexcept{
+		return impl_->listener_.run_one();
 	}
 
 

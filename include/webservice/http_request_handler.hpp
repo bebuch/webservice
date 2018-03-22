@@ -40,24 +40,18 @@ namespace webservice{
 
 
 		/// \brief Set the owning server
-		void set_server(class server& server)noexcept;
+		virtual void set_server(class server* server);
 
 
 	protected:
 		/// \brief Get reference to const server
-		///
-		/// Must not be called before a server is initialized with this service.
-		class server const& server()const noexcept{
-			assert(server_ != nullptr);
-			return *server_;
+		class server const* server()const noexcept{
+			return server_;
 		}
 
 		/// \brief Get reference to server
-		///
-		/// Must not be called before a server is initialized with this service.
-		class server& server()noexcept{
-			assert(server_ != nullptr);
-			return *server_;
+		class server* server()noexcept{
+			return server_;
 		}
 
 

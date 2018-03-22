@@ -74,7 +74,7 @@ struct ws_handler
 	}
 
 	void on_close(std::uintptr_t, std::string const&)override{
-		server().stop();
+		server()->shutdown();
 	}
 
 	void on_text(

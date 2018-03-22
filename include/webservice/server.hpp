@@ -79,7 +79,7 @@ namespace webservice{
 
 
 		/// \brief Run one task in server threads
-		void run_one()noexcept;
+		std::size_t run_one()noexcept;
 
 
 	private:
