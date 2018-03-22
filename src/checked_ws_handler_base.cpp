@@ -166,7 +166,11 @@ namespace webservice{
 			lock.unlock();
 
 			auto identifier = reinterpret_cast< std::uintptr_t >(session);
-			on_open(identifier, resource);
+			try{
+				on_open(identifier, resource);
+			}catch(...){
+				on_exception(identifier, resource, std::current_exception());
+			}
 		}else{
 			session->rebind(nullptr);
 			session->send("handler shutdown");
@@ -177,7 +181,12 @@ namespace webservice{
 		ws_server_session* const session,
 		std::string const& resource
 	){
-		on_close(reinterpret_cast< std::uintptr_t >(session), resource);
+		auto identifier = reinterpret_cast< std::uintptr_t >(session);
+		try{
+			on_close(identifier, resource);
+		}catch(...){
+			on_exception(identifier, resource, std::current_exception());
+		}
 
 		std::unique_lock< std::shared_timed_mutex > lock(impl_->mutex_);
 		impl_->sessions_.erase(session);
@@ -188,10 +197,12 @@ namespace webservice{
 		std::string const& resource,
 		boost::beast::multi_buffer const& buffer
 	){
-		on_text(
-			reinterpret_cast< std::uintptr_t >(session),
-			resource,
-			buffer);
+		auto identifier = reinterpret_cast< std::uintptr_t >(session);
+		try{
+			on_text(identifier, resource, buffer);
+		}catch(...){
+			on_exception(identifier, resource, std::current_exception());
+		}
 	}
 
 	void checked_ws_handler_base::on_binary(
@@ -199,10 +210,12 @@ namespace webservice{
 		std::string const& resource,
 		boost::beast::multi_buffer const& buffer
 	){
-		on_binary(
-			reinterpret_cast< std::uintptr_t >(session),
-			resource,
-			buffer);
+		auto identifier = reinterpret_cast< std::uintptr_t >(session);
+		try{
+			on_binary(identifier, resource, buffer);
+		}catch(...){
+			on_exception(identifier, resource, std::current_exception());
+		}
 	}
 
 	void checked_ws_handler_base::on_error(
@@ -211,11 +224,12 @@ namespace webservice{
 		ws_handler_location location,
 		boost::system::error_code ec
 	){
-		on_error(
-			reinterpret_cast< std::uintptr_t >(session),
-			resource,
-			location,
-			ec);
+		auto identifier = reinterpret_cast< std::uintptr_t >(session);
+		try{
+			on_error(identifier, resource, location, ec);
+		}catch(...){
+			on_exception(identifier, resource, std::current_exception());
+		}
 	}
 
 	void checked_ws_handler_base::on_exception(
@@ -223,10 +237,8 @@ namespace webservice{
 		std::string const& resource,
 		std::exception_ptr error
 	)noexcept{
-		on_exception(
-			reinterpret_cast< std::uintptr_t >(session),
-			resource,
-			error);
+		auto identifier = reinterpret_cast< std::uintptr_t >(session);
+		on_exception(identifier, resource, error);
 	}
 
 
