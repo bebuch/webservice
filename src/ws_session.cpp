@@ -53,10 +53,7 @@ namespace webservice{
 		if(timer_.expiry() <= std::chrono::steady_clock::now()){
 			// If this is the first time the timer expired,
 			// send a ping to see if the other end is there.
-			if(ws_.is_open() && ping_state_ == 0){
-				// Note that we are sending a ping
-				ping_state_ = 1;
-
+			if(ws_.is_open() && wait_on_pong_.exchange(true)){
 				// Set the timer
 				start_timer();
 
@@ -112,8 +109,8 @@ namespace webservice{
 
 	template < typename Derived >
 	void ws_session< Derived >::activity() {
-		// Note that the connection is alive
-		ping_state_ = 0;
+		// Note that the session is alive
+		wait_on_pong_ = false;
 
 		// Set the timer
 		start_timer();
@@ -129,16 +126,6 @@ namespace webservice{
 		if(ec){
 			derived().on_error(location_type::ping, ec);
 			return;
-		}
-
-		// Note that the ping was sent.
-		if(ping_state_ == 1){
-			ping_state_ = 2;
-		}else{
-			// ping_state_ could have been set to 0
-			// if an incoming control frame was received
-			// at exactly the same time we sent a ping.
-			BOOST_ASSERT(ping_state_ == 0);
 		}
 	}
 
