@@ -12,8 +12,6 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include <boost/make_unique.hpp>
-
 #include <algorithm>
 #include <iostream>
 #include <csignal>
@@ -95,8 +93,8 @@ int main(int argc, char* argv[]){
 		using webservice::file_request_handler;
 		using webservice::server;
 		server server(
-			boost::make_unique< file_request_handler >(doc_root),
-			boost::make_unique< mirror_ws_handler >(),
+			std::make_unique< file_request_handler >(doc_root),
+			std::make_unique< mirror_ws_handler >(),
 			nullptr, // ignore errors and exceptions
 			address, port, thread_count);
 

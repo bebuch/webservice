@@ -64,7 +64,7 @@ namespace webservice{
 			checked_ws_handler_base::set_server(server);
 
 			if(this->server()){
-				strand_ = boost::make_unique< strand >(
+				strand_ = std::make_unique< strand >(
 					this->server()->get_executor());
 			}else{
 				strand_.reset();

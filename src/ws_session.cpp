@@ -40,68 +40,65 @@ namespace webservice{
 	}
 
 	template < typename Derived >
-	void ws_session< Derived >::on_timer(boost::system::error_code ec){
-		if(!websocket_ping_time_) return;
+	void ws_session< Derived >::do_timer(){
+		timer_.async_wait(boost::asio::bind_executor(
+			strand_,
+			[this, lock = async_lock(async_calls_)]
+			(boost::system::error_code ec){
+				if(ec == boost::asio::error::operation_aborted){
+					return;
+				}
 
-		if(ec && ec != boost::asio::error::operation_aborted){
-			derived().on_error(location_type::timer, ec);
-			return;
-		}
+				if(ec){
+					derived().on_error(location_type::timer, ec);
+				}
 
-		// See if the timer really expired since the deadline may have
-		// moved.
-		if(timer_.expiry() <= std::chrono::steady_clock::now()){
-			// If this is the first time the timer expired,
-			// send a ping to see if the other end is there.
-			if(ws_.is_open() && wait_on_pong_.exchange(true)){
-				// Set the timer
-				start_timer();
+				// If this is the first time the timer expired and ec was not
+				// set, then send a ping to see if the other end is there.
+				// Close the session otherwise.
+				if(!ec && wait_on_pong_.exchange(true)){
+					// Set the timer
+					restart_timer();
 
-				auto ping_payload =
-					(std::is_same< Derived, ws_server_session >::value
-							? "server " : "client ")
-						+ std::to_string(ping_counter_++);
+					auto ping_payload =
+						(std::is_same< Derived, ws_server_session >::value
+								? "server " : "client ")
+							+ std::to_string(ping_counter_++);
 
-				// Now send the ping
-				ws_.async_ping(
-					boost::beast::websocket::ping_data(
-						ping_payload.c_str(), ping_payload.size()),
-					boost::asio::bind_executor(
-						strand_,
-						[this_ = this->shared_from_this()](
-							boost::system::error_code ec
-						){
-							this_->on_ping(ec);
-						}));
-			}else{
-				// The timer expired while trying to handshake,
-				// or we sent a ping and it never completed or
-				// we never got back a control frame, so close.
+					// Now send the ping
+					ws_.async_ping(
+						boost::beast::websocket::ping_data(
+							ping_payload.c_str(), ping_payload.size()),
+						boost::asio::bind_executor(
+							strand_,
+							[this, lock = async_lock(async_calls_)](
+								boost::system::error_code ec
+							){
+								// Happens when the timer closes the socket
+								if(ec == boost::asio::error::operation_aborted){
+									return;
+								}
 
-				// Closing the socket cancels all outstanding operations.
-				// They will complete with boost::asio::error::operation_aborted
-				using socket = boost::asio::ip::tcp::socket;
-				ws_.next_layer().shutdown(socket::shutdown_both, ec);
-				ws_.next_layer().close(ec);
+								if(ec){
+									derived().on_error(location_type::ping, ec);
+									return;
+								}
+							}));
 
-				return;
-			}
-		}
-
-		// Wait on the timer
-		if(ws_.is_open()){
-			timer_.async_wait(
-				boost::asio::bind_executor(
-					strand_,
-					[this_ = this->shared_from_this()]
-					(boost::system::error_code ec){
-						this_->on_timer(ec);
-					}));
-		}
+					do_timer();
+				}else{
+					// Closing the socket cancels all outstanding operations.
+					// They will complete with operation_aborted
+					using socket = boost::asio::ip::tcp::socket;
+					ws_.next_layer().shutdown(socket::shutdown_both, ec);
+					ws_.next_layer().close(ec);
+					async_erase();
+				}
+			}));
 	}
 
 	template < typename Derived >
-	void ws_session< Derived >::start_timer(){
+	void ws_session< Derived >::restart_timer(){
 		if(websocket_ping_time_){
 			timer_.expires_after(*websocket_ping_time_);
 		}
@@ -112,26 +109,12 @@ namespace webservice{
 		// Note that the session is alive
 		wait_on_pong_ = false;
 
-		// Set the timer
-		start_timer();
-	}
-
-	template < typename Derived >
-	void ws_session< Derived >::on_ping(boost::system::error_code ec){
-		// Happens when the timer closes the socket
-		if(ec == boost::asio::error::operation_aborted){
-			return;
-		}
-
-		if(ec){
-			derived().on_error(location_type::ping, ec);
-			return;
-		}
+		restart_timer();
 	}
 
 	template < typename Derived >
 	void ws_session< Derived >::do_read(){
-		start_timer();
+		restart_timer();
 
 		// Read a message into our buffer
 		if(ws_.is_open()){
@@ -139,7 +122,7 @@ namespace webservice{
 				buffer_,
 				boost::asio::bind_executor(
 					strand_,
-					[this_ = this->shared_from_this()](
+					[this, lock = async_lock(async_calls_)](
 						boost::system::error_code ec,
 						std::size_t /*bytes_transferred*/
 					){
@@ -206,7 +189,7 @@ namespace webservice{
 		boost::asio::asio_handler_invoke(boost::asio::bind_executor(
 			write_strand_,
 			[
-				this_ = this->shared_from_this(),
+				this, lock = async_lock(async_calls_),
 				data = std::move(std::get< 1 >(data))
 			]()mutable{
 				if(this_->write_list_.full()){
@@ -232,7 +215,7 @@ namespace webservice{
 			std::move(write_list_.front().data),
 			boost::asio::bind_executor(
 				write_strand_,
-				[this_ = this->shared_from_this()](
+				[this, lock = async_lock(async_calls_)](
 					boost::system::error_code ec,
 					std::size_t /*bytes_transferred*/
 				){
@@ -248,13 +231,22 @@ namespace webservice{
 			reason,
 			boost::asio::bind_executor(
 				strand_,
-				[this_ = this->shared_from_this()](
+				[this, lock = async_lock(async_calls_)](
 					boost::system::error_code ec
 				){
 					if(ec){
 						this_->on_error(location_type::close, ec);
 					}
 				}));
+	}
+
+	template < typename Derived >
+	void ws_session< Derived >::async_erase(){
+		std::call_once(erase_flag_, [this]{
+				boost::asio::post([this]{
+						eraser_();
+					});
+			});
 	}
 
 
@@ -310,7 +302,7 @@ namespace webservice{
 		on_timer({});
 
 		// Set the timer
-		start_timer();
+		restart_timer();
 
 		resource_ = std::string(req.target());
 
@@ -319,7 +311,7 @@ namespace webservice{
 			req,
 			boost::asio::bind_executor(
 				strand_,
-				[this_ = this->shared_from_this()]
+				[this, lock = async_lock(async_calls_)]
 				(boost::system::error_code ec){
 					this_->on_accept(ec);
 				}));
@@ -474,7 +466,7 @@ namespace webservice{
 		boost::asio::asio_handler_invoke(
 			boost::asio::bind_executor(
 				strand_,
-				[this_ = this->shared_from_this()]{
+				[this, lock = async_lock(async_calls_)]{
 					this_->is_open_ = true;
 					this_->on_open();
 				}));

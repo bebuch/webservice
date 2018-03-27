@@ -14,8 +14,6 @@
 #include <webservice/ws_handler.hpp>
 #include <webservice/file_request_handler.hpp>
 
-#include <boost/make_unique.hpp>
-
 #include <thread>
 #include <csignal>
 
@@ -179,9 +177,9 @@ int main(){
 
 	try{
 		webservice::server server(
-			boost::make_unique< request_handler >("server_vs_browser"),
-			boost::make_unique< ws_handler >(),
-			boost::make_unique< webservice::error_printing_error_handler >(),
+			std::make_unique< request_handler >("server_vs_browser"),
+			std::make_unique< ws_handler >(),
+			std::make_unique< webservice::error_printing_error_handler >(),
 			boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
 		check(state_t::init);

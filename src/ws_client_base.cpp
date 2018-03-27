@@ -21,8 +21,6 @@
 #include <boost/asio/bind_executor.hpp>
 #include <boost/asio/defer.hpp>
 
-#include <boost/make_unique.hpp>
-
 #include <memory>
 #include <string>
 #include <vector>
@@ -81,7 +79,7 @@ namespace webservice{
 		boost::optional< std::chrono::milliseconds > websocket_ping_time,
 		std::size_t max_read_message_size
 	)
-		: impl_(boost::make_unique< ws_client_base_impl >(
+		: impl_(std::make_unique< ws_client_base_impl >(
 			std::move(host), std::move(port), std::move(resource),
 			websocket_ping_time, max_read_message_size)) {}
 

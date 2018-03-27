@@ -25,37 +25,29 @@ namespace webservice{
 		= boost::beast::http::response< boost::beast::http::string_body >;
 
 
+	template < typename T >
+	class sessions;
+
+
 	/// \brief Base class of all HTTP request handlers
 	class http_request_handler{
 	public:
-		http_request_handler() = default;
+		/// \brief Constructor
+		http_request_handler();
 
 		http_request_handler(http_request_handler const&) = delete;
 
 		http_request_handler& operator=(http_request_handler const&) = delete;
 
 
+		/// \brief Destructor
 		virtual ~http_request_handler();
+
+
+		/// \brief Process http request
 		virtual void operator()(http_request&& req, http_response&& send);
 
 
-		/// \brief Set the owning server
-		virtual void set_server(class server* server);
-
-
-	protected:
-		/// \brief Get reference to const server
-		class server const* server()const noexcept{
-			return server_;
-		}
-
-		/// \brief Get reference to server
-		class server* server()noexcept{
-			return server_;
-		}
-
-
-	private:
 		/// \brief Called when an error occured
 		///
 		/// Default implementation does nothing.
@@ -69,10 +61,27 @@ namespace webservice{
 		virtual void on_exception(std::exception_ptr error)noexcept;
 
 
+		/// \brief Set the owning server
+		virtual void set_server(class server* server);
+
+
+
+
+
+	protected:
+		/// \brief Get reference to server
+		class server* server()noexcept{
+			return server_;
+		}
+
+
+	private:
 		/// \brief Pointer to the server object
 		class server* server_ = nullptr;
 
-		friend class http_session;
+
+		/// \brief Pointer to implementation
+		std::unique_ptr< sessions< class http_session > > list_;
 	};
 
 	/// \brief Returns a bad request response

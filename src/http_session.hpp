@@ -9,7 +9,7 @@
 #ifndef _webservice__http_session__hpp_INCLUDED_
 #define _webservice__http_session__hpp_INCLUDED_
 
-#include "ws_session.hpp"
+#include "server_impl.hpp"
 
 #include <boost/circular_buffer.hpp>
 
@@ -25,43 +25,83 @@
 namespace webservice{
 
 
-	/// \brief Handles an HTTP server connection
-	class http_session: public std::enable_shared_from_this< http_session >{
+	/// \brief Handles an HTTP server session
+	class http_session{
 	public:
 		/// \brief Take ownership of the socket and start reading
 		explicit http_session(
 			boost::asio::ip::tcp::socket&& socket,
-			http_request_handler& handler,
-			std::unique_ptr< ws_handler_base > const& service,
-			boost::optional< std::chrono::milliseconds > websocket_ping_time,
-			std::size_t max_read_message_size
+			server_impl& server
 		)
 			: socket_(std::move(socket))
-			, handler_(handler)
-			, service_(service)
+			, server_(server)
 			, strand_(socket_.get_executor())
 			, timer_(socket_.get_executor().context(),
 				std::chrono::steady_clock::time_point::max())
-			, websocket_ping_time_(websocket_ping_time)
-			, max_read_message_size_(max_read_message_size)
 			{}
 
 		~http_session(){
-			if(socket_.is_open()){
-				try{
-					socket_.shutdown(
-						boost::asio::ip::tcp::socket::shutdown_both);
-					socket_.close();
-				}catch(...){
-					handler_.on_exception(std::current_exception());
+			shutdown();
+		}
+
+		void set_eraser(sessions_eraser< http_session >&& eraser)noexcept{
+			eraser_ = std::move(eraser);
+		}
+
+		void shutdown()noexcept{
+			boost::asio::post(boost::asio::bind_executor(
+				strand_,
+				[this, lock = async_lock(async_calls_)]{
+					timer_.cancel();
+					if(socket_.is_open()){
+						socket_.shutdown(socket::shutdown_both);
+						socket_.close();
+					}
+				});
+
+			// as long as async calls are pending
+			while(async_calls_ > 0){
+				// request the server to run a handler async
+				if(server_.poll() == 0){
+					// if no handler was waiting, the pending one must
+					// currently run in another thread
+					std::this_thread::yield();
 				}
 			}
 		}
 
+		// Called when the timer expires.
+		void do_timer(boost::system::error_code ec){
+			timer_.async_wait(boost::asio::bind_executor(
+				strand_,
+				[this, lock = async_lock(async_calls_)](
+					boost::system::error_code ec
+				){
+					if(ec == boost::asio::error::operation_aborted){
+						return;
+					}
+
+					if(ec){
+						try{
+							server_.http().on_error(
+								http_request_location::timer, ec);
+						}catch(...){
+							server_.http().on_exception(
+								std::current_exception());
+						}
+					}else{
+						// Closing the socket cancels all outstanding operations.
+						// They will complete with operation_aborted
+						using socket = boost::asio::ip::tcp::socket;
+						socket_.shutdown(socket::shutdown_both, ec);
+						socket_.close(ec);
+					}
+					async_erase();
+				}));
+		}
+
 		void run(){
-			// Run the timer. The timer is operated
-			// continuously, this simplifies the code.
-			on_timer({});
+			do_timer();
 
 			// Start the asynchronous operation
 			do_read();
@@ -69,99 +109,68 @@ namespace webservice{
 
 		void do_read(){
 			// Set the timer
-			timer_.expires_after(std::chrono::seconds(15));
+			if(timer_.expires_after(server_.http().timeout()) == 0){
+				// if the timer could not be cancelled it was already
+				// expired and the session was closed by the timer
+				return;
+			}else{
+				// If the timer was cancelled, restart it
+				do_timer();
+			}
 
 			// Read a request
 			boost::beast::http::async_read(socket_, buffer_, req_,
 				boost::asio::bind_executor(
 					strand_,
-					[this_ = shared_from_this()](
+					[this, lock = async_lock(async_calls_)](
 						boost::system::error_code ec,
 						std::size_t /*bytes_transferred*/
 					){
-						this_->on_read(ec);
+						// Happens when the timer closes the socket
+						if(ec == boost::asio::error::operation_aborted){
+							return;
+						}
+
+						// This means endpoint closed the session
+						if(ec == boost::beast::http::error::end_of_stream){
+							do_close();
+							return;
+						}
+
+						if(ec){
+							try{
+								server_.http().on_error(
+									http_request_location::read, ec);
+							}catch(...){
+								server_.http().on_exception(
+									std::current_exception());
+							}
+							async_erase();
+							return;
+						}
+
+						// See if it is a WebSocket Upgrade
+						if(
+							server().has_ws() &&
+							boost::beast::websocket::is_upgrade(req_)
+						){
+							server().ws().emplace(std::move(socket_));
+						}else{
+							// Send the response
+							server_.http()(std::move(req_), http_response{
+									shared_from_this(),
+									&http_session::response,
+									socket_,
+									strand_
+								});
+
+							// If we aren't at the queue limit, try to pipeline
+							// another request
+							if(!queue_.is_full()){
+								do_read();
+							}
+						}
 					}));
-		}
-
-		// Called when the timer expires.
-		void on_timer(boost::system::error_code ec){
-			if(ec && ec != boost::asio::error::operation_aborted){
-				try{
-					handler_.on_error(http_request_location::timer, ec);
-				}catch(...){
-					handler_.on_exception(std::current_exception());
-				}
-				return;
-			}
-
-			// Verify that the timer really expired since the deadline may have
-			// moved.
-			if(timer_.expiry() <= std::chrono::steady_clock::now()){
-				// Closing the socket cancels all outstanding operations. They
-				// will complete with boost::asio::error::operation_aborted
-				socket_.shutdown(
-					boost::asio::ip::tcp::socket::shutdown_both, ec);
-				socket_.close(ec);
-				return;
-			}
-
-			// Wait on the timer
-			if(socket_.is_open()){
-				timer_.async_wait(
-					boost::asio::bind_executor(
-						strand_,
-						[this_ = shared_from_this()]
-						(boost::system::error_code ec){
-							this_->on_timer(ec);
-						}));
-			}
-		}
-
-		void on_read(boost::system::error_code ec){
-			// Happens when the timer closes the socket
-			if(ec == boost::asio::error::operation_aborted){
-				return;
-			}
-
-			// This means they closed the connection
-			if(ec == boost::beast::http::error::end_of_stream){
-				do_close();
-				return;
-			}
-
-			if(ec){
-				try{
-					handler_.on_error(http_request_location::read, ec);
-				}catch(...){
-					handler_.on_exception(std::current_exception());
-				}
-				return;
-			}
-
-			// See if it is a WebSocket Upgrade
-			if(service_ && boost::beast::websocket::is_upgrade(req_)){
-				// Create a ws_session by transferring the socket
-				ws_stream ws(std::move(socket_));
-				ws.read_message_max(max_read_message_size_);
-				auto session = std::make_shared< ws_server_session >(
-					std::move(ws), *service_, websocket_ping_time_);
-
-				session->do_accept(std::move(req_));
-			}else{
-				// Send the response
-				handler_(std::move(req_), http_response{
-						shared_from_this(),
-						&http_session::response,
-						socket_,
-						strand_
-					});
-
-				// If we aren't at the queue limit, try to pipeline another
-				// request
-				if(!queue_.is_full()){
-					do_read();
-				}
-			}
 		}
 
 		void on_write(boost::system::error_code ec, bool close){
@@ -172,15 +181,16 @@ namespace webservice{
 
 			if(ec){
 				try{
-					handler_.on_error(http_request_location::write, ec);
+					server_.http().on_error(http_request_location::write, ec);
 				}catch(...){
-					handler_.on_exception(std::current_exception());
+					server_.http().on_exception(std::current_exception());
 				}
+				async_erase();
 				return;
 			}
 
 			if(close){
-				// This means we should close the connection, usually because
+				// This means we should close the session, usually because
 				// the response indicated the "Connection: close" semantic.
 				do_close();
 				return;
@@ -196,14 +206,22 @@ namespace webservice{
 		void do_close(){
 			// Send a TCP shutdown
 			boost::system::error_code ec;
-			socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
-
-			// At this point the connection is closed gracefully
+			using socket = boost::asio::ip::tcp::socket;
+			socket_.shutdown(socket::shutdown_send, ec);
+			async_erase();
 		}
 
 		// Called by the HTTP handler to send a response.
 		void response(std::unique_ptr< http_session_work >&& work){
 			queue_.response(std::move(work));
+		}
+
+		void async_erase(){
+			std::call_once(erase_flag_, [this]{
+					boost::asio::post([this]{
+							eraser_();
+						});
+				});
 		}
 
 
@@ -254,16 +272,20 @@ namespace webservice{
 		};
 
 
+		server_impl& server_;
+
 		boost::asio::ip::tcp::socket socket_;
-		http_request_handler& handler_;
-		std::unique_ptr< ws_handler_base > const& service_;
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
 		boost::asio::steady_timer timer_;
-		boost::optional< std::chrono::milliseconds > websocket_ping_time_;
-		std::size_t const max_read_message_size_;
 		boost::beast::flat_buffer buffer_;
+
 		boost::beast::http::request< boost::beast::http::string_body > req_;
 		queue queue_;
+
+		sessions_eraser< http_session > eraser_;
+
+		std::once_flag erase_flag_;
+		std::atomic< std::size_t > async_calls_{0};
 	};
 
 

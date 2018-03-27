@@ -8,8 +8,6 @@
 //-----------------------------------------------------------------------------
 #include <webservice/ws_client.hpp>
 
-#include <boost/make_unique.hpp>
-
 #include <algorithm>
 #include <iostream>
 #include <csignal>

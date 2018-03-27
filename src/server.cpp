@@ -75,15 +75,13 @@ namespace webservice{
 		std::unique_ptr< error_handler > error_handler,
 		boost::asio::ip::address const address,
 		std::uint16_t const port,
-		std::uint8_t const thread_count,
-		boost::optional< std::chrono::milliseconds > websocket_ping_time,
-		std::size_t max_read_message_size
+		std::uint8_t const thread_count
 	)
 		: impl_(std::make_unique< server_impl >(
 				[this, handler = std::move(handler)]()mutable{
 						if(!handler){
 							handler =
-								boost::make_unique< http_request_handler >();
+								std::make_unique< http_request_handler >();
 						}
 						handler->set_server(this);
 						return std::move(handler);
@@ -97,15 +95,13 @@ namespace webservice{
 				[error_handler = std::move(error_handler)]()mutable{
 						if(!error_handler){
 							error_handler =
-								boost::make_unique< class error_handler >();
+								std::make_unique< class error_handler >();
 						}
 						return std::move(error_handler);
 					}(),
 				address,
 				port,
-				thread_count,
-				websocket_ping_time,
-				max_read_message_size
+				thread_count
 			)) {}
 
 	server::~server(){
@@ -115,32 +111,23 @@ namespace webservice{
 
 
 	void server::block()noexcept{
-		std::lock_guard< std::recursive_mutex > lock(impl_->mutex_);
-		for(auto& thread: impl_->threads_){
-			if(thread.joinable()){
-				try{
-					thread.join();
-				}catch(...){
-					impl_->listener_.on_exception(std::current_exception());
-				}
-			}
-		}
+		impl_->block();
 	}
 
 	void server::stop()noexcept{
-		impl_->listener_.stop();
+		impl_->stop();
 	}
 
 	void server::shutdown()noexcept{
-		impl_->listener_.shutdown();
+		impl_->shutdown();
 	}
 
 	boost::asio::executor server::get_executor(){
-		return impl_->listener_.get_executor();
+		return impl_->get_executor();
 	}
 
 	std::size_t server::run_one()noexcept{
-		return impl_->listener_.run_one();
+		return impl_->run_one();
 	}
 
 

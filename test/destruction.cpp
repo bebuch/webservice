@@ -10,8 +10,6 @@
 #include <webservice/ws_handler.hpp>
 #include <webservice/ws_client.hpp>
 
-#include <boost/make_unique.hpp>
-
 #include <csignal>
 #include <iostream>
 
@@ -29,12 +27,12 @@ int main(){
 	std::signal(SIGINT, &signal_handler);
 
 	try{
-		auto service_ptr = boost::make_unique< webservice::ws_handler >();
+		auto service_ptr = std::make_unique< webservice::ws_handler >();
 		auto& service = *service_ptr;
 		webservice::server server(
-			boost::make_unique< webservice::http_request_handler >(),
+			std::make_unique< webservice::http_request_handler >(),
 			std::move(service_ptr),
-			boost::make_unique< webservice::error_handler >(),
+			std::make_unique< webservice::error_handler >(),
 			boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
 		webservice::ws_client client("127.0.0.1", "1234", "/");

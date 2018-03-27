@@ -15,8 +15,6 @@
 #include <webservice/json_ws_handler.hpp>
 #include <webservice/json_ws_client.hpp>
 
-#include <boost/make_unique.hpp>
-
 #include <thread>
 #include <csignal>
 
@@ -241,7 +239,7 @@ int main(){
 
 	try{
 		{
-			using boost::make_unique;
+			using std::make_unique;
 			webservice::server server(
 				make_unique< request_handler >(),
 				make_unique< ws_handler >(),

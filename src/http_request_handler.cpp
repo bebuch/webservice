@@ -17,14 +17,25 @@ namespace webservice{
 	namespace http = boost::beast::http;
 
 
+	class http_request_handler_impl{
+	public:
+
+
+	};
+
+
+	http_request_handler::http_request_handler()
+		: list_(std::make_unique< sessions< http_session > >()) {}
+
+	http_request_handler::~http_request_handler(){}
+
+
 	void http_request_handler::operator()(
 		http_request&& req,
 		http_response&& send
 	){
 		send(not_found(req, req.target()));
 	}
-
-	http_request_handler::~http_request_handler(){}
 
 	void http_request_handler::on_error(
 		http_request_location /*location*/,

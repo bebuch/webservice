@@ -110,12 +110,34 @@ namespace webservice{
 		virtual void set_server(class server* server);
 
 
-	protected:
-		/// \brief Get reference to const server
-		class server const* server()const noexcept{
-			return server_;
+		/// \brief Set max size of incomming WebSocket messages
+		void set_max_read_message_size(std::size_t bytes){
+			max_read_message_size_ = bytes;
 		}
 
+		/// \brief Max size of incomming WebSocket messages
+		std::size_t max_read_message_size()const{
+			return max_read_message_size_;
+		}
+
+
+		/// \brief Set session timeout
+		void set_websocket_ping_time(std::chrono::milliseconds ms){
+			websocket_ping_time_ = ms;
+		}
+
+		/// \brief No session timeout
+		void unset_websocket_ping_time(){
+			websocket_ping_time_.reset();
+		}
+
+		/// \brief Session timeout
+		boost::optional< std::chrono::milliseconds > websocket_ping_time()const{
+			return websocket_ping_time_;
+		}
+
+
+	protected:
 		/// \brief Get reference to server
 		class server* server()noexcept{
 			return server_;
@@ -125,6 +147,19 @@ namespace webservice{
 	private:
 		/// \brief Pointer to the server object
 		class server* server_ = nullptr;
+
+		/// \brief Max size of incomming http and WebSocket messages
+		std::size_t max_read_message_size_{16 * 1024 * 1024};
+
+		/// \brief WebSocket session timeout
+		///
+		/// If empty, WebSocket sessions don't ping and have no timeout.
+		///
+		/// If set, after this time without an incomming message a ping is send.
+		/// If no message is incomming after a second period of this time, the
+		/// session is considerd to be dead and will be closed.
+		boost::optional< std::chrono::milliseconds > websocket_ping_time_{};
+
 	};
 
 

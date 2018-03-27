@@ -11,8 +11,6 @@
 
 #include <webservice/http_request_handler.hpp>
 
-#include "http_session.hpp"
-
 
 namespace webservice{
 
@@ -21,29 +19,20 @@ namespace webservice{
 	class listener{
 	public:
 		listener(
-			std::unique_ptr< http_request_handler > handler,
-			std::unique_ptr< ws_handler_base > service,
-			std::unique_ptr< error_handler > error_handler,
+			server_impl& server,
 			boost::asio::ip::tcp::endpoint endpoint,
-			std::uint8_t thread_count,
-			boost::optional< std::chrono::milliseconds > websocket_ping_time,
-			std::size_t max_read_message_size
+			boost::asio::io_context& ioc
 		)
-			: handler_(std::move(handler))
-			, service_(std::move(service))
-			, error_handler_(std::move(error_handler))
-			, websocket_ping_time_(websocket_ping_time)
-			, max_read_message_size_(max_read_message_size)
-			, ioc_{thread_count}
-			, acceptor_(ioc_)
-			, socket_(ioc_)
+			: server_(std::move(server))
+			, acceptor_(ioc)
+			, socket_(ioc)
 		{
 			// Open the acceptor
 			acceptor_.open(endpoint.protocol());
 
 			// Allow port reuse
-			acceptor_.set_option(
-				boost::asio::ip::tcp::acceptor::reuse_address(true));
+			using acceptor = boost::asio::ip::tcp::acceptor;
+			acceptor_.set_option(acceptor::reuse_address(true));
 
 			// Bind to the server address
 			acceptor_.bind(endpoint);
@@ -52,98 +41,42 @@ namespace webservice{
 			acceptor_.listen(boost::asio::socket_base::max_listen_connections);
 
 			// Start accepting incoming connections
-			BOOST_ASSERT(acceptor_.is_open());
 			do_accept();
 		}
+
 
 		void do_accept(){
 			acceptor_.async_accept(
 				socket_,
 				[this](boost::system::error_code ec){
-					on_accept(ec);
+					if(ec == boost::asio::error::operation_aborted){
+						return;
+					}
+
+					if(ec){
+						try{
+							server_.error().on_error(ec);
+						}catch(...){
+							server_.error().on_exception(
+								std::current_exception());
+						}
+					}else{
+						// Create the http_session and run it
+						server_.http().emplace(std::move(socket_))->run();
+					}
+
+					// Accept another connection
+					do_accept();
 				});
 		}
 
-		void on_accept(boost::system::error_code ec){
-			if(ec == boost::asio::error::operation_aborted){
-				return;
-			}
-
-			if(ec){
-				try{
-					error_handler_->on_error(ec);
-				}catch(...){
-					on_exception(std::current_exception());
-				}
-			}else{
-				// Create the http_session and run it
-				auto session = std::make_shared< http_session >(
-					std::move(socket_), *handler_, service_,
-					websocket_ping_time_, max_read_message_size_);
-
-				session->run();
-			}
-
-			// Accept another connection
-			do_accept();
-		}
-
-		void run(){
-			ioc_.run();
-		}
-
-		void stop()noexcept{
-			shutdown_ = true;
-			ioc_.stop();
-		}
-
 		void shutdown()noexcept{
-			shutdown_ = true;
-
 			// Don't accept new sessions
 			acceptor_.close();
-
-			// Destroy the websocket service
-			if(service_){
-				service_->shutdown();
-			}
-		}
-
-
-		/// \brief Get executor of the io_context
-		boost::asio::executor get_executor(){
-			return ioc_.get_executor();
-		}
-
-
-		/// \brief Called when an exception in the server occurred
-		void on_exception(std::exception_ptr error)noexcept{
-			error_handler_->on_exception(error);
-		}
-
-
-		/// \brief Run one task in server threads
-		std::size_t run_one()noexcept{
-			try{
-				return ioc_.run_one();
-			}catch(...){
-				on_exception(std::current_exception());
-				return 1;
-			}
 		}
 
 
 	private:
-		std::unique_ptr< http_request_handler > handler_;
-		std::unique_ptr< ws_handler_base > service_;
-		std::unique_ptr< error_handler > error_handler_;
-		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
-		std::size_t const max_read_message_size_;
-
-		/// \brief The io_context is required for all I/O
-		boost::asio::io_context ioc_;
-
-		std::atomic< bool > shutdown_{false};
 		boost::asio::ip::tcp::acceptor acceptor_;
 		boost::asio::ip::tcp::socket socket_;
 	};

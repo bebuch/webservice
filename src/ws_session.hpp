@@ -66,21 +66,21 @@ namespace webservice{
 
 	/// \brief Base of WebSocket sessions
 	template < typename Derived >
-	class ws_session: public std::enable_shared_from_this< Derived >{
+	class ws_session{
 	public:
 		/// \brief Take ownership of the socket
 		explicit ws_session(
 			ws_stream&& ws,
 			boost::optional< std::chrono::milliseconds > websocket_ping_time);
 
+		/// \brief Destructor
+		~ws_session();
+
 		/// \brief Called when the timer expires.
 		void on_timer(boost::system::error_code ec);
 
 		/// \brief Called to indicate activity from the remote peer
 		void activity();
-
-		/// \brief Called after a ping is sent.
-		void on_ping(boost::system::error_code ec);
 
 		/// \brief Read another message
 		void do_read();
@@ -99,7 +99,14 @@ namespace webservice{
 		void send(boost::beast::websocket::close_reason reason);
 
 		/// \brief Set timers expires_after
-		void start_timer();
+		void restart_timer();
+
+
+		/// \brief Send a request to erase this session from the list
+		///
+		/// The request is sended only once, any call after the fist will be
+		/// ignored.
+		void async_erase();
 
 
 	protected:
@@ -107,6 +114,11 @@ namespace webservice{
 		ws_stream ws_;
 
 		ws_strand strand_;
+
+		sessions_eraser< ws_session< Derived > > eraser_;
+
+		std::once_flag erase_flag_;
+		std::atomic< std::size_t > async_calls_{0};
 
 
 	private:

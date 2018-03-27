@@ -16,8 +16,6 @@
 #include <boost/asio/strand.hpp>
 #include <boost/asio/bind_executor.hpp>
 
-#include <boost/make_unique.hpp>
-
 #include <memory>
 
 
@@ -106,7 +104,7 @@ namespace webservice{
 				boost::beast::http::response< Body, Fields > msg_;
 			};
 
-			((*self_).*fn_)(boost::make_unique< work_impl >(
+			((*self_).*fn_)(std::make_unique< work_impl >(
 				self_, socket_, strand_, std::move(msg)));
 		}
 
