@@ -27,8 +27,6 @@
 
 #include <boost/any.hpp>
 
-#include <boost/optional.hpp>
-
 #include <memory>
 #include <chrono>
 #include <mutex>
@@ -45,11 +43,14 @@ namespace webservice{
 	class ws_server_session;
 	class ws_client_session;
 
-	using ws_stream =
-		boost::beast::websocket::stream< boost::asio::ip::tcp::socket >;
+	using ws_stream
+		= boost::beast::websocket::stream< boost::asio::ip::tcp::socket >;
 
-	using ws_strand =
-		boost::asio::strand< boost::asio::io_context::executor_type >;
+	using ws_strand
+		= boost::asio::strand< boost::asio::io_context::executor_type >;
+
+	using http_request
+		= boost::beast::http::request< boost::beast::http::string_body >;
 
 
 	template < typename Derived >
@@ -73,7 +74,11 @@ namespace webservice{
 		/// \brief Take ownership of the socket
 		explicit ws_session(
 			ws_stream&& ws,
-			boost::optional< std::chrono::milliseconds > websocket_ping_time);
+			std::chrono::milliseconds ping_time);
+
+		ws_session(ws_session const&) = delete;
+
+		ws_session& operator=(ws_session const&) = delete;
 
 		/// \brief Destructor
 		~ws_session();
@@ -106,6 +111,9 @@ namespace webservice{
 		void restart_timer();
 
 
+		/// \brief Set the function that is called on async_erase
+		void set_erase_fn(sessions_erase_fn< Derived >&& erase_fn)noexcept;
+
 		/// \brief Send a request to erase this session from the list
 		///
 		/// The request is sended only once, any call after the fist will be
@@ -119,7 +127,7 @@ namespace webservice{
 
 		ws_strand strand_;
 
-		sessions_eraser< ws_session< Derived > > eraser_;
+		sessions_erase_fn< Derived > erase_fn_;
 
 		std::once_flag erase_flag_;
 		std::atomic< std::size_t > async_calls_{0};
@@ -141,7 +149,7 @@ namespace webservice{
 		};
 		boost::circular_buffer< write_data > write_list_;
 
-		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
+		std::chrono::milliseconds const ping_time_;
 
 		boost::asio::steady_timer timer_;
 		boost::beast::multi_buffer buffer_;
@@ -157,17 +165,15 @@ namespace webservice{
 		/// \brief Take ownership of the socket
 		explicit ws_server_session(
 			ws_stream&& ws,
-			ws_handler_base& service,
-			boost::optional< std::chrono::milliseconds > websocket_ping_time);
+			class server& server,
+			std::chrono::milliseconds ping_time);
 
 		/// \brief Destructor
 		~ws_server_session();
 
 
 		/// \brief Start the asynchronous operation
-		void do_accept(
-			boost::beast::http::request< boost::beast::http::string_body > req
-		);
+		void do_accept(http_request&& req);
 
 		/// \brief Called when do_accept is ready
 		void on_accept(boost::system::error_code ec);
@@ -199,6 +205,7 @@ namespace webservice{
 
 
 	private:
+		class server_impl& server_;
 		std::atomic< ws_handler_base* > service_;
 		std::string resource_;
 		bool is_open_ = false;
@@ -211,7 +218,7 @@ namespace webservice{
 		explicit ws_client_session(
 			ws_stream&& ws,
 			ws_client_base& client,
-			boost::optional< std::chrono::milliseconds > websocket_ping_time);
+			std::chrono::milliseconds ping_time);
 
 		/// \brief Destructor
 		~ws_client_session();

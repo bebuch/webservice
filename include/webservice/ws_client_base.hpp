@@ -34,10 +34,7 @@ namespace webservice{
 		ws_client_base(
 			std::string host,
 			std::string port,
-			std::string resource,
-			boost::optional< std::chrono::milliseconds > websocket_ping_time
-				= {},
-			std::size_t max_read_message_size = 16 * 1024 * 1024
+			std::string resource
 		);
 
 		ws_client_base(ws_client_base const&) = delete;
@@ -118,7 +115,39 @@ namespace webservice{
 		virtual void on_exception(std::exception_ptr error)noexcept;
 
 
+		/// \brief Set max size of incomming WebSocket messages
+		void set_max_read_message_size(std::size_t bytes){
+			max_read_message_size_ = bytes;
+		}
+
+		/// \brief Max size of incomming WebSocket messages
+		std::size_t max_read_message_size()const{
+			return max_read_message_size_;
+		}
+
+
+		/// \brief Set session timeout
+		void set_ping_time(std::chrono::milliseconds ms){
+			ping_time_ = ms;
+		}
+
+		/// \brief Session timeout
+		std::chrono::milliseconds ping_time()const{
+			return ping_time_;
+		}
+
+
 	private:
+		/// \brief Max size of incomming http and WebSocket messages
+		std::size_t max_read_message_size_{16 * 1024 * 1024};
+
+		/// \brief WebSocket session timeout
+		///
+		/// After this time without an incomming message a ping is send.
+		/// If no message is incomming after a second period of this time, the
+		/// session is considerd to be dead and will be closed.
+		std::chrono::milliseconds ping_time_{15000};
+
 		/// \brief Pointer to implementation
 		std::unique_ptr< struct ws_client_base_impl > impl_;
 	};

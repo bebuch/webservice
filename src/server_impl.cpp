@@ -17,6 +17,7 @@ namespace webservice{
 
 
 	server_impl::server_impl(
+		class server& server,
 		std::unique_ptr< http_request_handler >&& handler,
 		std::unique_ptr< ws_handler_base >&& service,
 		std::unique_ptr< error_handler >&& error_handler,
@@ -24,9 +25,28 @@ namespace webservice{
 		std::uint16_t const port,
 		std::uint8_t const thread_count
 	)
-		: handler_(std::move(handler))
-		, service_(std::move(service))
-		, error_handler_(std::move(error_handler))
+		: server_(server)
+		, handler_([this, handler = std::move(handler)]()mutable{
+				if(!handler){
+					handler =
+						std::make_unique< http_request_handler >();
+				}
+				handler->set_server(server_);
+				return std::move(handler);
+			}())
+		, service_([this, service = std::move(service)]()mutable{
+				if(service){
+					service->set_server(server_);
+				}
+				return std::move(service);
+			}())
+		, error_handler_([error_handler = std::move(error_handler)]()mutable{
+				if(!error_handler){
+					error_handler =
+						std::make_unique< class error_handler >();
+				}
+				return std::move(error_handler);
+			}())
 		, ioc_{thread_count}
 		, listener_(*this, boost::asio::ip::tcp::endpoint{address, port}, ioc_)
 	{

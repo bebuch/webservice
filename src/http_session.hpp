@@ -71,10 +71,6 @@ namespace webservice{
 			}
 		}
 
-		void set_eraser(sessions_eraser< http_session >&& eraser)noexcept{
-			eraser_ = std::move(eraser);
-		}
-
 		// Called when the timer expires.
 		void do_timer(){
 			timer_.async_wait(boost::asio::bind_executor(
@@ -159,10 +155,13 @@ namespace webservice{
 							server_.has_ws() &&
 							boost::beast::websocket::is_upgrade(req_)
 						){
-							server_.ws().emplace(std::move(socket_));
+							server_.ws().emplace(
+								std::move(socket_), std::move(req_));
 						}else{
 							// Send the response
 							server_.http()(std::move(req_), http_response{
+									this,
+									async_calls_,
 									&http_session::response,
 									socket_,
 									strand_
@@ -207,23 +206,32 @@ namespace webservice{
 			}
 		}
 
+		/// \brief Send a TCP shutdown
 		void do_close(){
-			// Send a TCP shutdown
 			boost::system::error_code ec;
 			using socket = boost::asio::ip::tcp::socket;
 			socket_.shutdown(socket::shutdown_send, ec);
 			async_erase();
 		}
 
-		// Called by the HTTP handler to send a response.
+		/// \brief Called by the HTTP handler to send a response.
 		void response(std::unique_ptr< http_session_work >&& work){
 			queue_.response(std::move(work));
 		}
 
+		/// \brief Set the function that is called on async_erase
+		void set_erase_fn(sessions_erase_fn< http_session >&& erase_fn)noexcept{
+			erase_fn_ = std::move(erase_fn);
+		}
+
+		/// \brief Send a request to erase this session from the list
+		///
+		/// The request is sended only once, any call after the fist will be
+		/// ignored.
 		void async_erase(){
 			std::call_once(erase_flag_, [this]{
 					boost::asio::post([this]{
-							eraser_();
+							erase_fn_();
 						});
 				});
 		}
@@ -283,10 +291,10 @@ namespace webservice{
 		boost::asio::steady_timer timer_;
 		boost::beast::flat_buffer buffer_;
 
-		boost::beast::http::request< boost::beast::http::string_body > req_;
+		http_request req_;
 		queue queue_;
 
-		sessions_eraser< http_session > eraser_;
+		sessions_erase_fn< http_session > erase_fn_;
 
 		std::once_flag erase_flag_;
 		std::atomic< std::size_t > async_calls_{0};

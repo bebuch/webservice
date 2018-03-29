@@ -53,7 +53,7 @@ namespace webservice{
 
 
 		/// \brief Create a strand with servers executor
-		void set_server(class server* server)override{
+		void set_server(class server& server)override{
 			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
 
 			if(async_calls_ > 0){

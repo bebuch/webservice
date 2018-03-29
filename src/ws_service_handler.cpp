@@ -50,7 +50,7 @@ namespace webservice{
 
 		auto r = impl_->services.emplace(std::move(name), std::move(service));
 		if(r.second){
-			r.first->second->set_server(server());
+			r.first->second->set_server(*server());
 		}else{
 			throw std::logic_error("service '" + name + "' already exists");
 		}

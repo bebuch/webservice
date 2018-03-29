@@ -33,6 +33,7 @@ namespace webservice{
 		/// \param address IP address (IPv4 or IPv6)
 		/// \param port TCP Port
 		server_impl(
+			class server& server,
 			std::unique_ptr< class http_request_handler >&& http_handler,
 			std::unique_ptr< class ws_handler_base >&& service,
 			std::unique_ptr< class error_handler >&& error_handler,
@@ -96,6 +97,9 @@ namespace webservice{
 
 
 	private:
+		/// \brief Back reference to server object
+		class server& server_;
+
 		/// \brief Handler for HTTP sessions
 		std::unique_ptr< class http_request_handler > handler_;
 

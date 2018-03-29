@@ -30,9 +30,6 @@ namespace webservice{
 		/// \param address IP address (IPv4 or IPv6)
 		/// \param port TCP Port
 		/// \param thread_count Count of threads that proccess request parallel
-		/// \param websocket_ping_time If not set no pings are send, otherwise
-		///                            a ping is send after this time without
-		///                            activity
 		server(
 			std::unique_ptr< http_request_handler > http_handler,
 			std::unique_ptr< ws_handler_base > service,
@@ -68,6 +65,11 @@ namespace webservice{
 
 		/// \brief Run one task in server threads
 		std::size_t poll_one()noexcept;
+
+		/// \brief Get implementation
+		///
+		/// This function is internally used.
+		class server_impl& impl()noexcept;
 
 
 	private:

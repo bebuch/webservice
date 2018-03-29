@@ -18,6 +18,18 @@ namespace webservice{
 	ws_handler_base::~ws_handler_base() = default;
 
 
+	void ws_handler_base::emplace(
+		boost::asio::ip::tcp::socket&& socket,
+		http_request&& req
+	){
+		ws_stream ws(std::move(socket));
+		ws.read_message_max(max_read_message_size());
+
+		assert(server() != nullptr);
+		auto iter = list_->emplace(std::move(ws), *server(), ping_time());
+		iter->do_accept(std::move(req));
+	}
+
 	void ws_handler_base::on_open(
 		ws_server_session* /*session*/,
 		std::string const& /*resource*/){}
@@ -72,8 +84,12 @@ namespace webservice{
 	}
 
 
-	void ws_handler_base::set_server(class server* server){
-		server_ = server;
+	void ws_handler_base::set_server(class server& server){
+		list_->set_server(server);
+	}
+
+	class server* ws_handler_base::server()noexcept{
+		return list_->server();
 	}
 
 

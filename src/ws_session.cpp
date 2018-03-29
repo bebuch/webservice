@@ -7,7 +7,9 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include "ws_session.hpp"
+#include "server_impl.hpp"
 
+#include <webservice/server.hpp>
 #include <webservice/async_lock.hpp>
 #include <webservice/ws_handler_base.hpp>
 #include <webservice/ws_client_base.hpp>
@@ -27,12 +29,12 @@ namespace webservice{
 	template < typename Derived >
 	ws_session< Derived >::ws_session(
 		ws_stream&& ws,
-		boost::optional< std::chrono::milliseconds > websocket_ping_time
+		std::chrono::milliseconds ping_time
 	)
 		: ws_(std::move(ws))
 		, strand_(ws_.get_executor())
 		, write_list_(64)
-		, websocket_ping_time_(websocket_ping_time)
+		, ping_time_(ping_time)
 		, timer_(ws_.get_executor().context(),
 			std::chrono::steady_clock::time_point::max())
 	{
@@ -98,9 +100,7 @@ namespace webservice{
 
 	template < typename Derived >
 	void ws_session< Derived >::restart_timer(){
-		if(websocket_ping_time_){
-			timer_.expires_after(*websocket_ping_time_);
-		}
+		timer_.expires_after(ping_time_);
 	}
 
 	template < typename Derived >
@@ -230,11 +230,19 @@ namespace webservice{
 			}));
 	}
 
+
+	template < typename Derived >
+	void ws_session< Derived >::set_erase_fn(
+		sessions_erase_fn< Derived >&& erase_fn
+	)noexcept{
+		erase_fn_ = std::move(erase_fn);
+	}
+
 	template < typename Derived >
 	void ws_session< Derived >::async_erase(){
 		std::call_once(erase_flag_, [this]{
 				boost::asio::post([this]{
-						eraser_();
+						erase_fn_();
 					});
 			});
 	}
@@ -252,11 +260,12 @@ namespace webservice{
 
 	ws_server_session::ws_server_session(
 		ws_stream&& ws,
-		ws_handler_base& service,
-		boost::optional< std::chrono::milliseconds > websocket_ping_time
+		class server& server,
+		std::chrono::milliseconds ping_time
 	)
-		: ws_session< ws_server_session >(std::move(ws), websocket_ping_time)
-		, service_(&service) {}
+		: ws_session< ws_server_session >(std::move(ws), ping_time)
+		, server_(server.impl())
+		, service_(&server.impl().ws()) {}
 
 	ws_server_session::~ws_server_session(){
 		if(ws_.is_open()){
@@ -272,9 +281,7 @@ namespace webservice{
 		}
 	}
 
-	void ws_server_session::do_accept(
-		boost::beast::http::request< boost::beast::http::string_body > req
-	){
+	void ws_server_session::do_accept(http_request&& req){
 		// Set the control callback. This will be called
 		// on every incoming ping, pong, and close frame.
 		ws_.control_callback(
@@ -302,7 +309,7 @@ namespace webservice{
 
 		// Accept the WebSocket handshake
 		ws_.async_accept(
-			req,
+			std::move(req),
 			boost::asio::bind_executor(
 				strand_,
 				[this, lock = async_lock(async_calls_)]
@@ -420,9 +427,9 @@ namespace webservice{
 	ws_client_session::ws_client_session(
 		ws_stream&& ws,
 		ws_client_base& client,
-		boost::optional< std::chrono::milliseconds > websocket_ping_time
+		std::chrono::milliseconds ping_time
 	)
-		: ws_session< ws_client_session >(std::move(ws), websocket_ping_time)
+		: ws_session< ws_client_session >(std::move(ws), ping_time)
 		, client_(client) {}
 
 	ws_client_session::~ws_client_session(){

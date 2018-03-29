@@ -26,27 +26,10 @@ namespace webservice{
 		std::uint8_t const thread_count
 	)
 		: impl_(std::make_unique< server_impl >(
-				[this, handler = std::move(handler)]()mutable{
-						if(!handler){
-							handler =
-								std::make_unique< http_request_handler >();
-						}
-						handler->set_server(this);
-						return std::move(handler);
-					}(),
-				[this, service = std::move(service)]()mutable{
-						if(service){
-							service->set_server(this);
-						}
-						return std::move(service);
-					}(),
-				[error_handler = std::move(error_handler)]()mutable{
-						if(!error_handler){
-							error_handler =
-								std::make_unique< class error_handler >();
-						}
-						return std::move(error_handler);
-					}(),
+				*this,
+				std::move(handler),
+				std::move(service),
+				std::move(error_handler),
 				address,
 				port,
 				thread_count
@@ -72,6 +55,10 @@ namespace webservice{
 
 	std::size_t server::poll_one()noexcept{
 		return impl_->poll_one();
+	}
+
+	server_impl& server::impl()noexcept{
+		return *impl_;
 	}
 
 

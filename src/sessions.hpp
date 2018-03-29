@@ -9,7 +9,7 @@
 #ifndef _webservice__sessions__hpp_INCLUDED_
 #define _webservice__sessions__hpp_INCLUDED_
 
-#include "server_impl.hpp"
+#include <webservice/server.hpp>
 
 #include <list>
 #include <atomic>
@@ -34,26 +34,26 @@ namespace webservice{
 	class sessions;
 
 	template < typename T >
-	class sessions_eraser{
+	class sessions_erase_fn{
 	public:
 		using iterator = typename sessions< T >::iterator;
 
-		sessions_eraser()noexcept = default;
+		sessions_erase_fn()noexcept = default;
 
-		sessions_eraser(
+		sessions_erase_fn(
 			class sessions< T >* sessions,
 			iterator iter
 		)noexcept
 			: sessions_(sessions)
 			, iter_(iter) {}
 
-		sessions_eraser(sessions_eraser&& other)noexcept
-			: sessions_eraser(other.sessions_, other.iter_)
+		sessions_erase_fn(sessions_erase_fn&& other)noexcept
+			: sessions_erase_fn(other.sessions_, other.iter_)
 		{
 			other.sessions_ = nullptr;
 		}
 
-		sessions_eraser& operator=(sessions_eraser&& other)noexcept{
+		sessions_erase_fn& operator=(sessions_erase_fn&& other)noexcept{
 			sessions_ = other.sessions_;
 			iter_ = other.iter_;
 			other.sessions_ = nullptr;
@@ -91,21 +91,22 @@ namespace webservice{
 			shutdown_ = true;
 
 			for(auto& session: list_){
-				session.async_erase(sessions_eraser< T >());
+				session.async_erase();
 			}
 			lock.unlock();
 
 			while(!is_empty()){
+				assert(server_ != nullptr);
 				server_->poll_one();
 			}
 		}
 
 
-		void set_server(class server_impl* server){
-			server_ = server;
+		void set_server(class server& server){
+			server_ = &server;
 		}
 
-		class server_impl* server()const noexcept{
+		class server* server()const noexcept{
 			return server_;
 		}
 
@@ -126,12 +127,10 @@ namespace webservice{
 				throw std::logic_error("emplace in sessions while shutdown");
 			}else{
 				std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-				auto pair = list_.emplace(static_cast< Ts&& >(vs) ...);
-				if(!pair.second){
-					throw duplicate_insert("in sessions emplace");
-				}
-				pair.second.set_erase_fn();
-				return pair.second;
+				auto iter = list_.emplace(
+					list_.end(), static_cast< Ts&& >(vs) ...);
+				iter->set_erase_fn(sessions_erase_fn< T >(this, iter));
+				return iter;
 			}
 		}
 
@@ -169,7 +168,7 @@ namespace webservice{
 		std::atomic< bool > shutdown_{false};
 		std::shared_timed_mutex mutable mutex_;
 		std::list< T > list_;
-		class server_impl* server_{nullptr};
+		class server* server_{nullptr};
 	};
 
 

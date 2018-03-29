@@ -47,6 +47,7 @@ namespace webservice{
 		/// \brief Create a new http_session
 		void emplace(boost::asio::ip::tcp::socket&& socket);
 
+
 		/// \brief Process http request
 		virtual void operator()(http_request&& req, http_response&& send);
 
@@ -65,12 +66,19 @@ namespace webservice{
 
 
 		/// \brief Set the owning server
-		virtual void set_server(class server* server);
+		virtual void set_server(class server& server);
 
 
-		std::chrono::milliseconds timeout()noexcept{
-			return std::chrono::milliseconds(15000);
+		/// \brief Set session timeout
+		void set_timeout(std::chrono::milliseconds timeout){
+			timeout_ = timeout;
 		}
+
+		/// \brief Session timeout
+		std::chrono::milliseconds timeout()const{
+			return timeout_;
+		}
+
 
 	protected:
 		/// \brief Get reference to server
@@ -78,6 +86,9 @@ namespace webservice{
 
 
 	private:
+		/// \brief Session is closed after this time without receiving
+		std::chrono::milliseconds timeout_{15000};
+
 		/// \brief Pointer to implementation
 		std::unique_ptr< sessions< class http_session > > list_;
 	};

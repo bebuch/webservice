@@ -28,7 +28,7 @@ namespace webservice{
 
 
 	void http_request_handler::emplace(boost::asio::ip::tcp::socket&& socket){
-		auto iter = list_->emplace(std::move(socket), server());
+		auto iter = list_->emplace(std::move(socket), server()->impl());
 		iter->run();
 	}
 
@@ -88,7 +88,7 @@ namespace webservice{
 	}
 
 
-	void http_request_handler::set_server(class server* server){
+	void http_request_handler::set_server(class server& server){
 		list_->set_server(server);
 	}
 

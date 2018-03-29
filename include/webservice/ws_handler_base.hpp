@@ -12,6 +12,9 @@
 #include "shared_const_buffer.hpp"
 #include "ws_handler_location.hpp"
 
+#include <boost/asio/ip/tcp.hpp>
+
+#include <boost/beast/http.hpp>
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/string.hpp>
 
@@ -22,6 +25,14 @@
 
 
 namespace webservice{
+
+
+	using http_request
+		= boost::beast::http::request< boost::beast::http::string_body >;
+
+
+	template < typename T >
+	class sessions;
 
 
 	class ws_server_session;
@@ -36,6 +47,10 @@ namespace webservice{
 		ws_handler_base(ws_handler_base const&) = delete;
 
 		ws_handler_base& operator=(ws_handler_base const&) = delete;
+
+
+		/// \brief Create a new http_session
+		void emplace(boost::asio::ip::tcp::socket&& socket, http_request&& req);
 
 
 		/// \brief Send a text message to session
@@ -106,10 +121,6 @@ namespace webservice{
 		virtual void shutdown()noexcept;
 
 
-		/// \brief Set the owning server
-		virtual void set_server(class server* server);
-
-
 		/// \brief Set max size of incomming WebSocket messages
 		void set_max_read_message_size(std::size_t bytes){
 			max_read_message_size_ = bytes;
@@ -122,26 +133,23 @@ namespace webservice{
 
 
 		/// \brief Set session timeout
-		void set_websocket_ping_time(std::chrono::milliseconds ms){
-			websocket_ping_time_ = ms;
-		}
-
-		/// \brief No session timeout
-		void unset_websocket_ping_time(){
-			websocket_ping_time_.reset();
+		void set_ping_time(std::chrono::milliseconds ms){
+			ping_time_ = ms;
 		}
 
 		/// \brief Session timeout
-		boost::optional< std::chrono::milliseconds > websocket_ping_time()const{
-			return websocket_ping_time_;
+		std::chrono::milliseconds ping_time()const{
+			return ping_time_;
 		}
+
+
+		/// \brief Set the owning server
+		virtual void set_server(class server& server);
 
 
 	protected:
 		/// \brief Get reference to server
-		class server* server()noexcept{
-			return server_;
-		}
+		class server* server()noexcept;
 
 
 	private:
@@ -153,12 +161,13 @@ namespace webservice{
 
 		/// \brief WebSocket session timeout
 		///
-		/// If empty, WebSocket sessions don't ping and have no timeout.
-		///
-		/// If set, after this time without an incomming message a ping is send.
+		/// After this time without an incomming message a ping is send.
 		/// If no message is incomming after a second period of this time, the
 		/// session is considerd to be dead and will be closed.
-		boost::optional< std::chrono::milliseconds > websocket_ping_time_{};
+		std::chrono::milliseconds ping_time_{15000};
+
+		/// \brief Pointer to implementation
+		std::unique_ptr< sessions< class ws_server_session > > list_;
 
 	};
 

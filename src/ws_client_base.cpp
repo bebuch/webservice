@@ -36,18 +36,14 @@ namespace webservice{
 		ws_client_base_impl(
 			std::string&& host,
 			std::string&& port,
-			std::string&& resource,
-			boost::optional< std::chrono::milliseconds > websocket_ping_time,
-			std::size_t max_read_message_size
+			std::string&& resource
 		)
 			: host_(std::move(host))
 			, port_(std::move(port))
 			, resource_([](std::string&& resource){
 					if(resource.empty()) resource = "/";
 					return std::move(resource);
-				}(std::move(resource)))
-			, websocket_ping_time_(websocket_ping_time)
-			, max_read_message_size_(max_read_message_size) {}
+				}(std::move(resource))) {}
 
 
 		/// \brief Send a message
@@ -65,8 +61,6 @@ namespace webservice{
 		std::recursive_mutex mutex_;
 
 		boost::asio::io_context ioc_;
-		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
-		std::size_t const max_read_message_size_;
 		std::weak_ptr< ws_client_session > session_;
 		std::thread thread_;
 	};
@@ -75,13 +69,10 @@ namespace webservice{
 	ws_client_base::ws_client_base(
 		std::string host,
 		std::string port,
-		std::string resource,
-		boost::optional< std::chrono::milliseconds > websocket_ping_time,
-		std::size_t max_read_message_size
+		std::string resource
 	)
 		: impl_(std::make_unique< ws_client_base_impl >(
-			std::move(host), std::move(port), std::move(resource),
-			websocket_ping_time, max_read_message_size)) {}
+			std::move(host), std::move(port), std::move(resource))) {}
 
 	ws_client_base::~ws_client_base(){
 		impl_->send("client shutdown");
@@ -102,7 +93,7 @@ namespace webservice{
 		auto results = resolver.resolve(impl_->host_, impl_->port_);
 
 		ws_stream ws(impl_->ioc_);
-		ws.read_message_max(impl_->max_read_message_size_);
+		ws.read_message_max(max_read_message_size());
 
 		// Make the connection on the IP address we get from a lookup
 		boost::asio::connect(ws.next_layer(),
@@ -113,7 +104,7 @@ namespace webservice{
 
 		// Create a WebSocket session by transferring the socket
 		auto session = std::make_shared< ws_client_session >(
-			std::move(ws), *this, impl_->websocket_ping_time_);
+			std::move(ws), *this, ping_time());
 
 		session->start();
 
