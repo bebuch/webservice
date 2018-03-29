@@ -6,6 +6,10 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
+#include "server_impl.hpp"
+#include "sessions.hpp"
+#include "http_session.hpp"
+
 #include <webservice/http_request_handler.hpp>
 
 #include <boost/beast/version.hpp>
@@ -17,18 +21,16 @@ namespace webservice{
 	namespace http = boost::beast::http;
 
 
-	class http_request_handler_impl{
-	public:
-
-
-	};
-
-
 	http_request_handler::http_request_handler()
 		: list_(std::make_unique< sessions< http_session > >()) {}
 
 	http_request_handler::~http_request_handler(){}
 
+
+	void http_request_handler::emplace(boost::asio::ip::tcp::socket&& socket){
+		auto iter = list_->emplace(std::move(socket), server());
+		iter->run();
+	}
 
 	void http_request_handler::operator()(
 		http_request&& req,
@@ -87,7 +89,11 @@ namespace webservice{
 
 
 	void http_request_handler::set_server(class server* server){
-		server_ = server;
+		list_->set_server(server);
+	}
+
+	class server* http_request_handler::server()noexcept{
+		return list_->server();
 	}
 
 

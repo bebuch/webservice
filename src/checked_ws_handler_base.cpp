@@ -112,7 +112,7 @@ namespace webservice{
 
 			assert(server() != nullptr);
 
-			server()->run_one();
+			server()->poll_one();
 		}
 	}
 
@@ -140,12 +140,12 @@ namespace webservice{
 	void checked_ws_handler_base::on_text(
 		std::uintptr_t const /*identifier*/,
 		std::string const& /*resource*/,
-		boost::beast::multi_buffer const& /*buffer*/){}
+		boost::beast::multi_buffer&& /*buffer*/){}
 
 	void checked_ws_handler_base::on_binary(
 		std::uintptr_t const /*identifier*/,
 		std::string const& /*resource*/,
-		boost::beast::multi_buffer const& /*buffer*/){}
+		boost::beast::multi_buffer&& /*buffer*/){}
 
 	void checked_ws_handler_base::on_error(
 		std::uintptr_t const /*identifier*/,
@@ -198,11 +198,11 @@ namespace webservice{
 	void checked_ws_handler_base::on_text(
 		ws_server_session* const session,
 		std::string const& resource,
-		boost::beast::multi_buffer const& buffer
+		boost::beast::multi_buffer&& buffer
 	){
 		auto identifier = reinterpret_cast< std::uintptr_t >(session);
 		try{
-			on_text(identifier, resource, buffer);
+			on_text(identifier, resource, std::move(buffer));
 		}catch(...){
 			on_exception(identifier, resource, std::current_exception());
 		}
@@ -211,11 +211,11 @@ namespace webservice{
 	void checked_ws_handler_base::on_binary(
 		ws_server_session* const session,
 		std::string const& resource,
-		boost::beast::multi_buffer const& buffer
+		boost::beast::multi_buffer&& buffer
 	){
 		auto identifier = reinterpret_cast< std::uintptr_t >(session);
 		try{
-			on_binary(identifier, resource, buffer);
+			on_binary(identifier, resource, std::move(buffer));
 		}catch(...){
 			on_exception(identifier, resource, std::current_exception());
 		}

@@ -8,6 +8,7 @@
 //-----------------------------------------------------------------------------
 #include "ws_session.hpp"
 
+#include <webservice/async_lock.hpp>
 #include <webservice/ws_handler_base.hpp>
 #include <webservice/ws_client_base.hpp>
 
@@ -30,7 +31,6 @@ namespace webservice{
 	)
 		: ws_(std::move(ws))
 		, strand_(ws_.get_executor())
-		, write_strand_(ws_.get_executor())
 		, write_list_(64)
 		, websocket_ping_time_(websocket_ping_time)
 		, timer_(ws_.get_executor().context(),
@@ -81,7 +81,6 @@ namespace webservice{
 
 								if(ec){
 									derived().on_error(location_type::ping, ec);
-									return;
 								}
 							}));
 
@@ -126,84 +125,63 @@ namespace webservice{
 						boost::system::error_code ec,
 						std::size_t /*bytes_transferred*/
 					){
-						this_->on_read(ec);
+						// Happens when the timer closes the socket
+						if(ec == boost::asio::error::operation_aborted){
+							return;
+						}
+
+						// This indicates that the ws_session was closed
+						if(ec == boost::beast::websocket::error::closed){
+							return;
+						}
+
+						// Note that there is activity
+						activity();
+
+						if(ec){
+							derived().on_error(location_type::read, ec);
+						}else{
+							// Echo the message
+							if(ws_.got_text()){
+								derived().on_text(std::move(buffer_));
+							}else{
+								derived().on_binary(std::move(buffer_));
+							}
+						}
+
+						// Clear the buffer
+						buffer_.consume(buffer_.size());
+
+						// Do another read
+						do_read();
 					}));
 		}
 	}
 
-	template < typename Derived >
-	void ws_session< Derived >::on_read(boost::system::error_code ec){
-		// Happens when the timer closes the socket
-		if(ec == boost::asio::error::operation_aborted){
-			return;
-		}
-
-		// This indicates that the ws_session was closed
-		if(ec == boost::beast::websocket::error::closed){
-			return;
-		}
-
-		// Note that there is activity
-		activity();
-
-		if(ec){
-			derived().on_error(location_type::read, ec);
-		}else{
-			// Echo the message
-			if(ws_.got_text()){
-				derived().on_text(buffer_);
-			}else{
-				derived().on_binary(buffer_);
-			}
-		}
-
-		// Clear the buffer
-		buffer_.consume(buffer_.size());
-
-		// Do another read
-		do_read();
-	}
-
-	template < typename Derived >
-	void ws_session< Derived >::on_write(boost::system::error_code ec){
-		// Happens when the timer closes the socket
-		if(ec == boost::asio::error::operation_aborted){
-			return;
-		}
-
-		if(ec){
-			derived().on_error(location_type::write, ec);
-		}
-
-		write_list_.pop_front();
-		if(!write_list_.empty()){
-			do_write();
-		}
-	}
 
 	template < typename Derived >
 	template < typename Tag >
 	void ws_session< Derived >::send(
 		std::tuple< Tag, shared_const_buffer > data
 	){
-		boost::asio::asio_handler_invoke(boost::asio::bind_executor(
-			write_strand_,
+		boost::asio::dispatch(boost::asio::bind_executor(
+			strand_,
 			[
 				this, lock = async_lock(async_calls_),
 				data = std::move(std::get< 1 >(data))
 			]()mutable{
-				if(this_->write_list_.full()){
+				if(write_list_.full()){
 					throw std::runtime_error("write buffer is full");
 				}
 
-				bool was_empty = this_->write_list_.empty();
+				bool was_empty = write_list_.empty();
 
 				constexpr bool is_text = std::is_same< Tag, text_tag >::value;
-				this_->write_list_.push_back(
+				write_list_.push_back(
 					write_data{is_text, std::move(data)});
 
 				if(was_empty){
-					this_->do_write();
+					do_write();
 				}
 			}));
 	}
@@ -214,12 +192,23 @@ namespace webservice{
 		ws_.async_write(
 			std::move(write_list_.front().data),
 			boost::asio::bind_executor(
-				write_strand_,
+				strand_,
 				[this, lock = async_lock(async_calls_)](
 					boost::system::error_code ec,
 					std::size_t /*bytes_transferred*/
 				){
-					this_->on_write(ec);
+					if(ec == boost::asio::error::operation_aborted){
+						return;
+					}
+
+					if(ec){
+						derived().on_error(location_type::write, ec);
+					}
+
+					write_list_.pop_front();
+					if(!write_list_.empty()){
+						do_write();
+					}
 				}));
 	}
 
@@ -227,17 +216,18 @@ namespace webservice{
 	void ws_session< Derived >::send(
 		boost::beast::websocket::close_reason reason
 	){
-		ws_.async_close(
-			reason,
-			boost::asio::bind_executor(
-				strand_,
-				[this, lock = async_lock(async_calls_)](
-					boost::system::error_code ec
-				){
+		boost::asio::post(boost::asio::bind_executor(
+			strand_,
+			[this, lock = async_lock(async_calls_), reason]{
+				if(ws_.is_open()){
+					boost::system::error_code ec;
+					ws_.close(reason, ec);
 					if(ec){
-						this_->on_error(location_type::close, ec);
+						derived().on_error(location_type::close, ec);
 					}
-				}));
+					async_erase();
+				}
+			}));
 	}
 
 	template < typename Derived >
@@ -289,17 +279,21 @@ namespace webservice{
 		// on every incoming ping, pong, and close frame.
 		ws_.control_callback(
 			[this](
-				boost::beast::websocket::frame_type /*kind*/,
+				boost::beast::websocket::frame_type kind,
 				boost::beast::string_view /*payload*/
 			){
 				// Note that there is activity
 				activity();
+
+				if(kind == boost::beast::websocket::frame_type::close){
+					async_erase();
+				}
 			});
 
 
 		// Run the timer. The timer is operated
 		// continuously, this simplifies the code.
-		on_timer({});
+		do_timer();
 
 		// Set the timer
 		restart_timer();
@@ -313,7 +307,7 @@ namespace webservice{
 				strand_,
 				[this, lock = async_lock(async_calls_)]
 				(boost::system::error_code ec){
-					this_->on_accept(ec);
+					on_accept(ec);
 				}));
 	}
 
@@ -359,12 +353,12 @@ namespace webservice{
 	}
 
 	void ws_server_session::on_text(
-		boost::beast::multi_buffer const& buffer
+		boost::beast::multi_buffer&& buffer
 	)noexcept{
 		ws_handler_base* service = service_;
 		if(service){
 			try{
-				service->on_text(this, resource_, buffer);
+				service->on_text(this, resource_, std::move(buffer));
 			}catch(...){
 				on_exception(std::current_exception());
 			}
@@ -372,12 +366,12 @@ namespace webservice{
 	}
 
 	void ws_server_session::on_binary(
-		boost::beast::multi_buffer const& buffer
+		boost::beast::multi_buffer&& buffer
 	)noexcept{
 		ws_handler_base* service = service_;
 		if(service){
 			try{
-				service->on_binary(this, resource_, buffer);
+				service->on_binary(this, resource_, std::move(buffer));
 			}catch(...){
 				on_exception(std::current_exception());
 			}
@@ -461,14 +455,14 @@ namespace webservice{
 
 		// Run the timer. The timer is operated
 		// continuously, this simplifies the code.
-		on_timer({});
+		do_timer();
 
-		boost::asio::asio_handler_invoke(
+		boost::asio::dispatch(
 			boost::asio::bind_executor(
 				strand_,
 				[this, lock = async_lock(async_calls_)]{
-					this_->is_open_ = true;
-					this_->on_open();
+					is_open_ = true;
+					on_open();
 				}));
 
 		do_read();
@@ -492,20 +486,20 @@ namespace webservice{
 	}
 
 	void ws_client_session::on_text(
-		boost::beast::multi_buffer const& buffer
+		boost::beast::multi_buffer&& buffer
 	)noexcept{
 		try{
-			client_.on_text(buffer);
+			client_.on_text(std::move(buffer));
 		}catch(...){
 			on_exception(std::current_exception());
 		}
 	}
 
 	void ws_client_session::on_binary(
-		boost::beast::multi_buffer const& buffer
+		boost::beast::multi_buffer&& buffer
 	)noexcept{
 		try{
-			client_.on_binary(buffer);
+			client_.on_binary(std::move(buffer));
 		}catch(...){
 			on_exception(std::current_exception());
 		}

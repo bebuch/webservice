@@ -182,10 +182,10 @@ namespace webservice{
 	void ws_client_base::on_close(){}
 
 	void ws_client_base::on_text(
-		boost::beast::multi_buffer const& /*buffer*/){}
+		boost::beast::multi_buffer&& /*buffer*/){}
 
 	void ws_client_base::on_binary(
-		boost::beast::multi_buffer const& /*buffer*/){}
+		boost::beast::multi_buffer&& /*buffer*/){}
 
 	void ws_client_base::on_error(
 		ws_client_location /*location*/,

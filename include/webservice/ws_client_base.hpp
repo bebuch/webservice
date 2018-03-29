@@ -98,12 +98,12 @@ namespace webservice{
 		/// \brief Called when the session received a text message
 		///
 		/// Default implementation does nothing.
-		virtual void on_text(boost::beast::multi_buffer const& buffer);
+		virtual void on_text(boost::beast::multi_buffer&& buffer);
 
 		/// \brief Called when the session received a binary message
 		///
 		/// Default implementation does nothing.
-		virtual void on_binary(boost::beast::multi_buffer const& buffer);
+		virtual void on_binary(boost::beast::multi_buffer&& buffer);
 
 		/// \brief Called when an error occured
 		///

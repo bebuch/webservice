@@ -70,11 +70,11 @@ namespace webservice{
 		virtual void on_binary(ReceiveBinaryType&& /*data*/){}
 
 
-		void on_text(boost::beast::multi_buffer const& buffer)final{
+		void on_text(boost::beast::multi_buffer&& buffer)final{
 			on_text(multi_buffer_to_text(buffer));
 		}
 
-		void on_binary(boost::beast::multi_buffer const& buffer)final{
+		void on_binary(boost::beast::multi_buffer&& buffer)final{
 			on_binary(multi_buffer_to_binary(buffer));
 		}
 	};

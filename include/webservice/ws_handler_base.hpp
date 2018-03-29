@@ -74,7 +74,7 @@ namespace webservice{
 		virtual void on_text(
 			ws_server_session* session,
 			std::string const& resource,
-			boost::beast::multi_buffer const& buffer);
+			boost::beast::multi_buffer&& buffer);
 
 		/// \brief Called when a session received a binary message
 		///
@@ -82,7 +82,7 @@ namespace webservice{
 		virtual void on_binary(
 			ws_server_session* session,
 			std::string const& resource,
-			boost::beast::multi_buffer const& buffer);
+			boost::beast::multi_buffer&& buffer);
 
 		/// \brief Called when an error occured
 		///

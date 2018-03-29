@@ -33,7 +33,6 @@ namespace webservice{
 		virtual ~error_handler();
 
 
-	private:
 		/// \brief Called when an error occured
 		///
 		/// Default implementation does nothing.

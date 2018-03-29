@@ -9,7 +9,10 @@
 #ifndef _webservice__sessions__hpp_INCLUDED_
 #define _webservice__sessions__hpp_INCLUDED_
 
+#include "server_impl.hpp"
+
 #include <list>
+#include <atomic>
 #include <shared_mutex>
 
 
@@ -38,29 +41,29 @@ namespace webservice{
 		sessions_eraser()noexcept = default;
 
 		sessions_eraser(
-			sessions< T >* list,
+			class sessions< T >* sessions,
 			iterator iter
 		)noexcept
-			: list_(s)
+			: sessions_(sessions)
 			, iter_(iter) {}
 
 		sessions_eraser(sessions_eraser&& other)noexcept
-			: sessions_eraser(other.list_, other.iter_)
+			: sessions_eraser(other.sessions_, other.iter_)
 		{
-			other.list_ = nullptr;
+			other.sessions_ = nullptr;
 		}
 
 		sessions_eraser& operator=(sessions_eraser&& other)noexcept{
-			list_ = other.list_;
+			sessions_ = other.sessions_;
 			iter_ = other.iter_;
-			other.list_ = nullptr;
+			other.sessions_ = nullptr;
 			return *this;
 		}
 
 
 		void operator()(){
-			assert(list_);
-			list_->erase(iter_);
+			assert(sessions_);
+			sessions_->erase(iter_);
 		}
 
 		iterator iter()noexcept{
@@ -68,7 +71,7 @@ namespace webservice{
 		}
 
 	private:
-		sessions< T >* list_{nullptr};
+		class sessions< T >* sessions_{nullptr};
 		iterator iter_;
 	};
 
@@ -93,8 +96,17 @@ namespace webservice{
 			lock.unlock();
 
 			while(!is_empty()){
-				server_.pull();
+				server_->poll_one();
 			}
+		}
+
+
+		void set_server(class server_impl* server){
+			server_ = server;
+		}
+
+		class server_impl* server()const noexcept{
+			return server_;
 		}
 
 
@@ -136,29 +148,28 @@ namespace webservice{
 		}
 
 		void splice(const_iterator pos, sessions&& other){
-			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-			std::unique_lock< std::shared_timed_mutex > lock(other.mutex_);
+			std::unique_lock< std::shared_timed_mutex > lock1(mutex_);
+			std::unique_lock< std::shared_timed_mutex > lock2(other.mutex_);
 			list_.splice(pos, std::move(other.list_));
 		}
 
 		void splice(const_iterator pos, sessions&& other, const_iterator iter){
-			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-			std::unique_lock< std::shared_timed_mutex > lock(other.mutex_);
+			std::unique_lock< std::shared_timed_mutex > lock1(mutex_);
+			std::unique_lock< std::shared_timed_mutex > lock2(other.mutex_);
 			list_.splice(pos, std::move(other.list_), iter);
+		}
+
+		void erase(iterator iter){
+			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
+			list_.erase(iter);
 		}
 
 
 	private:
-		void erase(iterator iter){
-			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-			if(list_.erase(iter) < 1){
-				throw does_not_exist("in sessions erase");
-			}
-		}
-
 		std::atomic< bool > shutdown_{false};
 		std::shared_timed_mutex mutable mutex_;
 		std::list< T > list_;
+		class server_impl* server_{nullptr};
 	};
 
 

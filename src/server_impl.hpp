@@ -9,11 +9,14 @@
 #ifndef _webservice__server_impl__hpp_INCLUDED_
 #define _webservice__server_impl__hpp_INCLUDED_
 
-#include "http_request_handler.hpp"
-#include "ws_handler_base.hpp"
-#include "error_handler.hpp"
+#include "listener.hpp"
 
 #include <boost/asio/executor.hpp>
+#include <boost/asio/ip/address.hpp>
+
+#include <mutex>
+#include <vector>
+#include <thread>
 
 
 namespace webservice{
@@ -30,9 +33,9 @@ namespace webservice{
 		/// \param address IP address (IPv4 or IPv6)
 		/// \param port TCP Port
 		server_impl(
-			std::unique_ptr< http_request_handler >&& http_handler,
-			std::unique_ptr< ws_handler_base >&& service,
-			std::unique_ptr< error_handler >&& error_handler,
+			std::unique_ptr< class http_request_handler >&& http_handler,
+			std::unique_ptr< class ws_handler_base >&& service,
+			std::unique_ptr< class error_handler >&& error_handler,
 			boost::asio::ip::address address,
 			std::uint16_t port,
 			std::uint8_t thread_count
@@ -53,15 +56,6 @@ namespace webservice{
 		/// closed.
 		void block()noexcept;
 
-		/// \brief Cancal all operations
-		///
-		/// This function is not blocking. Call block() if you want to wait
-		/// until all operations are canceled.
-		///
-		/// This function doesn't close the connections properly! Use
-		/// shutdown() for this.
-		void stop()noexcept;
-
 		/// \brief Don't accept new connections and async tasks
 		///
 		/// This function is not blocking. Call block() if you want to wait
@@ -73,7 +67,7 @@ namespace webservice{
 
 
 		/// \brief Run one task in server_impl threads
-		std::size_t run_one()noexcept;
+		std::size_t poll_one()noexcept;
 
 
 		/// \brief true if a WebSocket handler is set, false otherwise
@@ -83,19 +77,19 @@ namespace webservice{
 
 
 		/// \brief Reference to the error_handler
-		error_handler& error()const{
+		class error_handler& error()const{
 			return *error_handler_;
 		}
 
 		/// \brief Reference to the http handler
-		http_request_handler& http()const{
+		class http_request_handler& http()const{
 			return *handler_;
 		}
 
 		/// \brief Reference to the WebSocket handler
 		///
 		/// \pre has_ws() must be true
-		ws_handler_base& ws()const{
+		class ws_handler_base& ws()const{
 			assert(service_.get() != nullptr);
 			return *service_;
 		}
@@ -103,13 +97,13 @@ namespace webservice{
 
 	private:
 		/// \brief Handler for HTTP sessions
-		std::unique_ptr< http_request_handler > handler_;
+		std::unique_ptr< class http_request_handler > handler_;
 
 		/// \brief Handler for WebSocket sessions
-		std::unique_ptr< ws_handler_base > service_;
+		std::unique_ptr< class ws_handler_base > service_;
 
 		/// \brief Handles errors and exceptions in the server
-		std::unique_ptr< error_handler > error_handler_;
+		std::unique_ptr< class error_handler > error_handler_;
 
 		/// \brief Protect thread joins
 		std::recursive_mutex mutex_;

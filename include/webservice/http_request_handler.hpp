@@ -44,6 +44,9 @@ namespace webservice{
 		virtual ~http_request_handler();
 
 
+		/// \brief Create a new http_session
+		void emplace(boost::asio::ip::tcp::socket&& socket);
+
 		/// \brief Process http request
 		virtual void operator()(http_request&& req, http_response&& send);
 
@@ -65,21 +68,16 @@ namespace webservice{
 		virtual void set_server(class server* server);
 
 
-
-
+		std::chrono::milliseconds timeout()noexcept{
+			return std::chrono::milliseconds(15000);
+		}
 
 	protected:
 		/// \brief Get reference to server
-		class server* server()noexcept{
-			return server_;
-		}
+		class server* server()noexcept;
 
 
 	private:
-		/// \brief Pointer to the server object
-		class server* server_ = nullptr;
-
-
 		/// \brief Pointer to implementation
 		std::unique_ptr< sessions< class http_session > > list_;
 	};

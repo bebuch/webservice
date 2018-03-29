@@ -11,6 +11,12 @@
 
 #include "server_impl.hpp"
 
+#include <webservice/async_lock.hpp>
+#include <webservice/http_response.hpp>
+#include <webservice/http_request_handler.hpp>
+#include <webservice/ws_handler_base.hpp>
+#include <webservice/error_handler.hpp>
+
 #include <boost/circular_buffer.hpp>
 
 #include <boost/beast/core/flat_buffer.hpp>
@@ -33,45 +39,44 @@ namespace webservice{
 			boost::asio::ip::tcp::socket&& socket,
 			server_impl& server
 		)
-			: socket_(std::move(socket))
-			, server_(server)
+			: server_(server)
+			, socket_(std::move(socket))
 			, strand_(socket_.get_executor())
 			, timer_(socket_.get_executor().context(),
 				std::chrono::steady_clock::time_point::max())
 			{}
 
 		~http_session(){
-			shutdown();
-		}
-
-		void set_eraser(sessions_eraser< http_session >&& eraser)noexcept{
-			eraser_ = std::move(eraser);
-		}
-
-		void shutdown()noexcept{
+			// Send an async shutdown to any session
 			boost::asio::post(boost::asio::bind_executor(
 				strand_,
 				[this, lock = async_lock(async_calls_)]{
-					timer_.cancel();
+					boost::system::error_code ec;
+					timer_.cancel(ec);
 					if(socket_.is_open()){
-						socket_.shutdown(socket::shutdown_both);
-						socket_.close();
+						using socket = boost::asio::ip::tcp::socket;
+						socket_.shutdown(socket::shutdown_both, ec);
+						socket_.close(ec);
 					}
-				});
+				}));
 
-			// as long as async calls are pending
+			// As long as async calls are pending
 			while(async_calls_ > 0){
-				// request the server to run a handler async
-				if(server_.poll() == 0){
-					// if no handler was waiting, the pending one must
+				// Request the server to run a handler async
+				if(server_.poll_one() == 0){
+					// If no handler was waiting, the pending one must
 					// currently run in another thread
 					std::this_thread::yield();
 				}
 			}
 		}
 
+		void set_eraser(sessions_eraser< http_session >&& eraser)noexcept{
+			eraser_ = std::move(eraser);
+		}
+
 		// Called when the timer expires.
-		void do_timer(boost::system::error_code ec){
+		void do_timer(){
 			timer_.async_wait(boost::asio::bind_executor(
 				strand_,
 				[this, lock = async_lock(async_calls_)](
@@ -151,14 +156,13 @@ namespace webservice{
 
 						// See if it is a WebSocket Upgrade
 						if(
-							server().has_ws() &&
+							server_.has_ws() &&
 							boost::beast::websocket::is_upgrade(req_)
 						){
-							server().ws().emplace(std::move(socket_));
+							server_.ws().emplace(std::move(socket_));
 						}else{
 							// Send the response
 							server_.http()(std::move(req_), http_response{
-									shared_from_this(),
 									&http_session::response,
 									socket_,
 									strand_

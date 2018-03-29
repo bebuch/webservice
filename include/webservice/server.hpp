@@ -39,10 +39,7 @@ namespace webservice{
 			std::unique_ptr< error_handler > error_handler,
 			boost::asio::ip::address address,
 			std::uint16_t port,
-			std::uint8_t thread_count = 1,
-			boost::optional< std::chrono::milliseconds > websocket_ping_time
-				= {},
-			std::size_t max_read_message_size = 16 * 1024 * 1024
+			std::uint8_t thread_count = 1
 		);
 
 		server(server const&) = delete;
@@ -59,15 +56,6 @@ namespace webservice{
 		/// This effecivly blocks the current thread until the server is closed.
 		void block()noexcept;
 
-		/// \brief Cancal all operations
-		///
-		/// This function is not blocking. Call block() if you want to wait
-		/// until all operations are canceled.
-		///
-		/// This function doesn't close the connections properly! Use
-		/// shutdown() for this.
-		void stop()noexcept;
-
 		/// \brief Don't accept new connections and async tasks
 		///
 		/// This function is not blocking. Call block() if you want to wait
@@ -79,7 +67,7 @@ namespace webservice{
 
 
 		/// \brief Run one task in server threads
-		std::size_t run_one()noexcept;
+		std::size_t poll_one()noexcept;
 
 
 	private:

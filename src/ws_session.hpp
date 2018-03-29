@@ -9,6 +9,8 @@
 #ifndef _webservice__ws_session__hpp_INCLUDED_
 #define _webservice__ws_session__hpp_INCLUDED_
 
+#include "sessions.hpp"
+
 #include <webservice/ws_handler_location.hpp>
 #include <webservice/ws_client_location.hpp>
 #include <webservice/shared_const_buffer.hpp>
@@ -76,17 +78,19 @@ namespace webservice{
 		/// \brief Destructor
 		~ws_session();
 
-		/// \brief Called when the timer expires.
-		void on_timer(boost::system::error_code ec);
+		/// \brief Async wait on timer
+		///
+		/// The timer is restarted after any received message.
+		///
+		/// Send a ping after the first timeout. If it timeouts a second time
+		/// after that, close the session.
+		void do_timer();
 
 		/// \brief Called to indicate activity from the remote peer
 		void activity();
 
 		/// \brief Read another message
 		void do_read();
-
-		/// \brief Called when a message was readed
-		void on_read(boost::system::error_code ec);
 
 		/// \brief Called when a message was written
 		void on_write(boost::system::error_code ec);
@@ -135,7 +139,6 @@ namespace webservice{
 			bool is_text;
 			shared_const_buffer data;
 		};
-		ws_strand write_strand_;
 		boost::circular_buffer< write_data > write_list_;
 
 		boost::optional< std::chrono::milliseconds > const websocket_ping_time_;
@@ -177,10 +180,10 @@ namespace webservice{
 		void on_close()noexcept;
 
 		/// \brief Called when a text message
-		void on_text(boost::beast::multi_buffer const& buffer)noexcept;
+		void on_text(boost::beast::multi_buffer&& buffer)noexcept;
 
 		/// \brief Called when a binary message
-		void on_binary(boost::beast::multi_buffer const& buffer)noexcept;
+		void on_binary(boost::beast::multi_buffer&& buffer)noexcept;
 
 		/// \brief Called when an error occured
 		void on_error(
@@ -225,10 +228,10 @@ namespace webservice{
 		void on_close()noexcept;
 
 		/// \brief Called when the session received a text message
-		void on_text(boost::beast::multi_buffer const& buffer)noexcept;
+		void on_text(boost::beast::multi_buffer&& buffer)noexcept;
 
 		/// \brief Called when the session received a binary message
-		void on_binary(boost::beast::multi_buffer const& buffer)noexcept;
+		void on_binary(boost::beast::multi_buffer&& buffer)noexcept;
 
 		/// \brief Called when an error occured
 		void on_error(

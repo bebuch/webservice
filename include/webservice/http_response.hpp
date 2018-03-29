@@ -9,6 +9,8 @@
 #ifndef _webservice__http_response__hpp_INCLUDED_
 #define _webservice__http_response__hpp_INCLUDED_
 
+#include "async_lock.hpp"
+
 #include <boost/beast/http/message.hpp>
 #include <boost/beast/http/write.hpp>
 
@@ -27,10 +29,12 @@ namespace webservice{
 	class http_session_on_write{
 	public:
 		http_session_on_write(
-			std::shared_ptr< http_session > self,
+			class http_session* self,
+			std::atomic< std::size_t >& async_calls,
 			bool const need_eof
 		)
-			: self_(std::move(self))
+			: self_(self)
+			, async_lock_(async_calls)
 			, need_eof_(need_eof) {}
 
 		void operator()(
@@ -39,7 +43,8 @@ namespace webservice{
 		)const;
 
 	private:
-		std::shared_ptr< http_session > const self_;
+		class http_session* self_;
+		async_lock async_lock_;
 		bool const need_eof_;
 	};
 
@@ -55,13 +60,15 @@ namespace webservice{
 			void (http_session::*)(std::unique_ptr< http_session_work >&&);
 
 		http_response(
-			std::shared_ptr< http_session >&& self,
+			class http_session* self,
+			std::atomic< std::size_t >& async_calls,
 			response_fn fn,
 			boost::asio::ip::tcp::socket& socket,
 			boost::asio::strand<
 				boost::asio::io_context::executor_type >& strand
 		)
-			: self_(std::move(self))
+			: self_(self)
+			, async_calls_(async_calls)
 			, fn_(fn)
 			, socket_(socket)
 			, strand_(strand) {}
@@ -75,13 +82,15 @@ namespace webservice{
 			class work_impl: public http_session_work{
 			public:
 				work_impl(
-					std::shared_ptr< http_session > const& self,
+					class http_session* self,
+					std::atomic< std::size_t >& async_calls,
 					boost::asio::ip::tcp::socket& socket,
 					boost::asio::strand<
 						boost::asio::io_context::executor_type >& strand,
 					boost::beast::http::response< Body, Fields >&& msg
 				)
 					: self_(self)
+					, async_calls_(async_calls)
 					, socket_(socket)
 					, strand_(strand)
 					, msg_(std::move(msg)) {}
@@ -92,12 +101,14 @@ namespace webservice{
 						msg_,
 						boost::asio::bind_executor(
 							strand_,
-							http_session_on_write(self_, msg_.need_eof())
+							http_session_on_write(
+								self_, async_calls_, msg_.need_eof())
 						));
 				}
 
 			private:
-				std::shared_ptr< http_session > const self_;
+				class http_session* self_;
+				std::atomic< std::size_t >& async_calls_;
 				boost::asio::ip::tcp::socket& socket_;
 				boost::asio::strand<
 					boost::asio::io_context::executor_type >& strand_;
@@ -105,11 +116,12 @@ namespace webservice{
 			};
 
 			((*self_).*fn_)(std::make_unique< work_impl >(
-				self_, socket_, strand_, std::move(msg)));
+				self_, async_calls_, socket_, strand_, std::move(msg)));
 		}
 
 	private:
-		std::shared_ptr< http_session > const self_;
+		class http_session* self_;
+		std::atomic< std::size_t >& async_calls_;
 		response_fn fn_;
 		boost::asio::ip::tcp::socket& socket_;
 		boost::asio::strand< boost::asio::io_context::executor_type >& strand_;

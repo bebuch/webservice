@@ -45,7 +45,7 @@ namespace webservice{
 			}
 
 			while(async_calls_ > 0){
-				auto count = this->server()->run_one();
+				auto count = this->server()->poll_one();
 				(void)count;
 				assert(count > 0);
 			}

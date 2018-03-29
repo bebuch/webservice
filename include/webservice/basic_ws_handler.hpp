@@ -120,7 +120,7 @@ namespace webservice{
 		void on_text(
 			std::uintptr_t identifier,
 			std::string const& resource,
-			boost::beast::multi_buffer const& buffer
+			boost::beast::multi_buffer&& buffer
 		)final{
 			on_text(identifier, resource, multi_buffer_to_text(buffer));
 		}
@@ -128,7 +128,7 @@ namespace webservice{
 		void on_binary(
 			std::uintptr_t identifier,
 			std::string const& resource,
-			boost::beast::multi_buffer const& buffer
+			boost::beast::multi_buffer&& buffer
 		)final{
 			on_binary(identifier, resource, multi_buffer_to_binary(buffer));
 		}

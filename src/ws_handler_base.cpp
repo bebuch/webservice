@@ -29,12 +29,12 @@ namespace webservice{
 	void ws_handler_base::on_text(
 		ws_server_session* /*session*/,
 		std::string const& /*resource*/,
-		boost::beast::multi_buffer const& /*buffer*/){}
+		boost::beast::multi_buffer&& /*buffer*/){}
 
 	void ws_handler_base::on_binary(
 		ws_server_session* /*session*/,
 		std::string const& /*resource*/,
-		boost::beast::multi_buffer const& /*buffer*/){}
+		boost::beast::multi_buffer&& /*buffer*/){}
 
 	void ws_handler_base::on_error(
 		ws_server_session* /*session*/,
