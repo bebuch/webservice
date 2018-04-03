@@ -48,7 +48,7 @@ namespace webservice{
 
 		~http_session(){
 			// Stop timer, close socket
-			boost::asio::post(boost::asio::bind_executor(
+			boost::asio::post(
 				strand_,
 				[this, lock = async_lock(async_calls_)]{
 					boost::system::error_code ec;
@@ -58,7 +58,7 @@ namespace webservice{
 						socket_.shutdown(socket::shutdown_both, ec);
 						socket_.close(ec);
 					}
-				}));
+				});
 
 			// As long as async calls are pending
 			while(async_calls_ > 0){
@@ -239,11 +239,11 @@ namespace webservice{
 		/// ignored.
 		void async_erase(){
 			std::call_once(erase_flag_, [this]{
-					boost::asio::post(boost::asio::bind_executor(
+					boost::asio::post(
 						server_.get_executor(),
 						[this]{
 							erase_fn_();
-						}));
+						});
 				});
 		}
 

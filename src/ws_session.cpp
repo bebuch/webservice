@@ -221,7 +221,7 @@ namespace webservice{
 	void ws_session< Derived >::send(
 		boost::beast::websocket::close_reason reason
 	){
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			strand_,
 			[this, lock = async_lock(async_calls_), reason]{
 				if(ws_.is_open()){
@@ -232,7 +232,7 @@ namespace webservice{
 					}
 					derived().async_erase();
 				}
-			}));
+			});
 	}
 
 
@@ -257,7 +257,7 @@ namespace webservice{
 
 	ws_server_session::~ws_server_session(){
 		// Stop timer, close socket
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			strand_,
 			[this, lock = async_lock(async_calls_)]{
 				boost::system::error_code ec;
@@ -265,7 +265,7 @@ namespace webservice{
 				if(ws_.is_open()){
 					ws_.close("shutdown", ec);
 				}
-			}));
+			});
 
 		// As long as async calls are pending
 		while(async_calls_ > 0){
@@ -339,7 +339,7 @@ namespace webservice{
 
 
 	void ws_server_session::on_open()noexcept{
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			handler_strand_,
 			[this, lock = async_lock(async_calls_)]{
 				ws_handler_base* service = service_;
@@ -350,11 +350,11 @@ namespace webservice{
 						on_exception(std::current_exception());
 					}
 				}
-			}));
+			});
 	}
 
 	void ws_server_session::on_close()noexcept{
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			handler_strand_,
 			[this, lock = async_lock(async_calls_)]{
 				ws_handler_base* service = service_;
@@ -365,13 +365,13 @@ namespace webservice{
 						on_exception(std::current_exception());
 					}
 				}
-			}));
+			});
 	}
 
 	void ws_server_session::on_text(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			handler_strand_,
 			[
 				this, lock = async_lock(async_calls_),
@@ -385,13 +385,13 @@ namespace webservice{
 						on_exception(std::current_exception());
 					}
 				}
-			}));
+			});
 	}
 
 	void ws_server_session::on_binary(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			handler_strand_,
 			[
 				this, lock = async_lock(async_calls_),
@@ -405,14 +405,14 @@ namespace webservice{
 						on_exception(std::current_exception());
 					}
 				}
-			}));
+			});
 	}
 
 	void ws_server_session::on_error(
 		ws_handler_location location,
 		boost::system::error_code ec
 	)noexcept{
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			handler_strand_,
 			[this, lock = async_lock(async_calls_), location, ec]{
 				ws_handler_base* service = service_;
@@ -423,20 +423,20 @@ namespace webservice{
 						on_exception(std::current_exception());
 					}
 				}
-			}));
+			});
 	}
 
 	void ws_server_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			handler_strand_,
 			[this, lock = async_lock(async_calls_), error]{
 				ws_handler_base* service = service_;
 				if(service){
 					service->on_exception(this, resource_, error);
 				}
-			}));
+			});
 	}
 
 
@@ -453,11 +453,11 @@ namespace webservice{
 
 	void ws_server_session::async_erase(){
 		std::call_once(erase_flag_, [this]{
-				boost::asio::post(boost::asio::bind_executor(
+				boost::asio::post(
 					server_.get_executor(),
 					[this]{
 						erase_fn_();
-					}));
+					});
 			});
 	}
 
@@ -482,7 +482,7 @@ namespace webservice{
 
 	ws_client_session::~ws_client_session(){
 		// Stop timer, close socket
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			strand_,
 			[this, lock = async_lock(async_calls_)]{
 				boost::system::error_code ec;
@@ -490,7 +490,7 @@ namespace webservice{
 				if(ws_.is_open()){
 					ws_.close("shutdown", ec);
 				}
-			}));
+			});
 
 		// As long as async calls are pending
 		while(async_calls_ > 0){
@@ -538,7 +538,7 @@ namespace webservice{
 
 
 	void ws_client_session::on_open()noexcept{
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			handler_strand_,
 			[this, lock = async_lock(async_calls_)]{
 				try{
@@ -546,11 +546,11 @@ namespace webservice{
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			}));
+			});
 	}
 
 	void ws_client_session::on_close()noexcept{
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			handler_strand_,
 			[this, lock = async_lock(async_calls_)]{
 				try{
@@ -558,13 +558,13 @@ namespace webservice{
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			}));
+			});
 	}
 
 	void ws_client_session::on_text(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			handler_strand_,
 			[
 				this, lock = async_lock(async_calls_),
@@ -575,13 +575,13 @@ namespace webservice{
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			}));
+			});
 	}
 
 	void ws_client_session::on_binary(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			handler_strand_,
 			[
 				this, lock = async_lock(async_calls_),
@@ -592,14 +592,14 @@ namespace webservice{
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			}));
+			});
 	}
 
 	void ws_client_session::on_error(
 		ws_client_location location,
 		boost::system::error_code ec
 	)noexcept{
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			handler_strand_,
 			[this, lock = async_lock(async_calls_), location, ec]{
 				try{
@@ -607,17 +607,17 @@ namespace webservice{
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			}));
+			});
 	}
 
 	void ws_client_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
-		boost::asio::post(boost::asio::bind_executor(
+		boost::asio::post(
 			handler_strand_,
 			[this, lock = async_lock(async_calls_), error]{
 				client_.on_exception(error);
-			}));
+			});
 	}
 
 	void ws_client_session::set_erase_fn(
@@ -628,11 +628,11 @@ namespace webservice{
 
 	void ws_client_session::async_erase(){
 		std::call_once(erase_flag_, [this]{
-				boost::asio::post(boost::asio::bind_executor(
+				boost::asio::post(
 					client_.get_executor(),
 					[this]{
 						erase_fn_();
-					}));
+					});
 			});
 	}
 
