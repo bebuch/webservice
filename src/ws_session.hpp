@@ -127,6 +127,8 @@ namespace webservice{
 
 		ws_strand strand_;
 
+		ws_strand handler_strand_;
+
 		sessions_erase_fn< Derived > erase_fn_;
 
 		std::once_flag erase_flag_;

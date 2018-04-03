@@ -33,6 +33,7 @@ namespace webservice{
 	)
 		: ws_(std::move(ws))
 		, strand_(ws_.get_executor())
+		, handler_strand_(ws_.get_executor())
 		, write_list_(64)
 		, ping_time_(ping_time)
 		, timer_(ws_.get_executor().context(),
@@ -338,74 +339,104 @@ namespace webservice{
 
 
 	void ws_server_session::on_open()noexcept{
-		ws_handler_base* service = service_;
-		if(service){
-			try{
-				service->on_open(this, resource_);
-			}catch(...){
-				on_exception(std::current_exception());
-			}
-		}
+		boost::asio::post(boost::asio::bind_executor(
+			handler_strand_,
+			[this, lock = async_lock(async_calls_)]{
+				ws_handler_base* service = service_;
+				if(service){
+					try{
+						service->on_open(this, resource_);
+					}catch(...){
+						on_exception(std::current_exception());
+					}
+				}
+			}));
 	}
 
 	void ws_server_session::on_close()noexcept{
-		ws_handler_base* service = service_;
-		if(service){
-			try{
-				service->on_close(this, resource_);
-			}catch(...){
-				on_exception(std::current_exception());
-			}
-		}
+		boost::asio::post(boost::asio::bind_executor(
+			handler_strand_,
+			[this, lock = async_lock(async_calls_)]{
+				ws_handler_base* service = service_;
+				if(service){
+					try{
+						service->on_close(this, resource_);
+					}catch(...){
+						on_exception(std::current_exception());
+					}
+				}
+			}));
 	}
 
 	void ws_server_session::on_text(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		ws_handler_base* service = service_;
-		if(service){
-			try{
-				service->on_text(this, resource_, std::move(buffer));
-			}catch(...){
-				on_exception(std::current_exception());
-			}
-		}
+		boost::asio::post(boost::asio::bind_executor(
+			handler_strand_,
+			[
+				this, lock = async_lock(async_calls_),
+				buffer = std::move(buffer)
+			]()mutable{
+				ws_handler_base* service = service_;
+				if(service){
+					try{
+						service->on_text(this, resource_, std::move(buffer));
+					}catch(...){
+						on_exception(std::current_exception());
+					}
+				}
+			}));
 	}
 
 	void ws_server_session::on_binary(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		ws_handler_base* service = service_;
-		if(service){
-			try{
-				service->on_binary(this, resource_, std::move(buffer));
-			}catch(...){
-				on_exception(std::current_exception());
-			}
-		}
+		boost::asio::post(boost::asio::bind_executor(
+			handler_strand_,
+			[
+				this, lock = async_lock(async_calls_),
+				buffer = std::move(buffer)
+			]()mutable{
+				ws_handler_base* service = service_;
+				if(service){
+					try{
+						service->on_binary(this, resource_, std::move(buffer));
+					}catch(...){
+						on_exception(std::current_exception());
+					}
+				}
+			}));
 	}
 
 	void ws_server_session::on_error(
 		ws_handler_location location,
 		boost::system::error_code ec
 	)noexcept{
-		ws_handler_base* service = service_;
-		if(service){
-			try{
-				service->on_error(this, resource_, location, ec);
-			}catch(...){
-				on_exception(std::current_exception());
-			}
-		}
+		boost::asio::post(boost::asio::bind_executor(
+			handler_strand_,
+			[this, lock = async_lock(async_calls_), location, ec]{
+				ws_handler_base* service = service_;
+				if(service){
+					try{
+						service->on_error(this, resource_, location, ec);
+					}catch(...){
+						on_exception(std::current_exception());
+					}
+				}
+			}));
 	}
 
 	void ws_server_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
-		ws_handler_base* service = service_;
-		if(service){
-			service->on_exception(this, resource_, error);
-		}
+		boost::asio::post(boost::asio::bind_executor(
+			handler_strand_,
+			[this, lock = async_lock(async_calls_), error]{
+				ws_handler_base* service = service_;
+				if(service){
+					service->on_exception(this, resource_, error);
+				}
+			}));
 	}
 
 
@@ -477,56 +508,86 @@ namespace webservice{
 
 
 	void ws_client_session::on_open()noexcept{
-		try{
-			client_.on_open();
-		}catch(...){
-			on_exception(std::current_exception());
-		}
+		boost::asio::post(boost::asio::bind_executor(
+			handler_strand_,
+			[this, lock = async_lock(async_calls_)]{
+				try{
+					client_.on_open();
+				}catch(...){
+					on_exception(std::current_exception());
+				}
+			}));
 	}
 
 	void ws_client_session::on_close()noexcept{
-		try{
-			client_.on_close();
-		}catch(...){
-			on_exception(std::current_exception());
-		}
+		boost::asio::post(boost::asio::bind_executor(
+			handler_strand_,
+			[this, lock = async_lock(async_calls_)]{
+				try{
+					client_.on_close();
+				}catch(...){
+					on_exception(std::current_exception());
+				}
+			}));
 	}
 
 	void ws_client_session::on_text(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		try{
-			client_.on_text(std::move(buffer));
-		}catch(...){
-			on_exception(std::current_exception());
-		}
+		boost::asio::post(boost::asio::bind_executor(
+			handler_strand_,
+			[
+				this, lock = async_lock(async_calls_),
+				buffer = std::move(buffer)
+			]()mutable{
+				try{
+					client_.on_text(std::move(buffer));
+				}catch(...){
+					on_exception(std::current_exception());
+				}
+			}));
 	}
 
 	void ws_client_session::on_binary(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		try{
-			client_.on_binary(std::move(buffer));
-		}catch(...){
-			on_exception(std::current_exception());
-		}
+		boost::asio::post(boost::asio::bind_executor(
+			handler_strand_,
+			[
+				this, lock = async_lock(async_calls_),
+				buffer = std::move(buffer)
+			]()mutable{
+				try{
+					client_.on_binary(std::move(buffer));
+				}catch(...){
+					on_exception(std::current_exception());
+				}
+			}));
 	}
 
 	void ws_client_session::on_error(
 		ws_client_location location,
 		boost::system::error_code ec
 	)noexcept{
-		try{
-			client_.on_error(location, ec);
-		}catch(...){
-			on_exception(std::current_exception());
-		}
+		boost::asio::post(boost::asio::bind_executor(
+			handler_strand_,
+			[this, lock = async_lock(async_calls_), location, ec]{
+				try{
+					client_.on_error(location, ec);
+				}catch(...){
+					on_exception(std::current_exception());
+				}
+			}));
 	}
 
 	void ws_client_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
-		client_.on_exception(error);
+		boost::asio::post(boost::asio::bind_executor(
+			handler_strand_,
+			[this, lock = async_lock(async_calls_), error]{
+				client_.on_exception(error);
+			}));
 	}
 
 
