@@ -46,11 +46,6 @@ namespace webservice{
 
 		server_impl& operator=(server_impl const&) = delete;
 
-		/// \brief Close all connections and wait on all processing threads
-		///
-		/// Calls close() and block()
-		~server_impl();
-
 		/// \brief Wait on all processing threads
 		///
 		/// This effecivly blocks the current thread until the server_impl is

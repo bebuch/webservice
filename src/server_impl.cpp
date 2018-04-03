@@ -26,17 +26,17 @@ namespace webservice{
 		std::uint8_t const thread_count
 	)
 		: server_(server)
-		, handler_([this, handler = std::move(handler)]()mutable{
+		, handler_([&server, handler = std::move(handler)]()mutable{
 				if(!handler){
 					handler =
 						std::make_unique< http_request_handler >();
 				}
-				handler->set_server(server_);
+				handler->set_server(server);
 				return std::move(handler);
 			}())
-		, service_([this, service = std::move(service)]()mutable{
+		, service_([&server, service = std::move(service)]()mutable{
 				if(service){
-					service->set_server(server_);
+					service->set_server(server);
 				}
 				return std::move(service);
 			}())

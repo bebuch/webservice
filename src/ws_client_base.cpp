@@ -49,8 +49,9 @@ namespace webservice{
 		/// \brief Send a message
 		template < typename Data >
 		void send(Data&& data){
-			if(auto const session = session_.lock()){
-				session->send(static_cast< Data&& >(data));
+			std::lock_guard< std::recursive_mutex > lock(mutex_);
+			if(session_){
+				session_->send(static_cast< Data&& >(data));
 			}
 		}
 
@@ -58,10 +59,11 @@ namespace webservice{
 		std::string const port_;
 		std::string const resource_;
 
+		std::atomic< bool > shutdown_{false};
 		std::recursive_mutex mutex_;
 
 		boost::asio::io_context ioc_;
-		std::weak_ptr< ws_client_session > session_;
+		std::unique_ptr< ws_client_session > session_;
 		std::thread thread_;
 	};
 
@@ -75,8 +77,7 @@ namespace webservice{
 			std::move(host), std::move(port), std::move(resource))) {}
 
 	ws_client_base::~ws_client_base(){
-		impl_->send("client shutdown");
-		stop();
+		shutdown();
 		block();
 	}
 
@@ -103,12 +104,11 @@ namespace webservice{
 		ws.handshake(impl_->host_, impl_->resource_);
 
 		// Create a WebSocket session by transferring the socket
-		auto session = std::make_shared< ws_client_session >(
+		impl_->session_ = std::make_unique< ws_client_session >(
 			std::move(ws), *this, ping_time());
+		impl_->session_->set_erase_fn(&impl_->session_);
+		impl_->session_->start();
 
-		session->start();
-
-		impl_->session_ = std::move(session);
 
 		// restart io_context if it returned by exception
 		impl_->thread_ = std::thread([this]{
@@ -124,7 +124,7 @@ namespace webservice{
 	}
 
 	bool ws_client_base::is_connected()const{
-		return static_cast< bool >(impl_->session_.lock());
+		return static_cast< bool >(impl_->session_.get());
 	}
 
 
@@ -152,19 +152,26 @@ namespace webservice{
 		}
 	}
 
-	void ws_client_base::stop()noexcept{
-		impl_->ioc_.stop();
+	void ws_client_base::shutdown()noexcept{
+		if(!impl_->shutdown_.exchange(true)){
+			std::lock_guard< std::recursive_mutex > lock(impl_->mutex_);
+			if(impl_->session_){
+				impl_->session_->async_erase();
+			}
+		}
 	}
 
+	boost::asio::executor ws_client_base::get_executor(){
+		return impl_->ioc_.get_executor();
+	}
 
-	void ws_client_base::async(std::function< void() > fn){
-		boost::asio::defer(impl_->ioc_, [this, fn = std::move(fn)]()noexcept{
-				try{
-					fn();
-				}catch(...){
-					on_exception(std::current_exception());
-				}
-			});
+	std::size_t ws_client_base::poll_one()noexcept{
+		try{
+			return impl_->ioc_.poll_one();
+		}catch(...){
+			on_exception(std::current_exception());
+			return 1;
+		}
 	}
 
 

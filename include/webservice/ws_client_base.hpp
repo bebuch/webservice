@@ -12,6 +12,8 @@
 #include "shared_const_buffer.hpp"
 #include "ws_client_location.hpp"
 
+#include <boost/asio/executor.hpp>
+
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/string.hpp>
 
@@ -71,15 +73,17 @@ namespace webservice{
 		/// This effecivly blocks the current thread until the client is closed.
 		void block()noexcept;
 
-		/// \brief Close the connection as fast as possible
+		/// \brief Close the connection
 		///
 		/// This function is not blocking. Call block() if you want to wait
 		/// until all connections are closed.
-		void stop()noexcept;
+		void shutdown()noexcept;
 
+		/// \brief Get executor
+		boost::asio::executor get_executor();
 
-		/// \brief Execute a function async via client threads
-		void async(std::function< void() > fn);
+		/// \brief Run one task in client thread
+		std::size_t poll_one()noexcept;
 
 
 		/// \brief Called when the sessions starts

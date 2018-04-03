@@ -109,6 +109,10 @@ namespace webservice{
 		}
 
 		void do_read(){
+			if(!socket_.is_open()){
+				return;
+			}
+
 			// Set the timer
 			if(timer_.expires_after(server_.http().timeout()) == 0){
 				// if the timer could not be cancelled it was already
@@ -157,6 +161,7 @@ namespace webservice{
 						){
 							server_.ws().emplace(
 								std::move(socket_), std::move(req_));
+							async_erase();
 						}else{
 							// Send the response
 							server_.http()(std::move(req_), http_response{
@@ -171,6 +176,8 @@ namespace webservice{
 							// another request
 							if(!queue_.is_full()){
 								do_read();
+							}else{
+								async_erase();
 							}
 						}
 					}));
@@ -203,6 +210,8 @@ namespace webservice{
 			if(queue_.on_write()){
 				// Read another request
 				do_read();
+			}else{
+				async_erase();
 			}
 		}
 
@@ -230,9 +239,11 @@ namespace webservice{
 		/// ignored.
 		void async_erase(){
 			std::call_once(erase_flag_, [this]{
-					boost::asio::post([this]{
+					boost::asio::post(boost::asio::bind_executor(
+						server_.get_executor(),
+						[this]{
 							erase_fn_();
-						});
+						}));
 				});
 		}
 

@@ -21,7 +21,7 @@ webservice::server* server = nullptr;
 void close_server(int signum){
 	std::signal(signum, SIG_DFL);
 	std::cout << "Signal: " << signum << '\n';
-	server->stop();
+	server->shutdown();
 	server->block();
 	std::raise(signum);
 }

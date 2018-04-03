@@ -39,7 +39,7 @@ ws_client* client = nullptr;
 void close_client(int signum){
 	std::signal(signum, SIG_DFL);
 	std::cout << "Signal: " << signum << '\n';
-	client->stop();
+	client->shutdown();
 	client->block();
 	std::raise(signum);
 }

@@ -80,9 +80,6 @@ namespace webservice{
 
 		ws_session& operator=(ws_session const&) = delete;
 
-		/// \brief Destructor
-		~ws_session();
-
 		/// \brief Async wait on timer
 		///
 		/// The timer is restarted after any received message.
@@ -111,16 +108,6 @@ namespace webservice{
 		void restart_timer();
 
 
-		/// \brief Set the function that is called on async_erase
-		void set_erase_fn(sessions_erase_fn< Derived >&& erase_fn)noexcept;
-
-		/// \brief Send a request to erase this session from the list
-		///
-		/// The request is sended only once, any call after the fist will be
-		/// ignored.
-		void async_erase();
-
-
 	protected:
 		/// \brief The websocket stream
 		ws_stream ws_;
@@ -131,9 +118,6 @@ namespace webservice{
 
 		boost::asio::steady_timer timer_;
 
-		sessions_erase_fn< Derived > erase_fn_;
-
-		std::once_flag erase_flag_;
 		std::atomic< std::size_t > async_calls_{0};
 
 
@@ -207,13 +191,44 @@ namespace webservice{
 		void rebind(ws_handler_base* service)noexcept;
 
 
+		/// \brief Set the function that is called on async_erase
+		void set_erase_fn(
+			sessions_erase_fn< ws_server_session >&& erase_fn
+		)noexcept;
+
+		/// \brief Send a request to erase this session from the list
+		///
+		/// The request is sended only once, any call after the fist will be
+		/// ignored.
+		void async_erase();
+
+
 	private:
+		sessions_erase_fn< ws_server_session > erase_fn_;
+
+		std::once_flag erase_flag_;
+
 		class server_impl& server_;
 		std::atomic< ws_handler_base* > service_;
 		std::string resource_;
 		bool is_open_ = false;
 	};
 
+
+	class erase_client_session_fn{
+	public:
+		erase_client_session_fn(
+			std::unique_ptr< ws_client_session >* erase_fn = nullptr
+		)
+			: erase_fn_(erase_fn) {}
+
+		void operator()(){
+			erase_fn_->reset();
+		}
+
+	private:
+		std::unique_ptr< ws_client_session >* erase_fn_;
+	};
 
 	class ws_client_session: public ws_session< ws_client_session >{
 	public:
@@ -252,7 +267,21 @@ namespace webservice{
 		void on_exception(std::exception_ptr error)noexcept;
 
 
+		/// \brief Set the function that is called on async_erase
+		void set_erase_fn(erase_client_session_fn&& erase_fn)noexcept;
+
+		/// \brief Send a request to erase this session from the list
+		///
+		/// The request is sended only once, any call after the fist will be
+		/// ignored.
+		void async_erase();
+
+
 	private:
+		erase_client_session_fn erase_fn_;
+
+		std::once_flag erase_flag_;
+
 		ws_client_base& client_;
 		bool is_open_ = false;
 	};

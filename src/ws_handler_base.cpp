@@ -15,6 +15,9 @@
 namespace webservice{
 
 
+	ws_handler_base::ws_handler_base()
+		: list_(std::make_unique< sessions< ws_server_session > >()) {}
+
 	ws_handler_base::~ws_handler_base() = default;
 
 

@@ -92,9 +92,11 @@ namespace webservice{
 					// Closing the socket cancels all outstanding operations.
 					// They will complete with operation_aborted
 					using socket = boost::asio::ip::tcp::socket;
-					ws_.next_layer().shutdown(socket::shutdown_both, ec);
-					ws_.next_layer().close(ec);
-					async_erase();
+					if(ws_.next_layer().is_open()){
+						ws_.next_layer().shutdown(socket::shutdown_both, ec);
+						ws_.next_layer().close(ec);
+					}
+					derived().async_erase();
 				}
 			}));
 	}
@@ -114,49 +116,51 @@ namespace webservice{
 
 	template < typename Derived >
 	void ws_session< Derived >::do_read(){
+		if(!ws_.is_open()){
+			return;
+		}
+
 		restart_timer();
 
 		// Read a message into our buffer
-		if(ws_.is_open()){
-			ws_.async_read(
-				buffer_,
-				boost::asio::bind_executor(
-					strand_,
-					[this, lock = async_lock(async_calls_)](
-						boost::system::error_code ec,
-						std::size_t /*bytes_transferred*/
-					){
-						// Happens when the timer closes the socket
-						if(ec == boost::asio::error::operation_aborted){
-							return;
-						}
+		ws_.async_read(
+			buffer_,
+			boost::asio::bind_executor(
+				strand_,
+				[this, lock = async_lock(async_calls_)](
+					boost::system::error_code ec,
+					std::size_t /*bytes_transferred*/
+				){
+					// Happens when the timer closes the socket
+					if(ec == boost::asio::error::operation_aborted){
+						return;
+					}
 
-						// This indicates that the ws_session was closed
-						if(ec == boost::beast::websocket::error::closed){
-							return;
-						}
+					// This indicates that the ws_session was closed
+					if(ec == boost::beast::websocket::error::closed){
+						return;
+					}
 
-						// Note that there is activity
-						activity();
+					// Note that there is activity
+					activity();
 
-						if(ec){
-							derived().on_error(location_type::read, ec);
+					if(ec){
+						derived().on_error(location_type::read, ec);
+					}else{
+						// Echo the message
+						if(ws_.got_text()){
+							derived().on_text(std::move(buffer_));
 						}else{
-							// Echo the message
-							if(ws_.got_text()){
-								derived().on_text(std::move(buffer_));
-							}else{
-								derived().on_binary(std::move(buffer_));
-							}
+							derived().on_binary(std::move(buffer_));
 						}
+					}
 
-						// Clear the buffer
-						buffer_.consume(buffer_.size());
+					// Clear the buffer
+					buffer_.consume(buffer_.size());
 
-						// Do another read
-						do_read();
-					}));
-		}
+					// Do another read
+					do_read();
+				}));
 	}
 
 
@@ -226,26 +230,9 @@ namespace webservice{
 					if(ec){
 						derived().on_error(location_type::close, ec);
 					}
-					async_erase();
+					derived().async_erase();
 				}
 			}));
-	}
-
-
-	template < typename Derived >
-	void ws_session< Derived >::set_erase_fn(
-		sessions_erase_fn< Derived >&& erase_fn
-	)noexcept{
-		erase_fn_ = std::move(erase_fn);
-	}
-
-	template < typename Derived >
-	void ws_session< Derived >::async_erase(){
-		std::call_once(erase_flag_, [this]{
-				boost::asio::post([this]{
-						erase_fn_();
-					});
-			});
 	}
 
 
@@ -276,7 +263,7 @@ namespace webservice{
 				boost::system::error_code ec;
 				timer_.cancel(ec);
 				if(ws_.is_open()){
-					ws_.close("server shutdown", ec);
+					ws_.close("shutdown", ec);
 				}
 			}));
 
@@ -458,6 +445,23 @@ namespace webservice{
 	}
 
 
+	void ws_server_session::set_erase_fn(
+		sessions_erase_fn< ws_server_session >&& erase_fn
+	)noexcept{
+		erase_fn_ = std::move(erase_fn);
+	}
+
+	void ws_server_session::async_erase(){
+		std::call_once(erase_flag_, [this]{
+				boost::asio::post(boost::asio::bind_executor(
+					server_.get_executor(),
+					[this]{
+						erase_fn_();
+					}));
+			});
+	}
+
+
 	template void ws_session< ws_client_session >::send< text_tag >(
 		std::tuple< text_tag, shared_const_buffer > data);
 
@@ -477,11 +481,24 @@ namespace webservice{
 		, client_(client) {}
 
 	ws_client_session::~ws_client_session(){
-		if(ws_.is_open()){
-			try{
-				ws_.close("client shutdown");
-			}catch(...){
-				on_exception(std::current_exception());
+		// Stop timer, close socket
+		boost::asio::post(boost::asio::bind_executor(
+			strand_,
+			[this, lock = async_lock(async_calls_)]{
+				boost::system::error_code ec;
+				timer_.cancel(ec);
+				if(ws_.is_open()){
+					ws_.close("shutdown", ec);
+				}
+			}));
+
+		// As long as async calls are pending
+		while(async_calls_ > 0){
+			// Request the client to run a handler async
+			if(client_.poll_one() == 0){
+				// If no handler was waiting, the pending one must
+				// currently run in another thread
+				std::this_thread::yield();
 			}
 		}
 
@@ -603,6 +620,21 @@ namespace webservice{
 			}));
 	}
 
+	void ws_client_session::set_erase_fn(
+		erase_client_session_fn&& erase_fn
+	)noexcept{
+		erase_fn_ = std::move(erase_fn);
+	}
+
+	void ws_client_session::async_erase(){
+		std::call_once(erase_flag_, [this]{
+				boost::asio::post(boost::asio::bind_executor(
+					client_.get_executor(),
+					[this]{
+						erase_fn_();
+					}));
+			});
+	}
 
 
 }

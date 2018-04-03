@@ -39,7 +39,7 @@ namespace webservice{
 
 	class ws_handler_base{
 	public:
-		ws_handler_base() = default;
+		ws_handler_base();
 
 		/// \brief Destructor
 		virtual ~ws_handler_base();
