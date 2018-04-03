@@ -11,11 +11,6 @@
 
 #include "basic_ws_handler.hpp"
 
-#include <boost/asio/strand.hpp>
-#include <boost/asio/post.hpp>
-
-#include <shared_mutex>
-
 
 namespace webservice{
 
@@ -37,39 +32,6 @@ namespace webservice{
 	public:
 		using basic_ws_handler< SendTextType, SendBinaryType,
 			ReceiveTextType, ReceiveBinaryType >::basic_ws_handler;
-
-
-		~basic_ws_service(){
-			if(!this->server()){
-				return;
-			}
-
-			while(async_calls_ > 0){
-				auto count = this->server()->poll_one();
-				(void)count;
-				assert(count > 0);
-			}
-		}
-
-
-		/// \brief Create a strand with servers executor
-		void set_server(class server& server)override{
-			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-
-			if(async_calls_ > 0){
-				throw std::logic_error(
-					"Can not replace server while async operations are active");
-			}
-
-			checked_ws_handler_base::set_server(server);
-
-			if(this->server()){
-				strand_ = std::make_unique< strand >(
-					this->server()->get_executor());
-			}else{
-				strand_.reset();
-			}
-		}
 
 
 	private:
@@ -113,16 +75,6 @@ namespace webservice{
 			std::exception_ptr /*error*/)noexcept{}
 
 
-		/// \brief Protect strand_
-		std::shared_timed_mutex mutex_;
-
-		/// \brief Exec all on_operations async over this strand
-		std::unique_ptr< strand > strand_;
-
-		/// \brief Don't destruct while async calls are active
-		std::atomic< std::size_t > async_calls_{0};
-
-
 		/// \brief Called with a unique identifier when a sessions starts
 		///
 		/// Default implementation does nothing.
@@ -130,20 +82,11 @@ namespace webservice{
 			std::uintptr_t identifier,
 			std::string const& /*resource*/
 		)final{
-			std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-
-			++async_calls_;
-			boost::asio::post(boost::asio::bind_executor(
-					*strand_,
-					[this, identifier]{
-						try{
-							on_open(identifier);
-						}catch(...){
-							on_exception(identifier, std::current_exception());
-						}
-						--async_calls_;
-					}
-				));
+			try{
+				on_open(identifier);
+			}catch(...){
+				on_exception(identifier, std::current_exception());
+			}
 		}
 
 		/// \brief Called with a unique identifier when a sessions ends
@@ -153,20 +96,11 @@ namespace webservice{
 			std::uintptr_t identifier,
 			std::string const& /*resource*/
 		)final{
-			std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-
-			++async_calls_;
-			boost::asio::post(boost::asio::bind_executor(
-					*strand_,
-					[this, identifier]{
-						try{
-							on_close(identifier);
-						}catch(...){
-							on_exception(identifier, std::current_exception());
-						}
-						--async_calls_;
-					}
-				));
+			try{
+				on_close(identifier);
+			}catch(...){
+				on_exception(identifier, std::current_exception());
+			}
 		}
 
 		/// \brief Called when a session received a text message
@@ -177,20 +111,11 @@ namespace webservice{
 			std::string const& /*resource*/,
 			ReceiveTextType&& data
 		)final{
-			std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-
-			++async_calls_;
-			boost::asio::post(boost::asio::bind_executor(
-					*strand_,
-					[this, identifier, data = std::move(data)]()mutable{
-						try{
-							on_text(identifier, std::move(data));
-						}catch(...){
-							on_exception(identifier, std::current_exception());
-						}
-						--async_calls_;
-					}
-				));
+			try{
+				on_text(identifier, std::move(data));
+			}catch(...){
+				on_exception(identifier, std::current_exception());
+			}
 		}
 
 		/// \brief Called when a session received a binary message
@@ -201,20 +126,11 @@ namespace webservice{
 			std::string const& /*resource*/,
 			ReceiveBinaryType&& data
 		)final{
-			std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-
-			++async_calls_;
-			boost::asio::post(boost::asio::bind_executor(
-					*strand_,
-					[this, identifier, data = std::move(data)]()mutable{
-						try{
-							on_binary(identifier, std::move(data));
-						}catch(...){
-							on_exception(identifier, std::current_exception());
-						}
-						--async_calls_;
-					}
-				));
+			try{
+				on_binary(identifier, std::move(data));
+			}catch(...){
+				on_exception(identifier, std::current_exception());
+			}
 		}
 
 		/// \brief Called when an error occured
@@ -226,20 +142,11 @@ namespace webservice{
 			ws_handler_location location,
 			boost::system::error_code ec
 		)final{
-			std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-
-			++async_calls_;
-			boost::asio::post(boost::asio::bind_executor(
-					*strand_,
-					[this, identifier, location, ec]{
-						try{
-							on_error(identifier, location, ec);
-						}catch(...){
-							on_exception(identifier, std::current_exception());
-						}
-						--async_calls_;
-					}
-				));
+			try{
+				on_error(identifier, location, ec);
+			}catch(...){
+				on_exception(identifier, std::current_exception());
+			}
 		}
 
 		/// \brief Called when an exception was thrown
@@ -250,16 +157,7 @@ namespace webservice{
 			std::string const& /*resource*/,
 			std::exception_ptr error
 		)noexcept final{
-			std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-
-			++async_calls_;
-			boost::asio::post(boost::asio::bind_executor(
-					*strand_,
-					[this, identifier, error]{
-						on_exception(identifier, error);
-						--async_calls_;
-					}
-				));
+			on_exception(identifier, error);
 		}
 	};
 #ifdef __clang__
