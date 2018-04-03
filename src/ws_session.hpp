@@ -129,6 +129,8 @@ namespace webservice{
 
 		ws_strand handler_strand_;
 
+		boost::asio::steady_timer timer_;
+
 		sessions_erase_fn< Derived > erase_fn_;
 
 		std::once_flag erase_flag_;
@@ -153,7 +155,6 @@ namespace webservice{
 
 		std::chrono::milliseconds const ping_time_;
 
-		boost::asio::steady_timer timer_;
 		boost::beast::multi_buffer buffer_;
 
 		std::size_t ping_counter_;

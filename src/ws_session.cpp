@@ -34,10 +34,10 @@ namespace webservice{
 		: ws_(std::move(ws))
 		, strand_(ws_.get_executor())
 		, handler_strand_(ws_.get_executor())
-		, write_list_(64)
-		, ping_time_(ping_time)
 		, timer_(ws_.get_executor().context(),
 			std::chrono::steady_clock::time_point::max())
+		, write_list_(64)
+		, ping_time_(ping_time)
 	{
 		ws_.auto_fragment(true);
 	}
@@ -269,11 +269,24 @@ namespace webservice{
 		, service_(&server.impl().ws()) {}
 
 	ws_server_session::~ws_server_session(){
-		if(ws_.is_open()){
-			try{
-				ws_.close("server shutdown");
-			}catch(...){
-				on_exception(std::current_exception());
+		// Stop timer, close socket
+		boost::asio::post(boost::asio::bind_executor(
+			strand_,
+			[this, lock = async_lock(async_calls_)]{
+				boost::system::error_code ec;
+				timer_.cancel(ec);
+				if(ws_.is_open()){
+					ws_.close("server shutdown", ec);
+				}
+			}));
+
+		// As long as async calls are pending
+		while(async_calls_ > 0){
+			// Request the server to run a handler async
+			if(server_.poll_one() == 0){
+				// If no handler was waiting, the pending one must
+				// currently run in another thread
+				std::this_thread::yield();
 			}
 		}
 

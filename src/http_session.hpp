@@ -47,7 +47,7 @@ namespace webservice{
 			{}
 
 		~http_session(){
-			// Send an async shutdown to any session
+			// Stop timer, close socket
 			boost::asio::post(boost::asio::bind_executor(
 				strand_,
 				[this, lock = async_lock(async_calls_)]{
