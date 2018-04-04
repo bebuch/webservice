@@ -17,6 +17,7 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <iomanip>
 #include <thread>
 #include <random>
 #include <csignal>
@@ -106,6 +107,24 @@ struct ws_handler
 			std::cout << "\033[1;31mfail: server expected vector with size "
 				<< binary_data.size() << " but got " << data.size()
 				<< " with different data\033[0m\n";
+			if(binary_data.size() == data.size()){
+				std::cout << "     pos: expected;      got\n";
+				auto i1 = binary_data.begin();
+				auto i2 = data.begin();
+				for(
+					std::size_t pos = 0, printed = 0;
+					printed < 20 && i1 != binary_data.end();
+					++pos, ++i1, ++i2
+				){
+					if(printed > 0 || *i1 != *i2){
+						++printed;
+						std::cout
+							<< std::setw(8) << pos << ": "
+							<< std::setw(8) << static_cast< int >(*i1) << "; "
+							<< std::setw(8) << static_cast< int >(*i2) << "\n";
+					}
+				}
+			}
 			close("shutdown");
 		}
 	}
@@ -129,11 +148,29 @@ struct ws_client
 		if(data == binary_data){
 			std::cout << "\033[1;32mclient pass vector with "
 				<< data.size() << "\033[0m\n";
-			send_binary(binary_data);
+			send_binary(std::move(data));
 		}else{
 			std::cout << "\033[1;31mfail: client expected vector with size "
 				<< binary_data.size() << " but got " << data.size()
 				<< " with different data\033[0m\n";
+			if(binary_data.size() == data.size()){
+				std::cout << "     pos: expected;      got\n";
+				auto i1 = binary_data.begin();
+				auto i2 = data.begin();
+				for(
+					std::size_t pos = 0, printed = 0;
+					printed < 20 && i1 != binary_data.end();
+					++pos, ++i1, ++i2
+				){
+					if(printed > 0 || *i1 != *i2){
+						++printed;
+						std::cout
+							<< std::setw(8) << pos << ": "
+							<< std::setw(8) << static_cast< int >(*i1) << "; "
+							<< std::setw(8) << static_cast< int >(*i2) << "\n";
+					}
+				}
+			}
 			close("shutdown");
 		}
 	}
