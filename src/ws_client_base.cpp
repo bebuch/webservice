@@ -14,12 +14,9 @@
 #include <boost/beast/core/string.hpp>
 #include <boost/beast/websocket.hpp>
 
+#include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/asio/steady_timer.hpp>
-#include <boost/asio/bind_executor.hpp>
-#include <boost/asio/defer.hpp>
 
 #include <memory>
 #include <string>
@@ -43,7 +40,8 @@ namespace webservice{
 			, resource_([](std::string&& resource){
 					if(resource.empty()) resource = "/";
 					return std::move(resource);
-				}(std::move(resource))) {}
+				}(std::move(resource)))
+			, work_(boost::asio::make_work_guard(ioc_)) {}
 
 
 		/// \brief Send a message
@@ -63,6 +61,8 @@ namespace webservice{
 		std::recursive_mutex mutex_;
 
 		boost::asio::io_context ioc_;
+		boost::asio::executor_work_guard<
+			boost::asio::io_context::executor_type > work_;
 		std::unique_ptr< ws_client_session > session_;
 		std::thread thread_;
 	};
@@ -154,14 +154,14 @@ namespace webservice{
 
 	void ws_client_base::shutdown()noexcept{
 		if(!impl_->shutdown_.exchange(true)){
-			std::lock_guard< std::recursive_mutex > lock(impl_->mutex_);
 			if(impl_->session_){
 				impl_->session_->async_erase();
 			}
+			impl_->work_.reset();
 		}
 	}
 
-	boost::asio::executor ws_client_base::get_executor(){
+	boost::asio::io_context::executor_type ws_client_base::get_executor(){
 		return impl_->ioc_.get_executor();
 	}
 

@@ -12,7 +12,7 @@
 #include "shared_const_buffer.hpp"
 #include "ws_client_location.hpp"
 
-#include <boost/asio/executor.hpp>
+#include <boost/asio/io_context.hpp>
 
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/string.hpp>
@@ -80,7 +80,7 @@ namespace webservice{
 		void shutdown()noexcept;
 
 		/// \brief Get executor
-		boost::asio::executor get_executor();
+		boost::asio::io_context::executor_type get_executor();
 
 		/// \brief Run one task in client thread
 		std::size_t poll_one()noexcept;

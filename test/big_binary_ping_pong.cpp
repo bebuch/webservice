@@ -52,7 +52,7 @@ void fill_data(){
 	std::cout << "====================\n";
 	for(std::size_t i = 0; i < size; ++i){
 		binary_data.push_back(dist(rd));
-		if(i % (size / 20) == 0){
+		if(i % ((size / 20) + 1) == 0){
 			std::cout << "-" << std::flush;
 		}
 	}
@@ -91,7 +91,7 @@ struct ws_handler
 		std::vector< std::uint8_t >&& data
 	)override{
 		if(data == binary_data){
-			std::cout << "\033[1;32mclient pass vector with "
+			std::cout << "\033[1;32mserver pass vector with "
 				<< data.size() << "\033[0m\n";
 			if(count < 10){
 				++count;
@@ -103,7 +103,7 @@ struct ws_handler
 				close("shutdown");
 			}
 		}else{
-			std::cout << "\033[1;31mfail: client expected vector with size "
+			std::cout << "\033[1;31mfail: server expected vector with size "
 				<< binary_data.size() << " but got " << data.size()
 				<< " with different data\033[0m\n";
 			close("shutdown");

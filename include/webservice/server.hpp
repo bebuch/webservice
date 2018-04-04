@@ -60,7 +60,7 @@ namespace webservice{
 		void shutdown()noexcept;
 
 		/// \brief Get executor
-		boost::asio::executor get_executor();
+		boost::asio::io_context::executor_type get_executor();
 
 
 		/// \brief Run one task in server threads

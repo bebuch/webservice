@@ -28,7 +28,8 @@ namespace webservice{
 		: public basic_ws_handler< SendTextType, SendBinaryType,
 			ReceiveTextType, ReceiveBinaryType >
 	{
-		using strand = boost::asio::strand< boost::asio::executor >;
+		using strand
+			= boost::asio::strand< boost::asio::io_context::executor_type >;
 	public:
 		using basic_ws_handler< SendTextType, SendBinaryType,
 			ReceiveTextType, ReceiveBinaryType >::basic_ws_handler;

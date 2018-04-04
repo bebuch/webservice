@@ -513,11 +513,15 @@ namespace webservice{
 		// on every incoming ping, pong, and close frame.
 		ws_.control_callback(
 			[this](
-				boost::beast::websocket::frame_type /*kind*/,
+				boost::beast::websocket::frame_type kind,
 				boost::beast::string_view /*payload*/
 			){
 				// Note that there is activity
 				activity();
+
+				if(kind == boost::beast::websocket::frame_type::close){
+					async_erase();
+				}
 			});
 
 
