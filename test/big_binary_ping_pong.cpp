@@ -193,7 +193,7 @@ int main(){
 		{
 			using std::make_unique;
 
-			auto ws_handler = make_unique< class ws_handler >();
+			auto ws_handler = make_unique< struct ws_handler >();
 			ws_handler->set_ping_time(std::chrono::milliseconds(4000));
 
 			webservice::server server(

@@ -74,7 +74,7 @@ namespace webservice{
 
 	private:
 		/// \brief Pointer to implementation
-		std::unique_ptr< struct server_impl > impl_;
+		std::unique_ptr< class server_impl > impl_;
 	};
 
 
