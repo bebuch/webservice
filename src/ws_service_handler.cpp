@@ -38,10 +38,34 @@ namespace webservice{
 	ws_service_handler::~ws_service_handler() = default;
 
 
+	void ws_service_handler::emplace(
+		boost::asio::ip::tcp::socket&& socket,
+		http_request&& req
+	){
+		assert(server() != nullptr);
+
+		if(impl_->shutdown_){
+			throw std::runtime_error("can not emplace session after shutdown");
+		}
+
+		std::string name(req.target());
+
+		std::unique_lock< std::shared_timed_mutex > lock(impl_->mutex);
+		auto iter = impl_->services.find(name);
+		if(iter != impl_->services.end()){
+			iter->second->emplace(std::move(socket), std::move(req));
+		}else{
+			throw std::logic_error("service '" + name + "' doesn't exist");
+		}
+	}
+
+
 	void ws_service_handler::add_service(
 		std::string name,
 		std::unique_ptr< class ws_handler_base > service
 	){
+		assert(server() != nullptr);
+
 		std::unique_lock< std::shared_timed_mutex > lock(impl_->mutex);
 		if(impl_->shutdown_){
 			throw std::runtime_error("can not add service(" + name
@@ -72,36 +96,6 @@ namespace webservice{
 			for(auto& service: impl_->services){
 				service.second->shutdown();
 			}
-		}
-	}
-
-	void ws_service_handler::on_open(
-		ws_server_session* session,
-		std::string const& resource
-	){
-		std::shared_lock< std::shared_timed_mutex > lock(impl_->mutex);
-		auto service = impl_->find_service(resource);
-		if(service == nullptr){
-			on_unknown_service(session, resource);
-		}else{
-			try{
-				session->rebind(service);
-				service->on_open(session, resource);
-			}catch(...){
-				service->on_exception(session, resource, std::current_exception());
-			}
-		}
-	}
-
-	void ws_service_handler::on_unknown_service(
-		ws_server_session* session,
-		std::string const& resource
-	){
-		try{
-			session->send(boost::beast::websocket::close_reason(
-				"unknown target: " + resource));
-		}catch(...){
-			on_exception(session, resource, std::current_exception());
 		}
 	}
 

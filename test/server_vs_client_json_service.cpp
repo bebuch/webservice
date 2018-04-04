@@ -154,13 +154,6 @@ struct ws_service_handler: webservice::ws_service_handler{
 				"exception\033[0m\n";
 		}
 	}
-
-	void on_unknown_service(
-		webservice::ws_server_session*,
-		std::string const& resource
-	)override{
-		throw std::runtime_error("unknown service: " + resource);
-	}
 };
 
 struct ws_service

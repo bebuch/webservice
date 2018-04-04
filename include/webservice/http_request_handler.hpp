@@ -80,7 +80,6 @@ namespace webservice{
 		}
 
 
-	protected:
 		/// \brief Get reference to server
 		class server* server()noexcept;
 

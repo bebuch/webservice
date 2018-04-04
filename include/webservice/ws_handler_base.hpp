@@ -49,8 +49,10 @@ namespace webservice{
 		ws_handler_base& operator=(ws_handler_base const&) = delete;
 
 
-		/// \brief Create a new http_session
-		void emplace(boost::asio::ip::tcp::socket&& socket, http_request&& req);
+		/// \brief Create a new ws_server_session
+		virtual void emplace(
+			boost::asio::ip::tcp::socket&& socket,
+			http_request&& req);
 
 
 		/// \brief Send a text message to session
@@ -156,7 +158,6 @@ namespace webservice{
 		virtual void set_server(class server& server);
 
 
-	protected:
 		/// \brief Get reference to server
 		class server* server()noexcept;
 

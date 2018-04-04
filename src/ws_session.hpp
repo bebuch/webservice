@@ -152,7 +152,7 @@ namespace webservice{
 		/// \brief Take ownership of the socket
 		explicit ws_server_session(
 			ws_stream&& ws,
-			class server& server,
+			ws_handler_base& service,
 			std::chrono::milliseconds ping_time);
 
 		/// \brief Destructor
@@ -187,10 +187,6 @@ namespace webservice{
 		void on_exception(std::exception_ptr error)noexcept;
 
 
-		/// \brief Bind session to another ws_handler
-		void rebind(ws_handler_base* service)noexcept;
-
-
 		/// \brief Set the function that is called on async_erase
 		void set_erase_fn(
 			sessions_erase_fn< ws_server_session >&& erase_fn
@@ -208,8 +204,7 @@ namespace webservice{
 
 		std::once_flag erase_flag_;
 
-		class server_impl& server_;
-		std::atomic< ws_handler_base* > service_;
+		ws_handler_base& service_;
 		std::string resource_;
 		bool is_open_ = false;
 	};

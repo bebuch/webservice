@@ -27,6 +27,12 @@ namespace webservice{
 		~ws_service_handler()override;
 
 
+		/// \brief Create a new ws_server_session
+		void emplace(
+			boost::asio::ip::tcp::socket&& socket,
+			http_request&& req)override;
+
+
 		/// \brief Add ws_handler_base that is used for sessions with resource
 		///        name
 		///
@@ -53,19 +59,6 @@ namespace webservice{
 
 
 	private:
-		/// \brief Rebinds the session to a service
-		void on_open(
-			ws_server_session* session,
-			std::string const& resource)override;
-
-		/// \brief Called if there was no service with resource as name
-		///
-		/// Closes the session.
-		virtual void on_unknown_service(
-			ws_server_session* session,
-			std::string const& resource);
-
-
 		/// \brief Pointer to implementation
 		std::unique_ptr< struct ws_service_handler_impl > impl_;
 	};

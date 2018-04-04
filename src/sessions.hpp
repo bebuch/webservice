@@ -146,17 +146,6 @@ namespace webservice{
 			return fn(list_);
 		}
 
-		void splice(const_iterator pos, sessions&& other){
-			std::unique_lock< std::shared_timed_mutex > lock1(mutex_);
-			std::unique_lock< std::shared_timed_mutex > lock2(other.mutex_);
-			list_.splice(pos, std::move(other.list_));
-		}
-
-		void splice(const_iterator pos, sessions&& other, const_iterator iter){
-			std::unique_lock< std::shared_timed_mutex > lock1(mutex_);
-			std::unique_lock< std::shared_timed_mutex > lock2(other.mutex_);
-			list_.splice(pos, std::move(other.list_), iter);
-		}
 
 		void erase(iterator iter){
 			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
