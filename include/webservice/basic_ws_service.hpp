@@ -36,35 +36,35 @@ namespace webservice{
 
 
 	private:
-		/// \brief Called with a unique identifier when a sessions starts
+		/// \brief Called when a sessions starts
 		///
 		/// Default implementation does nothing.
-		virtual void on_open(std::uintptr_t /*identifier*/){}
+		virtual void on_open(ws_server_session* /*session*/){}
 
-		/// \brief Called with a unique identifier when a sessions ends
+		/// \brief Called when a sessions ends
 		///
 		/// Default implementation does nothing.
-		virtual void on_close(std::uintptr_t /*identifier*/){}
+		virtual void on_close(ws_server_session* /*session*/){}
 
 		/// \brief Called when a session received a text message
 		///
 		/// Default implementation does nothing.
 		virtual void on_text(
-			std::uintptr_t /*identifier*/,
+			ws_server_session* /*session*/,
 			ReceiveTextType&& /*data*/){}
 
 		/// \brief Called when a session received a binary message
 		///
 		/// Default implementation does nothing.
 		virtual void on_binary(
-			std::uintptr_t /*identifier*/,
+			ws_server_session* /*session*/,
 			ReceiveBinaryType&& /*data*/){}
 
 		/// \brief Called when an error occured
 		///
 		/// Default implementation does nothing.
 		virtual void on_error(
-			std::uintptr_t /*identifier*/,
+			ws_server_session* /*session*/,
 			ws_handler_location /*location*/,
 			boost::system::error_code /*ec*/){}
 
@@ -72,35 +72,35 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_exception(
-			std::uintptr_t /*identifier*/,
+			ws_server_session* /*session*/,
 			std::exception_ptr /*error*/)noexcept{}
 
 
-		/// \brief Called with a unique identifier when a sessions starts
+		/// \brief Called when a sessions starts
 		///
 		/// Default implementation does nothing.
 		void on_open(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& /*resource*/
 		)final{
 			try{
-				on_open(identifier);
+				on_open(session);
 			}catch(...){
-				on_exception(identifier, std::current_exception());
+				on_exception(session, std::current_exception());
 			}
 		}
 
-		/// \brief Called with a unique identifier when a sessions ends
+		/// \brief Called when a sessions ends
 		///
 		/// Default implementation does nothing.
 		void on_close(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& /*resource*/
 		)final{
 			try{
-				on_close(identifier);
+				on_close(session);
 			}catch(...){
-				on_exception(identifier, std::current_exception());
+				on_exception(session, std::current_exception());
 			}
 		}
 
@@ -108,14 +108,14 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		void on_text(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& /*resource*/,
 			ReceiveTextType&& data
 		)final{
 			try{
-				on_text(identifier, std::move(data));
+				on_text(session, std::move(data));
 			}catch(...){
-				on_exception(identifier, std::current_exception());
+				on_exception(session, std::current_exception());
 			}
 		}
 
@@ -123,14 +123,14 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		void on_binary(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& /*resource*/,
 			ReceiveBinaryType&& data
 		)final{
 			try{
-				on_binary(identifier, std::move(data));
+				on_binary(session, std::move(data));
 			}catch(...){
-				on_exception(identifier, std::current_exception());
+				on_exception(session, std::current_exception());
 			}
 		}
 
@@ -138,15 +138,15 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		void on_error(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& /*resource*/,
 			ws_handler_location location,
 			boost::system::error_code ec
 		)final{
 			try{
-				on_error(identifier, location, ec);
+				on_error(session, location, ec);
 			}catch(...){
-				on_exception(identifier, std::current_exception());
+				on_exception(session, std::current_exception());
 			}
 		}
 
@@ -154,11 +154,11 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		void on_exception(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& /*resource*/,
 			std::exception_ptr error
 		)noexcept final{
-			on_exception(identifier, error);
+			on_exception(session, error);
 		}
 	};
 #ifdef __clang__

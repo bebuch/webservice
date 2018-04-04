@@ -72,6 +72,16 @@ namespace webservice{
 		session->send(std::make_tuple(text_tag{}, std::move(buffer)));
 	}
 
+	void ws_handler_base::send_text(shared_const_buffer buffer){
+		list_->shared_call([this, &buffer](
+			std::list< ws_server_session >& sessions
+		){
+			for(auto& session: sessions){
+				send_text(&session, std::move(buffer));
+			}
+		});
+	}
+
 	void ws_handler_base::send_binary(
 		ws_server_session* session,
 		shared_const_buffer buffer
@@ -79,11 +89,31 @@ namespace webservice{
 		session->send(std::make_tuple(binary_tag{}, std::move(buffer)));
 	}
 
+	void ws_handler_base::send_binary(shared_const_buffer buffer){
+		list_->shared_call([this, &buffer](
+			std::list< ws_server_session >& sessions
+		){
+			for(auto& session: sessions){
+				send_binary(&session, std::move(buffer));
+			}
+		});
+	}
+
 	void ws_handler_base::close(
 		ws_server_session* session,
 		boost::beast::string_view reason
 	){
 		session->send(boost::beast::websocket::close_reason(reason));
+	}
+
+	void ws_handler_base::close(boost::beast::string_view reason){
+		list_->shared_call([this, reason](
+			std::list< ws_server_session >& sessions
+		){
+			for(auto& session: sessions){
+				close(&session, reason);
+			}
+		});
 	}
 
 

@@ -9,7 +9,7 @@
 #ifndef _webservice__basic_ws_handler__hpp_INCLUDED_
 #define _webservice__basic_ws_handler__hpp_INCLUDED_
 
-#include "checked_ws_handler_base.hpp"
+#include "ws_handler_base.hpp"
 #include "conversion.hpp"
 
 
@@ -25,7 +25,7 @@ namespace webservice{
 		typename SendBinaryType = SendTextType,
 		typename ReceiveTextType = SendTextType,
 		typename ReceiveBinaryType = SendBinaryType >
-	class basic_ws_handler: public checked_ws_handler_base{
+	class basic_ws_handler: public ws_handler_base{
 	public:
 		static to_shared_const_buffer_t< SendTextType >
 			text_to_shared_const_buffer;
@@ -40,33 +40,22 @@ namespace webservice{
 			multi_buffer_to_binary;
 
 
-		using checked_ws_handler_base::checked_ws_handler_base;
+		using ws_handler_base::ws_handler_base;
 
 
 		/// \brief Send a text message to all sessions
 		template < typename SendTextTypeT >
 		void send_text(SendTextTypeT&& data){
-			checked_ws_handler_base::send_text(
+			ws_handler_base::send_text(
 				text_to_shared_const_buffer(
 					static_cast< SendTextTypeT&& >(data)));
 		}
 
-		/// \brief Send a text message to session by identifier
+		/// \brief Send a text message to session
 		template < typename SendTextTypeT >
-		void send_text(std::uintptr_t identifier, SendTextTypeT&& data){
-			checked_ws_handler_base::send_text(
-				identifier, text_to_shared_const_buffer(
-					static_cast< SendTextTypeT&& >(data)));
-		}
-
-		/// \brief Send a text message to all sessions by identifier
-		template < typename SendTextTypeT >
-		void send_text(
-			std::set< std::uintptr_t > const& identifier,
-			SendTextTypeT&& data
-		){
-			checked_ws_handler_base::send_text(
-				identifier, text_to_shared_const_buffer(
+		void send_text(ws_server_session* session, SendTextTypeT&& data){
+			ws_handler_base::send_text(
+				session, text_to_shared_const_buffer(
 					static_cast< SendTextTypeT&& >(data)));
 		}
 
@@ -74,27 +63,16 @@ namespace webservice{
 		/// \brief Send a binary message to all sessions
 		template < typename SendBinaryTypeT >
 		void send_binary(SendBinaryTypeT&& data){
-			checked_ws_handler_base::send_binary(
+			ws_handler_base::send_binary(
 				binary_to_shared_const_buffer(
 					static_cast< SendBinaryTypeT&& >(data)));
 		}
 
-		/// \brief Send a binary message to session by identifier
+		/// \brief Send a binary message to session
 		template < typename SendBinaryTypeT >
-		void send_binary(std::uintptr_t identifier, SendBinaryTypeT&& data){
-			checked_ws_handler_base::send_binary(
-				identifier, binary_to_shared_const_buffer(
-					static_cast< SendBinaryTypeT&& >(data)));
-		}
-
-		/// \brief Send a binary message to all sessions by identifier
-		template < typename SendBinaryTypeT >
-		void send_binary(
-			std::set< std::uintptr_t > const& identifier,
-			SendBinaryTypeT&& data
-		){
-			checked_ws_handler_base::send_binary(
-				identifier, binary_to_shared_const_buffer(
+		void send_binary(ws_server_session* session, SendBinaryTypeT&& data){
+			ws_handler_base::send_binary(
+				session, binary_to_shared_const_buffer(
 					static_cast< SendBinaryTypeT&& >(data)));
 		}
 
@@ -104,7 +82,7 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_text(
-			std::uintptr_t /*identifier*/,
+			ws_server_session* /*session*/,
 			std::string const& /*resource*/,
 			ReceiveTextType&& /*data*/){}
 
@@ -112,25 +90,25 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_binary(
-			std::uintptr_t /*identifier*/,
+			ws_server_session* /*session*/,
 			std::string const& /*resource*/,
 			ReceiveBinaryType&& /*data*/){}
 
 
 		void on_text(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& resource,
 			boost::beast::multi_buffer&& buffer
 		)final{
-			on_text(identifier, resource, multi_buffer_to_text(buffer));
+			on_text(session, resource, multi_buffer_to_text(buffer));
 		}
 
 		void on_binary(
-			std::uintptr_t identifier,
+			ws_server_session* session,
 			std::string const& resource,
 			boost::beast::multi_buffer&& buffer
 		)final{
-			on_binary(identifier, resource, multi_buffer_to_binary(buffer));
+			on_binary(session, resource, multi_buffer_to_binary(buffer));
 		}
 	};
 #ifdef __clang__

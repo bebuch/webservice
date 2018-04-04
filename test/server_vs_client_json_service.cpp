@@ -166,17 +166,17 @@ struct ws_service_handler: webservice::ws_service_handler{
 struct ws_service
 	: webservice::error_printing_ws_service< webservice::json_ws_service >
 {
-	void on_open(std::uintptr_t)override{
+	void on_open(webservice::ws_server_session*)override{
 		check(state_t::ws_server_open);
 		send_text(nlohmann::json::parse(test_text));
 	}
 
-	void on_close(std::uintptr_t)override{
+	void on_close(webservice::ws_server_session*)override{
 		check(state_t::ws_server_close);
 	}
 
 	void on_text(
-		std::uintptr_t,
+		webservice::ws_server_session*,
 		nlohmann::json&& text
 	)override{
 		check(state_t::ws_server_json);
@@ -194,7 +194,7 @@ struct ws_service
 	}
 
 	void on_binary(
-		std::uintptr_t,
+		webservice::ws_server_session*,
 		std::vector< std::uint8_t >&& data
 	)override{
 		check(state_t::ws_server_binary);

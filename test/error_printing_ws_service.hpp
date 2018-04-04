@@ -27,7 +27,7 @@ namespace webservice{
 		using Base::Base;
 
 		void on_error(
-			std::uintptr_t,
+			class ws_server_session*,
 			ws_handler_location location,
 			boost::system::error_code ec
 		)override{
@@ -36,7 +36,7 @@ namespace webservice{
 		}
 
 		void on_exception(
-			std::uintptr_t,
+			class ws_server_session*,
 			std::exception_ptr error
 		)noexcept override{
 			try{

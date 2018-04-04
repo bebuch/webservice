@@ -135,13 +135,13 @@ namespace webservice{
 		}
 
 		template < typename Fn >
-		auto call(Fn&& fn){
+		auto unique_call(Fn&& fn){
 			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
 			return fn(list_);
 		}
 
 		template < typename Fn >
-		auto const_call(Fn&& fn)const{
+		auto shared_call(Fn&& fn){
 			std::shared_lock< std::shared_timed_mutex > lock(mutex_);
 			return fn(list_);
 		}

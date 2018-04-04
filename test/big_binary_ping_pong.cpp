@@ -65,19 +65,19 @@ struct ws_handler
 {
 	std::size_t count = 0;
 
-	void on_open(std::uintptr_t, std::string const&)override{
+	void on_open(webservice::ws_server_session*, std::string const&)override{
 		std::thread([this]{
 				fill_data();
 				send_binary(binary_data);
 			}).detach();
 	}
 
-	void on_close(std::uintptr_t, std::string const&)override{
+	void on_close(webservice::ws_server_session*, std::string const&)override{
 		server()->shutdown();
 	}
 
 	void on_text(
-		std::uintptr_t,
+		webservice::ws_server_session*,
 		std::string const&,
 		std::string&& text
 	)override{
@@ -87,7 +87,7 @@ struct ws_handler
 	}
 
 	void on_binary(
-		std::uintptr_t,
+		webservice::ws_server_session*,
 		std::string const&,
 		std::vector< std::uint8_t >&& data
 	)override{

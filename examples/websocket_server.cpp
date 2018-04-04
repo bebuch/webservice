@@ -19,21 +19,21 @@
 
 struct mirror_ws_handler: webservice::ws_handler{
 	void on_open(
-		std::uintptr_t const identifier, // unique identifier of the session
+		ws_server_session* const session,
 		std::string const& resource      // target of the session ("/path")
 	)override{
 		std::cout << "open session " << identifier << "->" << resource << "\n";
 	}
 
 	void on_close(
-		std::uintptr_t const identifier, // unique identifier of the session
+		ws_server_session* const session,
 		std::string const& /*resource*/  // target of the session ("/path")
 	)override{
 		std::cout << identifier << " closed\n";
 	}
 
 	void on_text(
-		std::uintptr_t const identifier, // unique identifier of the session
+		ws_server_session* const session,
 		std::string const& /*resource*/, // target of the session ("/path")
 		std::string&& text
 	)override{
@@ -44,7 +44,7 @@ struct mirror_ws_handler: webservice::ws_handler{
 	}
 
 	void on_binary(
-		std::uintptr_t const identifier, // unique identifier of the session
+		ws_server_session* const session,
 		std::string const& /*resource*/, // target of the session ("/path")
 		std::vector< std::uint8_t >&& data
 	)override{

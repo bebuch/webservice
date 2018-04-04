@@ -58,25 +58,34 @@ namespace webservice{
 			ws_server_session* session,
 			shared_const_buffer buffer);
 
+		/// \brief Send a text message to all session
+		void send_text(shared_const_buffer buffer);
+
 		/// \brief Send a binary message to session
 		void send_binary(
 			ws_server_session* session,
 			shared_const_buffer buffer);
+
+		/// \brief Send a binary message to all session
+		void send_binary(shared_const_buffer buffer);
 
 		/// \brief Shutdown session
 		void close(
 			ws_server_session* session,
 			boost::beast::string_view reason);
 
+		/// \brief Shutdown all sessions
+		void close(boost::beast::string_view reason);
 
-		/// \brief Called with a unique identifier when a sessions starts
+
+		/// \brief Called when a sessions starts
 		///
 		/// Default implementation does nothing.
 		virtual void on_open(
 			ws_server_session* session,
 			std::string const& resource);
 
-		/// \brief Called with a unique identifier when a sessions ends
+		/// \brief Called when a sessions ends
 		///
 		/// Default implementation does nothing.
 		virtual void on_close(

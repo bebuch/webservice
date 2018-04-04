@@ -110,16 +110,16 @@ struct request_handler
 struct ws_handler
 	: webservice::error_printing_ws_handler< webservice::ws_handler >
 {
-	void on_open(std::uintptr_t, std::string const&)override{
+	void on_open(webservice::ws_server_session*, std::string const&)override{
 		check(state_t::ws_open);
 	}
 
-	void on_close(std::uintptr_t, std::string const&)override{
+	void on_close(webservice::ws_server_session*, std::string const&)override{
 		check(state_t::ws_close);
 	}
 
 	void on_text(
-		std::uintptr_t,
+		webservice::ws_server_session*,
 		std::string const&,
 		std::string&& text
 	)override{
@@ -129,7 +129,7 @@ struct ws_handler
 	}
 
 	void on_binary(
-		std::uintptr_t,
+		webservice::ws_server_session*,
 		std::string const&,
 		std::vector< std::uint8_t >&& data
 	)override{
