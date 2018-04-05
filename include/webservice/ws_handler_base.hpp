@@ -55,6 +55,11 @@ namespace webservice{
 			ws_identifier identifier,
 			shared_const_buffer buffer);
 
+		/// \brief Send a text message to sessions
+		void send_text(
+			std::set< ws_identifier > const& identifiers,
+			shared_const_buffer buffer);
+
 		/// \brief Send a text message to all session
 		void send_text(shared_const_buffer buffer);
 
@@ -63,12 +68,22 @@ namespace webservice{
 			ws_identifier identifier,
 			shared_const_buffer buffer);
 
+		/// \brief Send a binary message to sessions
+		void send_binary(
+			std::set< ws_identifier > const& identifiers,
+			shared_const_buffer buffer);
+
 		/// \brief Send a binary message to all session
 		void send_binary(shared_const_buffer buffer);
 
 		/// \brief Shutdown session
 		void close(
 			ws_identifier identifier,
+			boost::beast::string_view reason);
+
+		/// \brief Shutdown sessions
+		void close(
+			std::set< ws_identifier > const& identifiers,
 			boost::beast::string_view reason);
 
 		/// \brief Shutdown all sessions

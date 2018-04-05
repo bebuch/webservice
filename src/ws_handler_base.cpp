@@ -16,6 +16,39 @@
 namespace webservice{
 
 
+	namespace{
+
+
+		std::set< ws_identifier > set_intersection(
+			std::set< ws_identifier > set1,
+			std::set< ws_identifier > set2
+		){
+			auto first1 = set1.begin();
+			auto last1 = set1.end();
+			auto first2 = set2.begin();
+			auto last2 = set2.end();
+
+			std::set< ws_identifier > result;
+			auto d_first = std::inserter(result, result.begin());
+
+			while(first1 != last1 && first2 != last2){
+				if(*first1 < *first2){
+					++first1;
+				}else{
+					if(!(*first2 < *first1)){
+						*d_first++ = *first1++;
+					}
+					++first2;
+				}
+			}
+
+			return result;
+		}
+
+
+	}
+
+
 	ws_handler_base::ws_handler_base()
 		: list_(std::make_unique< ws_sessions >()) {}
 
@@ -83,6 +116,21 @@ namespace webservice{
 		});
 	}
 
+	void ws_handler_base::send_text(
+		std::set< ws_identifier > const& identifiers,
+		shared_const_buffer buffer
+	){
+		list_->shared_call([this, identifiers, &buffer](
+			std::set< ws_identifier > const& valid_identifiers
+		){
+			auto valids = set_intersection(identifiers, valid_identifiers);
+			for(auto identifier: valids){
+				identifier.session
+					->send(std::make_tuple(text_tag{}, std::move(buffer)));
+			}
+		});
+	}
+
 	void ws_handler_base::send_text(shared_const_buffer buffer){
 		list_->shared_call([this, &buffer](
 			std::set< ws_identifier > const& identifiers
@@ -110,6 +158,21 @@ namespace webservice{
 		});
 	}
 
+	void ws_handler_base::send_binary(
+		std::set< ws_identifier > const& identifiers,
+		shared_const_buffer buffer
+	){
+		list_->shared_call([this, identifiers, &buffer](
+			std::set< ws_identifier > const& valid_identifiers
+		){
+			auto valids = set_intersection(identifiers, valid_identifiers);
+			for(auto identifier: valids){
+				identifier.session
+					->send(std::make_tuple(binary_tag{}, std::move(buffer)));
+			}
+		});
+	}
+
 	void ws_handler_base::send_binary(shared_const_buffer buffer){
 		list_->shared_call([this, &buffer](
 			std::set< ws_identifier > const& identifiers
@@ -134,6 +197,21 @@ namespace webservice{
 
 			identifier.session
 				->send(boost::beast::websocket::close_reason(reason));
+		});
+	}
+
+	void ws_handler_base::close(
+		std::set< ws_identifier > const& identifiers,
+		boost::beast::string_view reason
+	){
+		list_->shared_call([this, identifiers, reason](
+			std::set< ws_identifier > const& valid_identifiers
+		){
+			auto valids = set_intersection(identifiers, valid_identifiers);
+			for(auto identifier: valids){
+				identifier.session
+					->send(boost::beast::websocket::close_reason(reason));
+			}
 		});
 	}
 

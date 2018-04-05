@@ -53,6 +53,17 @@ namespace webservice{
 
 		/// \brief Send a text message to session
 		template < typename SendTextTypeT >
+		void send_text(
+			std::set< ws_identifier > const& identifiers,
+			SendTextTypeT&& data
+		){
+			ws_handler_base::send_text(
+				identifiers, text_to_shared_const_buffer(
+					static_cast< SendTextTypeT&& >(data)));
+		}
+
+		/// \brief Send a text message to session
+		template < typename SendTextTypeT >
 		void send_text(ws_identifier identifier, SendTextTypeT&& data){
 			ws_handler_base::send_text(
 				identifier, text_to_shared_const_buffer(
@@ -65,6 +76,17 @@ namespace webservice{
 		void send_binary(SendBinaryTypeT&& data){
 			ws_handler_base::send_binary(
 				binary_to_shared_const_buffer(
+					static_cast< SendBinaryTypeT&& >(data)));
+		}
+
+		/// \brief Send a binary message to session
+		template < typename SendBinaryTypeT >
+		void send_binary(
+			std::set< ws_identifier > const& identifiers,
+			SendBinaryTypeT&& data
+		){
+			ws_handler_base::send_binary(
+				identifiers, binary_to_shared_const_buffer(
 					static_cast< SendBinaryTypeT&& >(data)));
 		}
 
