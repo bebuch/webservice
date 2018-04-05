@@ -165,7 +165,7 @@ namespace webservice{
 
 
 		/// \brief Set the owning server
-		virtual void set_server(class server& server);
+		void set_server(class server& server);
 
 
 		/// \brief Get reference to server
