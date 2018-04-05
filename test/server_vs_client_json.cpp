@@ -131,17 +131,17 @@ std::string const test_text = "{\"key\":\"value\"}";
 struct ws_handler
 	: webservice::error_printing_ws_handler< webservice::json_ws_handler >
 {
-	void on_open(webservice::ws_server_session*, std::string const&)override{
+	void on_open(webservice::ws_identifier, std::string const&)override{
 		check(state_t::ws_server_open);
 		send_text(nlohmann::json::parse(test_text));
 	}
 
-	void on_close(webservice::ws_server_session*, std::string const&)override{
+	void on_close(webservice::ws_identifier, std::string const&)override{
 		check(state_t::ws_server_close);
 	}
 
 	void on_text(
-		webservice::ws_server_session*,
+		webservice::ws_identifier,
 		std::string const&,
 		nlohmann::json&& text
 	)override{
@@ -160,7 +160,7 @@ struct ws_handler
 	}
 
 	void on_binary(
-		webservice::ws_server_session*,
+		webservice::ws_identifier,
 		std::string const&,
 		std::vector< std::uint8_t >&& data
 	)override{

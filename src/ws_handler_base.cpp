@@ -10,13 +10,14 @@
 #include <webservice/server.hpp>
 
 #include "ws_session.hpp"
+#include "ws_sessions.hpp"
 
 
 namespace webservice{
 
 
 	ws_handler_base::ws_handler_base()
-		: list_(std::make_unique< sessions< ws_server_session > >()) {}
+		: list_(std::make_unique< ws_sessions >()) {}
 
 	ws_handler_base::~ws_handler_base() = default;
 
@@ -35,31 +36,31 @@ namespace webservice{
 	}
 
 	void ws_handler_base::on_open(
-		ws_server_session* /*session*/,
+		ws_identifier /*identifier*/,
 		std::string const& /*resource*/){}
 
 	void ws_handler_base::on_close(
-		ws_server_session* /*session*/,
+		ws_identifier /*identifier*/,
 		std::string const& /*resource*/){}
 
 	void ws_handler_base::on_text(
-		ws_server_session* /*session*/,
+		ws_identifier /*identifier*/,
 		std::string const& /*resource*/,
 		boost::beast::multi_buffer&& /*buffer*/){}
 
 	void ws_handler_base::on_binary(
-		ws_server_session* /*session*/,
+		ws_identifier /*identifier*/,
 		std::string const& /*resource*/,
 		boost::beast::multi_buffer&& /*buffer*/){}
 
 	void ws_handler_base::on_error(
-		ws_server_session* /*session*/,
+		ws_identifier /*identifier*/,
 		std::string const& /*resource*/,
 		ws_handler_location /*location*/,
 		boost::system::error_code /*ec*/){}
 
 	void ws_handler_base::on_exception(
-		ws_server_session* /*session*/,
+		ws_identifier /*identifier*/,
 		std::string const& /*resource*/,
 		std::exception_ptr /*error*/)noexcept{}
 
@@ -67,52 +68,82 @@ namespace webservice{
 
 
 	void ws_handler_base::send_text(
-		ws_server_session* session,
+		ws_identifier identifier,
 		shared_const_buffer buffer
 	){
-		session->send(std::make_tuple(text_tag{}, std::move(buffer)));
+		list_->shared_call([this, identifier, &buffer](
+			std::set< ws_identifier > const& identifiers
+		){
+			if(identifiers.count(identifier) == 0){
+				return;
+			}
+
+			identifier.session
+				->send(std::make_tuple(text_tag{}, std::move(buffer)));
+		});
 	}
 
 	void ws_handler_base::send_text(shared_const_buffer buffer){
 		list_->shared_call([this, &buffer](
-			std::list< ws_server_session >& sessions
+			std::set< ws_identifier > const& identifiers
 		){
-			for(auto& session: sessions){
-				send_text(&session, std::move(buffer));
+			for(auto identifier: identifiers){
+				identifier.session
+					->send(std::make_tuple(text_tag{}, std::move(buffer)));
 			}
 		});
 	}
 
 	void ws_handler_base::send_binary(
-		ws_server_session* session,
+		ws_identifier identifier,
 		shared_const_buffer buffer
 	){
-		session->send(std::make_tuple(binary_tag{}, std::move(buffer)));
+		list_->shared_call([this, identifier, &buffer](
+			std::set< ws_identifier > const& identifiers
+		){
+			if(identifiers.count(identifier) == 0){
+				return;
+			}
+
+			identifier.session
+				->send(std::make_tuple(binary_tag{}, std::move(buffer)));
+		});
 	}
 
 	void ws_handler_base::send_binary(shared_const_buffer buffer){
 		list_->shared_call([this, &buffer](
-			std::list< ws_server_session >& sessions
+			std::set< ws_identifier > const& identifiers
 		){
-			for(auto& session: sessions){
-				send_binary(&session, std::move(buffer));
+			for(auto identifier: identifiers){
+				identifier.session
+					->send(std::make_tuple(binary_tag{}, std::move(buffer)));
 			}
 		});
 	}
 
 	void ws_handler_base::close(
-		ws_server_session* session,
+		ws_identifier identifier,
 		boost::beast::string_view reason
 	){
-		session->send(boost::beast::websocket::close_reason(reason));
+		list_->shared_call([this, identifier, reason](
+			std::set< ws_identifier > const& identifiers
+		){
+			if(identifiers.count(identifier) == 0){
+				return;
+			}
+
+			identifier.session
+				->send(boost::beast::websocket::close_reason(reason));
+		});
 	}
 
 	void ws_handler_base::close(boost::beast::string_view reason){
 		list_->shared_call([this, reason](
-			std::list< ws_server_session >& sessions
+			std::set< ws_identifier > const& identifiers
 		){
-			for(auto& session: sessions){
-				close(&session, reason);
+			for(auto identifier: identifiers){
+				identifier.session
+					->send(boost::beast::websocket::close_reason(reason));
 			}
 		});
 	}

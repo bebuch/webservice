@@ -7,8 +7,8 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include "server_impl.hpp"
-#include "sessions.hpp"
 #include "http_session.hpp"
+#include "http_sessions.hpp"
 
 #include <webservice/http_request_handler.hpp>
 
@@ -22,7 +22,7 @@ namespace webservice{
 
 
 	http_request_handler::http_request_handler()
-		: list_(std::make_unique< sessions< http_session > >()) {}
+		: list_(std::make_unique< http_sessions >()) {}
 
 	http_request_handler::~http_request_handler(){}
 

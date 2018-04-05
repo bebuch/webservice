@@ -342,7 +342,7 @@ namespace webservice{
 			handler_strand_,
 			[this, lock = async_lock(async_calls_)]{
 				try{
-					service_.on_open(this, resource_);
+					service_.on_open(ws_identifier(this), resource_);
 				}catch(...){
 					on_exception(std::current_exception());
 				}
@@ -354,7 +354,7 @@ namespace webservice{
 			handler_strand_,
 			[this, lock = async_lock(async_calls_)]{
 				try{
-					service_.on_close(this, resource_);
+					service_.on_close(ws_identifier(this), resource_);
 				}catch(...){
 					on_exception(std::current_exception());
 				}
@@ -371,7 +371,8 @@ namespace webservice{
 				buffer = std::move(buffer)
 			]()mutable{
 				try{
-					service_.on_text(this, resource_, std::move(buffer));
+					service_.on_text(
+						ws_identifier(this), resource_, std::move(buffer));
 				}catch(...){
 					on_exception(std::current_exception());
 				}
@@ -388,7 +389,8 @@ namespace webservice{
 				buffer = std::move(buffer)
 			]()mutable{
 				try{
-					service_.on_binary(this, resource_, std::move(buffer));
+					service_.on_binary(
+						ws_identifier(this), resource_, std::move(buffer));
 				}catch(...){
 					on_exception(std::current_exception());
 				}
@@ -403,7 +405,8 @@ namespace webservice{
 			handler_strand_,
 			[this, lock = async_lock(async_calls_), location, ec]{
 				try{
-					service_.on_error(this, resource_, location, ec);
+					service_.on_error(
+						ws_identifier(this), resource_, location, ec);
 				}catch(...){
 					on_exception(std::current_exception());
 				}
@@ -416,13 +419,13 @@ namespace webservice{
 		boost::asio::post(
 			handler_strand_,
 			[this, lock = async_lock(async_calls_), error]{
-				service_.on_exception(this, resource_, error);
+				service_.on_exception(ws_identifier(this), resource_, error);
 			});
 	}
 
 
 	void ws_server_session::set_erase_fn(
-		sessions_erase_fn< ws_server_session >&& erase_fn
+		ws_sessions_erase_fn&& erase_fn
 	)noexcept{
 		erase_fn_ = std::move(erase_fn);
 	}

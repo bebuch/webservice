@@ -25,10 +25,6 @@ namespace webservice{
 		= boost::beast::http::response< boost::beast::http::string_body >;
 
 
-	template < typename T >
-	class sessions;
-
-
 	/// \brief Base class of all HTTP request handlers
 	class http_request_handler{
 	public:
@@ -89,7 +85,7 @@ namespace webservice{
 		std::chrono::milliseconds timeout_{15000};
 
 		/// \brief Pointer to implementation
-		std::unique_ptr< sessions< class http_session > > list_;
+		std::unique_ptr< class http_sessions > list_;
 	};
 
 	/// \brief Returns a bad request response

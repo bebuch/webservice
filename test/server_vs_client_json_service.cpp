@@ -130,7 +130,7 @@ std::string const test_text = "{\"key\":\"value\"}";
 
 struct ws_service_handler: webservice::ws_service_handler{
 	void on_error(
-		webservice::ws_server_session*,
+		webservice::ws_identifier,
 		std::string const&,
 		webservice::ws_handler_location location,
 		boost::system::error_code ec
@@ -140,7 +140,7 @@ struct ws_service_handler: webservice::ws_service_handler{
 	}
 
 	void on_exception(
-		webservice::ws_server_session*,
+		webservice::ws_identifier,
 		std::string const&,
 		std::exception_ptr error
 	)noexcept override{
@@ -159,17 +159,17 @@ struct ws_service_handler: webservice::ws_service_handler{
 struct ws_service
 	: webservice::error_printing_ws_service< webservice::json_ws_service >
 {
-	void on_open(webservice::ws_server_session*)override{
+	void on_open(webservice::ws_identifier)override{
 		check(state_t::ws_server_open);
 		send_text(nlohmann::json::parse(test_text));
 	}
 
-	void on_close(webservice::ws_server_session*)override{
+	void on_close(webservice::ws_identifier)override{
 		check(state_t::ws_server_close);
 	}
 
 	void on_text(
-		webservice::ws_server_session*,
+		webservice::ws_identifier,
 		nlohmann::json&& text
 	)override{
 		check(state_t::ws_server_json);
@@ -187,7 +187,7 @@ struct ws_service
 	}
 
 	void on_binary(
-		webservice::ws_server_session*,
+		webservice::ws_identifier,
 		std::vector< std::uint8_t >&& data
 	)override{
 		check(state_t::ws_server_binary);

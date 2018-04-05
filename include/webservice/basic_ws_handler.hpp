@@ -53,9 +53,9 @@ namespace webservice{
 
 		/// \brief Send a text message to session
 		template < typename SendTextTypeT >
-		void send_text(ws_server_session* session, SendTextTypeT&& data){
+		void send_text(ws_identifier identifier, SendTextTypeT&& data){
 			ws_handler_base::send_text(
-				session, text_to_shared_const_buffer(
+				identifier, text_to_shared_const_buffer(
 					static_cast< SendTextTypeT&& >(data)));
 		}
 
@@ -70,9 +70,9 @@ namespace webservice{
 
 		/// \brief Send a binary message to session
 		template < typename SendBinaryTypeT >
-		void send_binary(ws_server_session* session, SendBinaryTypeT&& data){
+		void send_binary(ws_identifier identifier, SendBinaryTypeT&& data){
 			ws_handler_base::send_binary(
-				session, binary_to_shared_const_buffer(
+				identifier, binary_to_shared_const_buffer(
 					static_cast< SendBinaryTypeT&& >(data)));
 		}
 
@@ -82,7 +82,7 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_text(
-			ws_server_session* /*session*/,
+			ws_identifier /*identifier*/,
 			std::string const& /*resource*/,
 			ReceiveTextType&& /*data*/){}
 
@@ -90,25 +90,25 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_binary(
-			ws_server_session* /*session*/,
+			ws_identifier /*identifier*/,
 			std::string const& /*resource*/,
 			ReceiveBinaryType&& /*data*/){}
 
 
 		void on_text(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& resource,
 			boost::beast::multi_buffer&& buffer
 		)final{
-			on_text(session, resource, multi_buffer_to_text(buffer));
+			on_text(identifier, resource, multi_buffer_to_text(buffer));
 		}
 
 		void on_binary(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& resource,
 			boost::beast::multi_buffer&& buffer
 		)final{
-			on_binary(session, resource, multi_buffer_to_binary(buffer));
+			on_binary(identifier, resource, multi_buffer_to_binary(buffer));
 		}
 	};
 #ifdef __clang__

@@ -19,36 +19,36 @@
 
 struct mirror_ws_handler: webservice::ws_handler{
 	void on_open(
-		webservice::ws_server_session* const session,
+		webservice::ws_identifier identifier,
 		std::string const& resource      // target of the session ("/path")
 	)override{
-		std::cout << "open session " << session << "->" << resource << "\n";
+		std::cout << "open session " << identifier << "->" << resource << "\n";
 	}
 
 	void on_close(
-		webservice::ws_server_session* const session,
+		webservice::ws_identifier identifier,
 		std::string const& /*resource*/  // target of the session ("/path")
 	)override{
-		std::cout << session << " closed\n";
+		std::cout << identifier << " closed\n";
 	}
 
 	void on_text(
-		webservice::ws_server_session* const session,
+		webservice::ws_identifier identifier,
 		std::string const& /*resource*/, // target of the session ("/path")
 		std::string&& text
 	)override{
-		std::cout << session << " received text message: " << text << "\n";
+		std::cout << identifier << " received text message: " << text << "\n";
 
 		// Send received text to all WebSocket sessions
 		send_text(text);
 	}
 
 	void on_binary(
-		webservice::ws_server_session* const session,
+		webservice::ws_identifier identifier,
 		std::string const& /*resource*/, // target of the session ("/path")
 		std::vector< std::uint8_t >&& data
 	)override{
-		std::cout << session << " received binary message\n";
+		std::cout << identifier << " received binary message\n";
 
 		// Send received data to all WebSocket sessions
 		send_binary(data);

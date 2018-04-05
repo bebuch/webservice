@@ -11,6 +11,7 @@
 
 #include "shared_const_buffer.hpp"
 #include "ws_handler_location.hpp"
+#include "ws_identifier.hpp"
 
 #include <boost/asio/ip/tcp.hpp>
 
@@ -30,12 +31,6 @@ namespace webservice{
 	using http_request
 		= boost::beast::http::request< boost::beast::http::string_body >;
 
-
-	template < typename T >
-	class sessions;
-
-
-	class ws_server_session;
 
 	class ws_handler_base{
 	public:
@@ -57,7 +52,7 @@ namespace webservice{
 
 		/// \brief Send a text message to session
 		void send_text(
-			ws_server_session* session,
+			ws_identifier identifier,
 			shared_const_buffer buffer);
 
 		/// \brief Send a text message to all session
@@ -65,7 +60,7 @@ namespace webservice{
 
 		/// \brief Send a binary message to session
 		void send_binary(
-			ws_server_session* session,
+			ws_identifier identifier,
 			shared_const_buffer buffer);
 
 		/// \brief Send a binary message to all session
@@ -73,7 +68,7 @@ namespace webservice{
 
 		/// \brief Shutdown session
 		void close(
-			ws_server_session* session,
+			ws_identifier identifier,
 			boost::beast::string_view reason);
 
 		/// \brief Shutdown all sessions
@@ -84,21 +79,21 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_open(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& resource);
 
 		/// \brief Called when a sessions ends
 		///
 		/// Default implementation does nothing.
 		virtual void on_close(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& resource);
 
 		/// \brief Called when a session received a text message
 		///
 		/// Default implementation does nothing.
 		virtual void on_text(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& resource,
 			boost::beast::multi_buffer&& buffer);
 
@@ -106,7 +101,7 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_binary(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& resource,
 			boost::beast::multi_buffer&& buffer);
 
@@ -114,7 +109,7 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_error(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& resource,
 			ws_handler_location location,
 			boost::system::error_code ec);
@@ -123,7 +118,7 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_exception(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& resource,
 			std::exception_ptr error)noexcept;
 
@@ -177,8 +172,7 @@ namespace webservice{
 		std::chrono::milliseconds ping_time_{15000};
 
 		/// \brief Pointer to implementation
-		std::unique_ptr< sessions< class ws_server_session > > list_;
-
+		std::unique_ptr< class ws_sessions > list_;
 	};
 
 

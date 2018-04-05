@@ -9,7 +9,7 @@
 #ifndef _webservice__ws_session__hpp_INCLUDED_
 #define _webservice__ws_session__hpp_INCLUDED_
 
-#include "sessions.hpp"
+#include "ws_sessions.hpp"
 
 #include <webservice/ws_handler_location.hpp>
 #include <webservice/ws_client_location.hpp>
@@ -188,9 +188,7 @@ namespace webservice{
 
 
 		/// \brief Set the function that is called on async_erase
-		void set_erase_fn(
-			sessions_erase_fn< ws_server_session >&& erase_fn
-		)noexcept;
+		void set_erase_fn(ws_sessions_erase_fn&& erase_fn)noexcept;
 
 		/// \brief Send a request to erase this session from the list
 		///
@@ -200,7 +198,7 @@ namespace webservice{
 
 
 	private:
-		sessions_erase_fn< ws_server_session > erase_fn_;
+		ws_sessions_erase_fn erase_fn_;
 
 		std::once_flag erase_flag_;
 

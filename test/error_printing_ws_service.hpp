@@ -10,6 +10,7 @@
 #define _webservice__error_printing_ws_service__hpp_INCLUDED_
 
 #include <webservice/ws_handler_location.hpp>
+#include <webservice/ws_identifier.hpp>
 
 #include <boost/system/error_code.hpp>
 #include <boost/system/system_error.hpp>
@@ -27,7 +28,7 @@ namespace webservice{
 		using Base::Base;
 
 		void on_error(
-			class ws_server_session*,
+			ws_identifier,
 			ws_handler_location location,
 			boost::system::error_code ec
 		)override{
@@ -36,7 +37,7 @@ namespace webservice{
 		}
 
 		void on_exception(
-			class ws_server_session*,
+			ws_identifier,
 			std::exception_ptr error
 		)noexcept override{
 			try{

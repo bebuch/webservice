@@ -39,32 +39,32 @@ namespace webservice{
 		/// \brief Called when a sessions starts
 		///
 		/// Default implementation does nothing.
-		virtual void on_open(ws_server_session* /*session*/){}
+		virtual void on_open(ws_identifier /*identifier*/){}
 
 		/// \brief Called when a sessions ends
 		///
 		/// Default implementation does nothing.
-		virtual void on_close(ws_server_session* /*session*/){}
+		virtual void on_close(ws_identifier /*identifier*/){}
 
 		/// \brief Called when a session received a text message
 		///
 		/// Default implementation does nothing.
 		virtual void on_text(
-			ws_server_session* /*session*/,
+			ws_identifier /*identifier*/,
 			ReceiveTextType&& /*data*/){}
 
 		/// \brief Called when a session received a binary message
 		///
 		/// Default implementation does nothing.
 		virtual void on_binary(
-			ws_server_session* /*session*/,
+			ws_identifier /*identifier*/,
 			ReceiveBinaryType&& /*data*/){}
 
 		/// \brief Called when an error occured
 		///
 		/// Default implementation does nothing.
 		virtual void on_error(
-			ws_server_session* /*session*/,
+			ws_identifier /*identifier*/,
 			ws_handler_location /*location*/,
 			boost::system::error_code /*ec*/){}
 
@@ -72,7 +72,7 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_exception(
-			ws_server_session* /*session*/,
+			ws_identifier /*identifier*/,
 			std::exception_ptr /*error*/)noexcept{}
 
 
@@ -80,13 +80,13 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		void on_open(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& /*resource*/
 		)final{
 			try{
-				on_open(session);
+				on_open(identifier);
 			}catch(...){
-				on_exception(session, std::current_exception());
+				on_exception(identifier, std::current_exception());
 			}
 		}
 
@@ -94,13 +94,13 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		void on_close(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& /*resource*/
 		)final{
 			try{
-				on_close(session);
+				on_close(identifier);
 			}catch(...){
-				on_exception(session, std::current_exception());
+				on_exception(identifier, std::current_exception());
 			}
 		}
 
@@ -108,14 +108,14 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		void on_text(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& /*resource*/,
 			ReceiveTextType&& data
 		)final{
 			try{
-				on_text(session, std::move(data));
+				on_text(identifier, std::move(data));
 			}catch(...){
-				on_exception(session, std::current_exception());
+				on_exception(identifier, std::current_exception());
 			}
 		}
 
@@ -123,14 +123,14 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		void on_binary(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& /*resource*/,
 			ReceiveBinaryType&& data
 		)final{
 			try{
-				on_binary(session, std::move(data));
+				on_binary(identifier, std::move(data));
 			}catch(...){
-				on_exception(session, std::current_exception());
+				on_exception(identifier, std::current_exception());
 			}
 		}
 
@@ -138,15 +138,15 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		void on_error(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& /*resource*/,
 			ws_handler_location location,
 			boost::system::error_code ec
 		)final{
 			try{
-				on_error(session, location, ec);
+				on_error(identifier, location, ec);
 			}catch(...){
-				on_exception(session, std::current_exception());
+				on_exception(identifier, std::current_exception());
 			}
 		}
 
@@ -154,11 +154,11 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		void on_exception(
-			ws_server_session* session,
+			ws_identifier identifier,
 			std::string const& /*resource*/,
 			std::exception_ptr error
 		)noexcept final{
-			on_exception(session, error);
+			on_exception(identifier, error);
 		}
 	};
 #ifdef __clang__
