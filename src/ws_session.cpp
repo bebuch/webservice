@@ -268,6 +268,8 @@ namespace webservice{
 
 		// As long as async calls are pending
 		while(async_calls_ > 0){
+			assert(service_.server() != nullptr);
+
 			// Request the server to run a handler async
 			if(service_.server()->poll_one() == 0){
 				// If no handler was waiting, the pending one must

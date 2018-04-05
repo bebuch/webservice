@@ -104,7 +104,7 @@ namespace webservice{
 		ws_identifier identifier,
 		shared_const_buffer buffer
 	){
-		list_->shared_call([this, identifier, &buffer](
+		list_->shared_call([identifier, &buffer](
 			std::set< ws_identifier > const& identifiers
 		){
 			if(identifiers.count(identifier) == 0){
@@ -120,7 +120,7 @@ namespace webservice{
 		std::set< ws_identifier > const& identifiers,
 		shared_const_buffer buffer
 	){
-		list_->shared_call([this, identifiers, &buffer](
+		list_->shared_call([identifiers, &buffer](
 			std::set< ws_identifier > const& valid_identifiers
 		){
 			auto valids = set_intersection(identifiers, valid_identifiers);
@@ -132,7 +132,7 @@ namespace webservice{
 	}
 
 	void ws_handler_base::send_text(shared_const_buffer buffer){
-		list_->shared_call([this, &buffer](
+		list_->shared_call([&buffer](
 			std::set< ws_identifier > const& identifiers
 		){
 			for(auto identifier: identifiers){
@@ -146,7 +146,7 @@ namespace webservice{
 		ws_identifier identifier,
 		shared_const_buffer buffer
 	){
-		list_->shared_call([this, identifier, &buffer](
+		list_->shared_call([identifier, &buffer](
 			std::set< ws_identifier > const& identifiers
 		){
 			if(identifiers.count(identifier) == 0){
@@ -162,7 +162,7 @@ namespace webservice{
 		std::set< ws_identifier > const& identifiers,
 		shared_const_buffer buffer
 	){
-		list_->shared_call([this, identifiers, &buffer](
+		list_->shared_call([identifiers, &buffer](
 			std::set< ws_identifier > const& valid_identifiers
 		){
 			auto valids = set_intersection(identifiers, valid_identifiers);
@@ -174,7 +174,7 @@ namespace webservice{
 	}
 
 	void ws_handler_base::send_binary(shared_const_buffer buffer){
-		list_->shared_call([this, &buffer](
+		list_->shared_call([&buffer](
 			std::set< ws_identifier > const& identifiers
 		){
 			for(auto identifier: identifiers){
@@ -188,7 +188,7 @@ namespace webservice{
 		ws_identifier identifier,
 		boost::beast::string_view reason
 	){
-		list_->shared_call([this, identifier, reason](
+		list_->shared_call([identifier, reason](
 			std::set< ws_identifier > const& identifiers
 		){
 			if(identifiers.count(identifier) == 0){
@@ -204,7 +204,7 @@ namespace webservice{
 		std::set< ws_identifier > const& identifiers,
 		boost::beast::string_view reason
 	){
-		list_->shared_call([this, identifiers, reason](
+		list_->shared_call([identifiers, reason](
 			std::set< ws_identifier > const& valid_identifiers
 		){
 			auto valids = set_intersection(identifiers, valid_identifiers);
@@ -216,7 +216,7 @@ namespace webservice{
 	}
 
 	void ws_handler_base::close(boost::beast::string_view reason){
-		list_->shared_call([this, reason](
+		list_->shared_call([reason](
 			std::set< ws_identifier > const& identifiers
 		){
 			for(auto identifier: identifiers){
