@@ -99,6 +99,13 @@ exe destruction
 	/boost//system
 	;
 
+exe extern_destruction
+	:
+	extern_destruction.cpp
+	/webservice//webservice
+	/boost//system
+	;
+
 exe text_ping_pong
 	:
 	text_ping_pong.cpp
