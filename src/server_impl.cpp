@@ -28,8 +28,7 @@ namespace webservice{
 		: server_(server)
 		, handler_([&server, handler = std::move(handler)]()mutable{
 				if(!handler){
-					handler =
-						std::make_unique< http_request_handler >();
+					handler = std::make_unique< http_request_handler >();
 				}
 				handler->set_server(server);
 				return std::move(handler);
@@ -42,8 +41,7 @@ namespace webservice{
 			}())
 		, error_handler_([error_handler = std::move(error_handler)]()mutable{
 				if(!error_handler){
-					error_handler =
-						std::make_unique< class error_handler >();
+					error_handler = std::make_unique< class error_handler >();
 				}
 				return std::move(error_handler);
 			}())
@@ -82,6 +80,9 @@ namespace webservice{
 	}
 
 	void server_impl::shutdown()noexcept{
+		if(has_ws()){
+			ws().on_shutdown();
+		}
 		listener_.shutdown();
 	}
 

@@ -139,7 +139,7 @@ namespace webservice{
 
 
 		/// \brief Shutdown hint called by the server
-		virtual void shutdown()noexcept;
+		virtual void on_shutdown()noexcept;
 
 
 		/// \brief Set max size of incomming WebSocket messages

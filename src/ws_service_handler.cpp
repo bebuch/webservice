@@ -90,11 +90,11 @@ namespace webservice{
 		}
 	}
 
-	void ws_service_handler::shutdown()noexcept{
+	void ws_service_handler::on_shutdown()noexcept{
 		if(!impl_->shutdown_.exchange(true)){
 			std::shared_lock< std::shared_timed_mutex > lock(impl_->mutex);
 			for(auto& service: impl_->services){
-				service.second->shutdown();
+				service.second->on_shutdown();
 			}
 		}
 	}

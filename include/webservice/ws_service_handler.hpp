@@ -55,7 +55,7 @@ namespace webservice{
 
 
 		/// \brief Call shutdown on all services and don't accept any new ones
-		void shutdown()noexcept override;
+		void on_shutdown()noexcept override;
 
 
 	private:
