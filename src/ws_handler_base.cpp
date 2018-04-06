@@ -52,7 +52,9 @@ namespace webservice{
 	ws_handler_base::ws_handler_base()
 		: list_(std::make_unique< ws_sessions >()) {}
 
-	ws_handler_base::~ws_handler_base() = default;
+	ws_handler_base::~ws_handler_base(){
+		list_->block();
+	}
 
 
 	void ws_handler_base::emplace(

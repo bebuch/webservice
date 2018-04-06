@@ -31,8 +31,6 @@ namespace webservice{
 
 		http_sessions(http_sessions const&) = default;
 
-		~http_sessions();
-
 
 		void set_server(class server& server);
 
@@ -60,6 +58,8 @@ namespace webservice{
 		void erase(iterator iter);
 
 		void shutdown()noexcept;
+
+		void block()noexcept;
 
 
 	private:

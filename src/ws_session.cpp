@@ -266,6 +266,16 @@ namespace webservice{
 				}
 			});
 
+		wait_on_last_task();
+
+		if(is_open_){
+			on_close();
+		}
+
+		wait_on_last_task();
+	}
+
+	void ws_server_session::wait_on_last_task()noexcept{
 		// As long as async calls are pending
 		while(async_calls_ > 0){
 			assert(service_.server() != nullptr);
@@ -276,10 +286,6 @@ namespace webservice{
 				// currently run in another thread
 				std::this_thread::yield();
 			}
-		}
-
-		if(is_open_){
-			on_close();
 		}
 	}
 

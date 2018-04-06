@@ -24,7 +24,9 @@ namespace webservice{
 	http_request_handler::http_request_handler()
 		: list_(std::make_unique< http_sessions >()) {}
 
-	http_request_handler::~http_request_handler(){}
+	http_request_handler::~http_request_handler(){
+		list_->block();
+	}
 
 
 	void http_request_handler::emplace(boost::asio::ip::tcp::socket&& socket){

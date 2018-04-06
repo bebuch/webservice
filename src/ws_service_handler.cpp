@@ -84,6 +84,7 @@ namespace webservice{
 		std::unique_lock< std::shared_timed_mutex > lock(impl_->mutex);
 		auto iter = impl_->services.find(name);
 		if(iter != impl_->services.end()){
+			iter->second->shutdown();
 			impl_->services.erase(iter);
 		}else{
 			throw std::logic_error("service '" + name + "' doesn't exist");

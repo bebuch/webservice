@@ -17,17 +17,6 @@
 namespace webservice{
 
 
-	ws_sessions::~ws_sessions(){
-		shutdown();
-		while(!is_empty()){
-			assert(server_ != nullptr);
-			if(server_->poll_one() == 0){
-				std::this_thread::yield();
-			}
-		}
-	}
-
-
 	void ws_sessions::set_server(class server& server){
 		server_ = &server;
 	}
@@ -61,6 +50,19 @@ namespace webservice{
 		for(auto& session: list_){
 			session.async_erase();
 		}
+	}
+
+	void ws_sessions::block()noexcept{
+		// Block until last element has been removed from list
+		while(!is_empty()){
+			assert(server() != nullptr);
+			if(server()->poll_one() == 0){
+				std::this_thread::yield();
+			}
+		}
+
+		// Block until last erase has been completed
+		std::unique_lock< std::shared_timed_mutex > lock(mutex_);
 	}
 
 
