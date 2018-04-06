@@ -11,22 +11,19 @@
 
 #include <webservice/server.hpp>
 
+#include <thread>
+
 
 namespace webservice{
 
 
 	ws_sessions::~ws_sessions(){
-		std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-		shutdown_ = true;
-
-		for(auto& session: list_){
-			session.async_erase();
-		}
-		lock.unlock();
-
+		shutdown();
 		while(!is_empty()){
 			assert(server_ != nullptr);
-			server_->poll_one();
+			if(server_->poll_one() == 0){
+				std::this_thread::yield();
+			}
 		}
 	}
 
@@ -55,6 +52,15 @@ namespace webservice{
 		std::unique_lock< std::shared_timed_mutex > lock(mutex_);
 		set_.erase(ws_identifier(&*iter));
 		list_.erase(iter);
+	}
+
+	void ws_sessions::shutdown()noexcept{
+		std::shared_lock< std::shared_timed_mutex > lock(mutex_);
+		shutdown_ = true;
+
+		for(auto& session: list_){
+			session.async_erase();
+		}
 	}
 
 

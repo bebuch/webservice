@@ -60,9 +60,15 @@ namespace webservice{
 		/// Default implementation does nothing.
 		virtual void on_exception(std::exception_ptr error)noexcept;
 
+		/// \brief Shutdown hint called by shutdown()
+		virtual void on_shutdown()noexcept;
+
+		/// \brief Shutdown hint called by the server
+		void shutdown()noexcept;
+
 
 		/// \brief Set the owning server
-		virtual void set_server(class server& server);
+		void set_server(class server& server);
 
 
 		/// \brief Set session timeout

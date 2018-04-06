@@ -11,25 +11,19 @@
 
 #include <webservice/server.hpp>
 
-#include <list>
-#include <shared_mutex>
+#include <thread>
 
 
 namespace webservice{
 
 
 	http_sessions::~http_sessions(){
-		std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-		shutdown_ = true;
-
-		for(auto& session: list_){
-			session.async_erase();
-		}
-		lock.unlock();
-
+		shutdown();
 		while(!is_empty()){
 			assert(server_ != nullptr);
-			server_->poll_one();
+			if(server_->poll_one() == 0){
+				std::this_thread::yield();
+			}
 		}
 	}
 
@@ -56,6 +50,15 @@ namespace webservice{
 	void http_sessions::erase(iterator iter){
 		std::unique_lock< std::shared_timed_mutex > lock(mutex_);
 		list_.erase(iter);
+	}
+
+	void http_sessions::shutdown()noexcept{
+		std::shared_lock< std::shared_timed_mutex > lock(mutex_);
+		shutdown_ = true;
+
+		for(auto& session: list_){
+			session.async_erase();
+		}
 	}
 
 

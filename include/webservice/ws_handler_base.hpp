@@ -137,9 +137,11 @@ namespace webservice{
 			std::string const& resource,
 			std::exception_ptr error)noexcept;
 
+		/// \brief Shutdown hint called by shutdown()
+		virtual void on_shutdown()noexcept;
 
 		/// \brief Shutdown hint called by the server
-		virtual void on_shutdown()noexcept;
+		void shutdown()noexcept;
 
 
 		/// \brief Set max size of incomming WebSocket messages

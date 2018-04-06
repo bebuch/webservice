@@ -99,6 +99,11 @@ namespace webservice{
 
 	void ws_handler_base::on_shutdown()noexcept{}
 
+	void ws_handler_base::shutdown()noexcept{
+		list_->shutdown();
+		on_shutdown();
+	}
+
 
 	void ws_handler_base::send_text(
 		ws_identifier identifier,

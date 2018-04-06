@@ -80,8 +80,9 @@ namespace webservice{
 	}
 
 	void server_impl::shutdown()noexcept{
+		http().shutdown();
 		if(has_ws()){
-			ws().on_shutdown();
+			ws().shutdown();
 		}
 		listener_.shutdown();
 	}

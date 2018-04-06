@@ -46,6 +46,13 @@ namespace webservice{
 	void http_request_handler::on_exception(
 		std::exception_ptr /*error*/)noexcept{}
 
+	void http_request_handler::on_shutdown()noexcept{}
+
+	void http_request_handler::shutdown()noexcept{
+		list_->shutdown();
+		on_shutdown();
+	}
+
 
 	http_string_response bad_request(
 		http_request const& req,

@@ -59,6 +59,8 @@ namespace webservice{
 
 		void erase(iterator iter);
 
+		void shutdown()noexcept;
+
 
 	private:
 		bool shutdown_{false};
