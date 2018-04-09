@@ -81,6 +81,9 @@ namespace webservice{
 	}
 
 	void ws_service_handler::erase_service(std::string name){
+		// Services are erased by destructor if shutdown is active
+		if(impl_->shutdown_) return;
+
 		std::unique_lock< std::shared_timed_mutex > lock(impl_->mutex);
 		auto iter = impl_->services.find(name);
 		if(iter != impl_->services.end()){
