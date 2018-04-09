@@ -55,7 +55,7 @@ namespace webservice{
 		if(iter != impl_->services.end()){
 			iter->second->emplace(std::move(socket), std::move(req));
 		}else{
-			throw std::logic_error("service '" + name + "' doesn't exist");
+			throw std::logic_error("service(" + name + ") doesn't exist");
 		}
 	}
 
@@ -76,7 +76,7 @@ namespace webservice{
 		if(r.second){
 			r.first->second->set_server(*server());
 		}else{
-			throw std::logic_error("service '" + name + "' already exists");
+			throw std::logic_error("service(" + name + ") already exists");
 		}
 	}
 
@@ -87,7 +87,7 @@ namespace webservice{
 			iter->second->shutdown();
 			impl_->services.erase(iter);
 		}else{
-			throw std::logic_error("service '" + name + "' doesn't exist");
+			throw std::logic_error("service(" + name + ") doesn't exist");
 		}
 	}
 
