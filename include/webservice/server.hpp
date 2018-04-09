@@ -62,6 +62,9 @@ namespace webservice{
 		/// \brief Get executor
 		boost::asio::io_context::executor_type get_executor();
 
+		/// \brief Get reference to the internal io_context
+		boost::asio::io_context& get_io_context()noexcept;
+
 
 		/// \brief Run one task in server threads
 		std::size_t poll_one()noexcept;

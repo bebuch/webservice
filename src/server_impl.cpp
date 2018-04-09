@@ -91,6 +91,10 @@ namespace webservice{
 		return ioc_.get_executor();
 	}
 
+	boost::asio::io_context& server_impl::get_io_context()noexcept{
+		return ioc_;
+	}
+
 	std::size_t server_impl::poll_one()noexcept{
 		try{
 			return ioc_.poll_one();
