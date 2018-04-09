@@ -44,13 +44,13 @@ namespace webservice{
 	){
 		assert(server() != nullptr);
 
+		std::unique_lock< std::shared_timed_mutex > lock(impl_->mutex);
 		if(impl_->shutdown_){
 			throw std::runtime_error("can not emplace session after shutdown");
 		}
 
 		std::string name(req.target());
 
-		std::unique_lock< std::shared_timed_mutex > lock(impl_->mutex);
 		auto iter = impl_->services.find(name);
 		if(iter != impl_->services.end()){
 			iter->second->emplace(std::move(socket), std::move(req));
@@ -95,7 +95,7 @@ namespace webservice{
 		if(!impl_->shutdown_.exchange(true)){
 			std::shared_lock< std::shared_timed_mutex > lock(impl_->mutex);
 			for(auto& service: impl_->services){
-				service.second->on_shutdown();
+				service.second->shutdown();
 			}
 		}
 	}
