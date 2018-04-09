@@ -196,9 +196,6 @@ namespace webservice{
 		/// ignored.
 		void async_erase();
 
-		/// \brief Wait until async_calls_ becomes 0
-		void wait_on_last_task()noexcept;
-
 
 	private:
 		ws_sessions_erase_fn erase_fn_;

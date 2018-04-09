@@ -266,16 +266,6 @@ namespace webservice{
 				}
 			});
 
-		wait_on_last_task();
-
-		if(is_open_){
-			on_close();
-		}
-
-		wait_on_last_task();
-	}
-
-	void ws_server_session::wait_on_last_task()noexcept{
 		// As long as async calls are pending
 		while(async_calls_ > 0){
 			assert(service_.server() != nullptr);
@@ -287,6 +277,8 @@ namespace webservice{
 				std::this_thread::yield();
 			}
 		}
+
+		on_close();
 	}
 
 	void ws_server_session::do_accept(http_request&& req){
@@ -358,15 +350,11 @@ namespace webservice{
 	}
 
 	void ws_server_session::on_close()noexcept{
-		boost::asio::post(
-			handler_strand_,
-			[this, lock = async_lock(async_calls_)]{
-				try{
-					service_.on_close(ws_identifier(this), resource_);
-				}catch(...){
-					on_exception(std::current_exception());
-				}
-			});
+		try{
+			service_.on_close(ws_identifier(this), resource_);
+		}catch(...){
+			on_exception(std::current_exception());
+		}
 	}
 
 	void ws_server_session::on_text(
