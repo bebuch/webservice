@@ -36,6 +36,21 @@ namespace webservice{
 		return list_.size();
 	}
 
+	http_sessions::iterator http_sessions::emplace(
+		boost::asio::ip::tcp::socket&& socket,
+		server_impl& server
+	){
+		std::unique_lock< std::shared_timed_mutex > lock(mutex_);
+		if(shutdown_){
+			throw std::logic_error(
+				"emplace in http_sessions while shutdown");
+		}
+
+		auto iter = list_.emplace(list_.end(), std::move(socket), server);
+		iter->set_erase_fn(http_sessions_erase_fn(this, iter));
+		return iter;
+	}
+
 	void http_sessions::erase(iterator iter){
 		std::unique_lock< std::shared_timed_mutex > lock(mutex_);
 		list_.erase(iter);

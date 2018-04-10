@@ -36,6 +36,23 @@ namespace webservice{
 		return list_.size();
 	}
 
+	ws_sessions::iterator ws_sessions::emplace(
+		ws_stream&& ws,
+		ws_handler_base& service,
+		std::chrono::milliseconds ping_time
+	){
+		std::unique_lock< std::shared_timed_mutex > lock(mutex_);
+		if(shutdown_){
+			throw std::logic_error("emplace in ws_sessions while shutdown");
+		}
+
+		auto iter = list_.emplace(list_.end(),
+			std::move(ws), service, ping_time);
+		set_.insert(set_.end(), ws_identifier(&*iter));
+		iter->set_erase_fn(ws_sessions_erase_fn(this, iter));
+		return iter;
+	}
+
 
 	void ws_sessions::erase(iterator iter){
 		std::unique_lock< std::shared_timed_mutex > lock(mutex_);

@@ -13,6 +13,8 @@
 
 #include <webservice/ws_identifier.hpp>
 
+#include <boost/beast/websocket.hpp>
+
 #include <set>
 #include <shared_mutex>
 
@@ -20,7 +22,11 @@
 namespace webservice{
 
 
+	using ws_stream
+		= boost::beast::websocket::stream< boost::asio::ip::tcp::socket >;
+
 	class ws_server_session;
+	class ws_handler_base;
 
 	class ws_sessions{
 	public:
@@ -42,24 +48,12 @@ namespace webservice{
 
 		std::size_t size()const;
 
-		template < typename ... Ts >
-		iterator emplace(Ts&& ... vs){
-			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-			if(shutdown_){
-				throw std::logic_error("emplace in ws_sessions while shutdown");
-			}
+		iterator emplace(
+			ws_stream&& ws,
+			ws_handler_base& service,
+			std::chrono::milliseconds ping_time
+		);
 
-			auto iter = list_.emplace(list_.end(), static_cast< Ts&& >(vs) ...);
-			set_.insert(set_.end(), ws_identifier(&*iter));
-			iter->set_erase_fn(ws_sessions_erase_fn(this, iter));
-			return iter;
-		}
-
-		template < typename Fn >
-		auto unique_call(Fn&& fn){
-			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-			return fn(set_);
-		}
 
 		template < typename Fn >
 		auto shared_call(Fn&& fn)const{

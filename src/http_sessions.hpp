@@ -41,18 +41,10 @@ namespace webservice{
 
 		std::size_t size()const;
 
-		template < typename ... Ts >
-		iterator emplace(Ts&& ... vs){
-			std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-			if(shutdown_){
-				throw std::logic_error(
-					"emplace in http_sessions while shutdown");
-			}
-
-			auto iter = list_.emplace(list_.end(), static_cast< Ts&& >(vs) ...);
-			iter->set_erase_fn(http_sessions_erase_fn(this, iter));
-			return iter;
-		}
+		iterator emplace(
+			boost::asio::ip::tcp::socket&& socket,
+			server_impl& server
+		);
 
 
 		void erase(iterator iter);
