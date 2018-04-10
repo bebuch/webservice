@@ -408,19 +408,9 @@ namespace webservice{
 			}, std::allocator< void >());
 	}
 
-
-	void ws_server_session::set_erase_fn(
-		ws_sessions_erase_fn&& erase_fn
-	)noexcept{
-		erase_fn_ = std::move(erase_fn);
-	}
-
 	void ws_server_session::async_erase(){
 		std::call_once(erase_flag_, [this]{
-				service_.server()->impl().get_executor().post(
-					[this]{
-						erase_fn_();
-					}, std::allocator< void >());
+				service_.async_erase(this);
 			});
 	}
 

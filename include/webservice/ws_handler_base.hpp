@@ -174,6 +174,10 @@ namespace webservice{
 		class server* server()noexcept;
 
 
+		/// \brief Called by a ws_server_session
+		void async_erase(class ws_server_session* session);
+
+
 	private:
 		/// \brief Pointer to the server object
 		class server* server_ = nullptr;

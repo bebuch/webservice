@@ -19,24 +19,24 @@ namespace webservice{
 	namespace{
 
 
-		std::set< ws_identifier > set_intersection(
-			std::set< ws_identifier > set1,
-			std::set< ws_identifier > set2
+		std::set< ws_server_session* > set_intersection(
+			ws_sessions::set const& set1,
+			std::set< ws_identifier > const& set2
 		){
 			auto first1 = set1.begin();
 			auto last1 = set1.end();
 			auto first2 = set2.begin();
 			auto last2 = set2.end();
 
-			std::set< ws_identifier > result;
+			std::set< ws_server_session* > result;
 			auto d_first = std::inserter(result, result.begin());
 
 			while(first1 != last1 && first2 != last2){
-				if(*first1 < *first2){
+				if(set1.key_comp()(*first1, *first2)){
 					++first1;
 				}else{
-					if(!(*first2 < *first1)){
-						*d_first++ = *first1++;
+					if(!(set1.key_comp()(*first2, *first1))){
+						*d_first++ = (*first1++).get();
 					}
 					++first2;
 				}
@@ -49,8 +49,7 @@ namespace webservice{
 	}
 
 
-	ws_handler_base::ws_handler_base()
-		: list_(std::make_unique< ws_sessions >()) {}
+	ws_handler_base::ws_handler_base() = default;
 
 	ws_handler_base::~ws_handler_base(){
 		list_->block();
@@ -66,7 +65,7 @@ namespace webservice{
 		ws_stream ws(std::move(socket));
 		ws.read_message_max(max_read_message_size());
 
-		list_->emplace(std::move(req), std::move(ws), *this, ping_time());
+		list_->async_emplace(std::move(req), std::move(ws), *this, ping_time());
 	}
 
 	void ws_handler_base::on_open(
@@ -110,41 +109,44 @@ namespace webservice{
 		ws_identifier identifier,
 		shared_const_buffer buffer
 	){
-		list_->shared_call([identifier, &buffer](
-			std::set< ws_identifier > const& identifiers
-		){
-			if(identifiers.count(identifier) == 0){
-				return;
-			}
+		list_->async_call(
+			[identifier, buffer = std::move(buffer)](
+				ws_sessions::set const& sessions
+			)mutable{
+				if(sessions.count(identifier) == 0){
+					return;
+				}
 
-			identifier.session
-				->send(std::make_tuple(text_tag{}, std::move(buffer)));
-		});
+				identifier.session->send(
+					std::make_tuple(text_tag{}, std::move(buffer)));
+			});
 	}
 
 	void ws_handler_base::send_text(
 		std::set< ws_identifier > const& identifiers,
 		shared_const_buffer buffer
 	){
-		list_->shared_call([identifiers, &buffer](
-			std::set< ws_identifier > const& valid_identifiers
-		){
-			auto valids = set_intersection(identifiers, valid_identifiers);
-			for(auto identifier: valids){
-				identifier.session
-					->send(std::make_tuple(text_tag{}, std::move(buffer)));
-			}
-		});
+		list_->async_call(
+			[identifiers, buffer = std::move(buffer)](
+				ws_sessions::set const& sessions
+			)mutable{
+				auto valid_sessions = set_intersection(sessions, identifiers);
+				for(auto session: valid_sessions){
+					session->send(
+						std::make_tuple(text_tag{}, std::move(buffer)));
+				}
+			});
 	}
 
 	void ws_handler_base::send_text(shared_const_buffer buffer){
-		list_->shared_call([&buffer](
-			std::set< ws_identifier > const& identifiers
-		){
-			for(auto identifier: identifiers){
-				identifier.session
-					->send(std::make_tuple(text_tag{}, std::move(buffer)));
-			}
+		list_->async_call(
+			[buffer = std::move(buffer)](
+				ws_sessions::set const& sessions
+			)mutable{
+				for(auto& session: sessions){
+					session->send(
+						std::make_tuple(text_tag{}, std::move(buffer)));
+				}
 		});
 	}
 
@@ -152,93 +154,97 @@ namespace webservice{
 		ws_identifier identifier,
 		shared_const_buffer buffer
 	){
-		list_->shared_call([identifier, &buffer](
-			std::set< ws_identifier > const& identifiers
-		){
-			if(identifiers.count(identifier) == 0){
-				return;
-			}
+		list_->async_call(
+			[identifier, buffer = std::move(buffer)](
+				ws_sessions::set const& sessions
+			)mutable{
+				if(sessions.count(identifier) == 0){
+					return;
+				}
 
-			identifier.session
-				->send(std::make_tuple(binary_tag{}, std::move(buffer)));
-		});
+				identifier.session->send(
+					std::make_tuple(binary_tag{}, std::move(buffer)));
+			});
 	}
 
 	void ws_handler_base::send_binary(
 		std::set< ws_identifier > const& identifiers,
 		shared_const_buffer buffer
 	){
-		list_->shared_call([identifiers, &buffer](
-			std::set< ws_identifier > const& valid_identifiers
-		){
-			auto valids = set_intersection(identifiers, valid_identifiers);
-			for(auto identifier: valids){
-				identifier.session
-					->send(std::make_tuple(binary_tag{}, std::move(buffer)));
-			}
-		});
+		list_->async_call(
+			[identifiers, buffer = std::move(buffer)](
+				ws_sessions::set const& sessions
+			)mutable{
+				auto valid_sessions = set_intersection(sessions, identifiers);
+				for(auto session: valid_sessions){
+					session->send(
+						std::make_tuple(binary_tag{}, std::move(buffer)));
+				}
+			});
 	}
 
 	void ws_handler_base::send_binary(shared_const_buffer buffer){
-		list_->shared_call([&buffer](
-			std::set< ws_identifier > const& identifiers
-		){
-			for(auto identifier: identifiers){
-				identifier.session
-					->send(std::make_tuple(binary_tag{}, std::move(buffer)));
-			}
-		});
+		list_->async_call(
+			[buffer = std::move(buffer)](
+				ws_sessions::set const& sessions
+			)mutable{
+				for(auto& session: sessions){
+					session->send(
+						std::make_tuple(binary_tag{}, std::move(buffer)));
+				}
+			});
 	}
 
 	void ws_handler_base::close(
 		ws_identifier identifier,
 		boost::beast::string_view reason
 	){
-		list_->shared_call([identifier, reason](
-			std::set< ws_identifier > const& identifiers
-		){
-			if(identifiers.count(identifier) == 0){
-				return;
-			}
+		list_->async_call(
+			[identifier, reason](ws_sessions::set const& sessions){
+				if(sessions.count(identifier) == 0){
+					return;
+				}
 
-			identifier.session
-				->send(boost::beast::websocket::close_reason(reason));
-		});
+				identifier.session->send(
+					boost::beast::websocket::close_reason(reason));
+			});
 	}
 
 	void ws_handler_base::close(
 		std::set< ws_identifier > const& identifiers,
 		boost::beast::string_view reason
 	){
-		list_->shared_call([identifiers, reason](
-			std::set< ws_identifier > const& valid_identifiers
-		){
-			auto valids = set_intersection(identifiers, valid_identifiers);
-			for(auto identifier: valids){
-				identifier.session
-					->send(boost::beast::websocket::close_reason(reason));
-			}
-		});
+		list_->async_call(
+			[identifiers, reason](ws_sessions::set const& sessions){
+				auto valid_sessions = set_intersection(sessions, identifiers);
+				for(auto session: valid_sessions){
+					session->send(
+						boost::beast::websocket::close_reason(reason));
+				}
+			});
 	}
 
 	void ws_handler_base::close(boost::beast::string_view reason){
-		list_->shared_call([reason](
-			std::set< ws_identifier > const& identifiers
-		){
-			for(auto identifier: identifiers){
-				identifier.session
-					->send(boost::beast::websocket::close_reason(reason));
-			}
-		});
+		list_->async_call(
+			[reason](ws_sessions::set const& sessions){
+				for(auto& session: sessions){
+					session->send(
+						boost::beast::websocket::close_reason(reason));
+				}
+			});
 	}
 
 
 	void ws_handler_base::set_server(class server& server){
-		list_->set_server(server);
+		list_ = std::make_unique< ws_sessions >(server);
 	}
 
 	class server* ws_handler_base::server()noexcept{
 		return list_->server();
+	}
+
+	void ws_handler_base::async_erase(ws_server_session* session){
+		list_->async_erase(session);
 	}
 
 

@@ -17,70 +17,80 @@
 namespace webservice{
 
 
-	void ws_sessions::set_server(class server& server){
-		server_ = &server;
-	}
+	ws_sessions::ws_sessions(class server& server)
+		: server_(server)
+		, strand_(server_.get_executor()) {}
+
 
 	class server* ws_sessions::server()const noexcept{
-		return server_;
+		return &server_;
 	}
 
 
-	bool ws_sessions::is_empty()const{
-		std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-		return list_.empty();
-	}
-
-	std::size_t ws_sessions::size()const{
-		std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-		return list_.size();
-	}
-
-	void ws_sessions::emplace(
+	void ws_sessions::async_emplace(
 		http_request&& req,
 		ws_stream&& ws,
 		ws_handler_base& service,
 		std::chrono::milliseconds ping_time
 	){
-		std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-		if(shutdown_){
-			throw std::logic_error("emplace in ws_sessions while shutdown");
-		}
+		strand_.post(
+			[
+				this,
+				lock = async_lock(async_calls_),
+				req = std::move(req),
+				ws = std::move(ws),
+				&service,
+				ping_time
+			]()mutable{
+				if(shutdown_){
+					throw std::logic_error(
+						"emplace in ws_sessions while shutdown");
+				}
 
-		auto iter = list_.emplace(list_.end(),
-			std::move(ws), service, ping_time);
-		set_.insert(set_.end(), ws_identifier(&*iter));
-		iter->set_erase_fn(ws_sessions_erase_fn(this, iter));
-		iter->do_accept(std::move(req));
+				auto session = std::make_unique< ws_server_session >(
+					std::move(ws), service, ping_time);
+
+				set_.insert(set_.end(), std::move(session));
+
+				try{
+					session->do_accept(std::move(req));
+				}catch(...){
+					async_erase(session.get());
+					throw;
+				}
+			}, std::allocator< void >());
 	}
 
-
-	void ws_sessions::erase(iterator iter){
-		std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-		set_.erase(ws_identifier(&*iter));
-		list_.erase(iter);
+	void ws_sessions::async_erase(ws_server_session* session){
+		strand_.post(
+			[this, lock = async_lock(async_calls_), session]{
+				auto iter = set_.find(session);
+				if(iter == set_.end()){
+					throw std::logic_error("session doesn't exist");
+				}
+				set_.erase(iter);
+			}, std::allocator< void >());
 	}
 
 	void ws_sessions::shutdown()noexcept{
-		std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-		shutdown_ = true;
-
-		for(auto& session: list_){
-			session.async_erase();
-		}
+		async_call([this](set const& sessions){
+				shutdown_ = true;
+				for(auto& session: sessions){
+					session->async_erase();
+				}
+			});
 	}
 
 	void ws_sessions::block()noexcept{
-		// Block until last element has been removed from list
-		while(!is_empty()){
-			assert(server() != nullptr);
-			if(server()->poll_one() == 0){
+		// As long as async calls are pending
+		while(async_calls_ > 0){
+			// Request the server to run a handler async
+			if(server_.poll_one() == 0){
+				// If no handler was waiting, the pending one must
+				// currently run in another thread
 				std::this_thread::yield();
 			}
 		}
-
-		// Block until last erase has been completed
-		std::unique_lock< std::shared_timed_mutex > lock(mutex_);
 	}
 
 
