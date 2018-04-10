@@ -162,9 +162,6 @@ namespace webservice{
 		/// \brief Start the asynchronous operation
 		void do_accept(http_request&& req);
 
-		/// \brief Called when do_accept is ready
-		void on_accept(boost::system::error_code ec);
-
 
 		/// \brief Called with when a sessions starts
 		void on_open()noexcept;

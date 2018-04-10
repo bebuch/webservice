@@ -314,26 +314,23 @@ namespace webservice{
 				strand_,
 				[this, lock = async_lock(async_calls_)]
 				(boost::system::error_code ec){
-					on_accept(ec);
+					// Happens when the timer closes the socket
+					if(ec == boost::asio::error::operation_aborted){
+						return;
+					}
+
+					if(ec){
+						on_error(ws_handler_location::accept, ec);
+						async_erase();
+						return;
+					}
+
+					is_open_ = true;
+					on_open();
+
+					// Read a message
+					do_read();
 				}));
-	}
-
-	void ws_server_session::on_accept(boost::system::error_code ec){
-		// Happens when the timer closes the socket
-		if(ec == boost::asio::error::operation_aborted){
-			return;
-		}
-
-		if(ec){
-			on_error(ws_handler_location::accept, ec);
-			return;
-		}
-
-		is_open_ = true;
-		on_open();
-
-		// Read a message
-		do_read();
 	}
 
 
