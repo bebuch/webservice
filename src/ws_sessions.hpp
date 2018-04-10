@@ -25,6 +25,9 @@ namespace webservice{
 	using ws_stream
 		= boost::beast::websocket::stream< boost::asio::ip::tcp::socket >;
 
+	using http_request
+		= boost::beast::http::request< boost::beast::http::string_body >;
+
 	class ws_server_session;
 	class ws_handler_base;
 
@@ -48,7 +51,8 @@ namespace webservice{
 
 		std::size_t size()const;
 
-		iterator emplace(
+		void emplace(
+			http_request&& req,
 			ws_stream&& ws,
 			ws_handler_base& service,
 			std::chrono::milliseconds ping_time

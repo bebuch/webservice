@@ -66,8 +66,7 @@ namespace webservice{
 		ws_stream ws(std::move(socket));
 		ws.read_message_max(max_read_message_size());
 
-		auto iter = list_->emplace(std::move(ws), *this, ping_time());
-		iter->do_accept(std::move(req));
+		list_->emplace(std::move(req), std::move(ws), *this, ping_time());
 	}
 
 	void ws_handler_base::on_open(

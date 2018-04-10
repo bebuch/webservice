@@ -41,7 +41,7 @@ namespace webservice{
 
 		std::size_t size()const;
 
-		iterator emplace(
+		void emplace(
 			boost::asio::ip::tcp::socket&& socket,
 			server_impl& server
 		);

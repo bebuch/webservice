@@ -36,7 +36,7 @@ namespace webservice{
 		return list_.size();
 	}
 
-	http_sessions::iterator http_sessions::emplace(
+	void http_sessions::emplace(
 		boost::asio::ip::tcp::socket&& socket,
 		server_impl& server
 	){
@@ -48,7 +48,7 @@ namespace webservice{
 
 		auto iter = list_.emplace(list_.end(), std::move(socket), server);
 		iter->set_erase_fn(http_sessions_erase_fn(this, iter));
-		return iter;
+		iter->run();
 	}
 
 	void http_sessions::erase(iterator iter){

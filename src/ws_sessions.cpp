@@ -36,7 +36,8 @@ namespace webservice{
 		return list_.size();
 	}
 
-	ws_sessions::iterator ws_sessions::emplace(
+	void ws_sessions::emplace(
+		http_request&& req,
 		ws_stream&& ws,
 		ws_handler_base& service,
 		std::chrono::milliseconds ping_time
@@ -50,7 +51,7 @@ namespace webservice{
 			std::move(ws), service, ping_time);
 		set_.insert(set_.end(), ws_identifier(&*iter));
 		iter->set_erase_fn(ws_sessions_erase_fn(this, iter));
-		return iter;
+		iter->do_accept(std::move(req));
 	}
 
 

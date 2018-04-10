@@ -30,8 +30,7 @@ namespace webservice{
 
 
 	void http_request_handler::emplace(boost::asio::ip::tcp::socket&& socket){
-		auto iter = list_->emplace(std::move(socket), server()->impl());
-		iter->run();
+		list_->emplace(std::move(socket), server()->impl());
 	}
 
 	void http_request_handler::operator()(
