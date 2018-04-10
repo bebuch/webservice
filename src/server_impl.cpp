@@ -80,11 +80,13 @@ namespace webservice{
 	}
 
 	void server_impl::shutdown()noexcept{
-		http().shutdown();
-		if(has_ws()){
-			ws().shutdown();
-		}
-		listener_.shutdown();
+		get_executor().post([this]{
+				http().shutdown();
+				if(has_ws()){
+					ws().shutdown();
+				}
+				listener_.shutdown();
+			}, std::allocator< void >());
 	}
 
 	boost::asio::io_context::executor_type server_impl::get_executor(){
