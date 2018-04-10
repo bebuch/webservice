@@ -25,7 +25,8 @@ namespace webservice{
 		std::uint16_t const port,
 		std::uint8_t const thread_count
 	)
-		: impl_(std::make_unique< server_impl >(
+		: ioc_{thread_count}
+		, impl_(std::make_unique< server_impl >(
 				*this,
 				std::move(handler),
 				std::move(service),
@@ -50,15 +51,20 @@ namespace webservice{
 	}
 
 	boost::asio::io_context::executor_type server::get_executor(){
-		return impl_->get_executor();
+		return ioc_.get_executor();
 	}
 
 	boost::asio::io_context& server::get_io_context()noexcept{
-		return impl_->get_io_context();
+		return ioc_;
 	}
 
 	std::size_t server::poll_one()noexcept{
-		return impl_->poll_one();
+		try{
+			return ioc_.poll_one();
+		}catch(...){
+			impl().error().on_exception(std::current_exception());
+			return 1;
+		}
 	}
 
 	server_impl& server::impl()noexcept{

@@ -59,6 +59,7 @@ namespace webservice{
 		/// until all connections are closed.
 		void shutdown()noexcept;
 
+
 		/// \brief Get executor
 		boost::asio::io_context::executor_type get_executor();
 
@@ -69,6 +70,7 @@ namespace webservice{
 		/// \brief Run one task in server threads
 		std::size_t poll_one()noexcept;
 
+
 		/// \brief Get implementation
 		///
 		/// This function is internally used.
@@ -76,6 +78,9 @@ namespace webservice{
 
 
 	private:
+		/// \brief The io_context is required for all I/O
+		boost::asio::io_context ioc_;
+
 		/// \brief Pointer to implementation
 		std::unique_ptr< class server_impl > impl_;
 	};

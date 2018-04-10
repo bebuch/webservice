@@ -58,6 +58,7 @@ namespace webservice{
 		/// until all connections are closed.
 		void shutdown()noexcept;
 
+
 		/// \brief Get executor
 		boost::asio::io_context::executor_type get_executor();
 
@@ -65,7 +66,7 @@ namespace webservice{
 		boost::asio::io_context& get_io_context()noexcept;
 
 
-		/// \brief Run one task in server_impl threads
+		/// \brief Run one task in server threads
 		std::size_t poll_one()noexcept;
 
 
@@ -112,9 +113,6 @@ namespace webservice{
 
 		/// \brief The worker threads
 		std::vector< std::thread > threads_;
-
-		/// \brief The io_context is required for all I/O
-		boost::asio::io_context ioc_;
 
 		/// \brief Accepts incoming connections and launches the sessions
 		listener listener_;

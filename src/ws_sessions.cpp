@@ -50,10 +50,10 @@ namespace webservice{
 				auto session = std::make_unique< ws_server_session >(
 					std::move(ws), service, ping_time);
 
-				set_.insert(set_.end(), std::move(session));
+				auto iter = set_.insert(set_.end(), std::move(session));
 
 				try{
-					session->do_accept(std::move(req));
+					(*iter)->do_accept(std::move(req));
 				}catch(...){
 					async_erase(session.get());
 					throw;

@@ -8,6 +8,7 @@
 //-----------------------------------------------------------------------------
 #include "server_impl.hpp"
 
+#include <webservice/server.hpp>
 #include <webservice/http_request_handler.hpp>
 #include <webservice/ws_handler_base.hpp>
 #include <webservice/error_handler.hpp>
@@ -23,7 +24,7 @@ namespace webservice{
 		std::unique_ptr< error_handler >&& error_handler,
 		boost::asio::ip::address const address,
 		std::uint16_t const port,
-		std::uint8_t const thread_count
+		std::uint8_t thread_count
 	)
 		: server_(server)
 		, handler_([&server, handler = std::move(handler)]()mutable{
@@ -45,8 +46,10 @@ namespace webservice{
 				}
 				return std::move(error_handler);
 			}())
-		, ioc_{thread_count}
-		, listener_(*this, boost::asio::ip::tcp::endpoint{address, port}, ioc_)
+		, listener_(
+			*this,
+			boost::asio::ip::tcp::endpoint{address, port},
+			server_.get_io_context())
 	{
 		// Run the I/O service on the requested number of thread_count
 		threads_.reserve(thread_count);
@@ -55,7 +58,7 @@ namespace webservice{
 				// restart io_context if it returned by exception
 				for(;;){
 					try{
-						ioc_.run();
+						server_.get_io_context().run();
 						return;
 					}catch(...){
 						error().on_exception(std::current_exception());
@@ -89,22 +92,18 @@ namespace webservice{
 			}, std::allocator< void >());
 	}
 
+
 	boost::asio::io_context::executor_type server_impl::get_executor(){
-		return ioc_.get_executor();
+		return server_.get_executor();
 	}
 
 	boost::asio::io_context& server_impl::get_io_context()noexcept{
-		return ioc_;
+		return server_.get_io_context();
 	}
+
 
 	std::size_t server_impl::poll_one()noexcept{
-		try{
-			return ioc_.poll_one();
-		}catch(...){
-			error().on_exception(std::current_exception());
-			return 1;
-		}
+		return server_.poll_one();
 	}
-
 
 }
