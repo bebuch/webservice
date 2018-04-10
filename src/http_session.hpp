@@ -9,7 +9,7 @@
 #ifndef _webservice__http_session__hpp_INCLUDED_
 #define _webservice__http_session__hpp_INCLUDED_
 
-#include "http_sessions.hpp"
+#include "http_sessions_erase_fn.hpp"
 
 #include <boost/circular_buffer.hpp>
 

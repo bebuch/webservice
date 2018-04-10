@@ -9,7 +9,7 @@
 #ifndef _webservice__ws_session__hpp_INCLUDED_
 #define _webservice__ws_session__hpp_INCLUDED_
 
-#include "ws_sessions.hpp"
+#include "ws_sessions_erase_fn.hpp"
 
 #include <webservice/ws_handler_location.hpp>
 #include <webservice/ws_client_location.hpp>
