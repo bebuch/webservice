@@ -192,6 +192,24 @@ namespace webservice{
 	}
 
 	template < typename Derived >
+	void ws_session< Derived >::send(
+		boost::beast::websocket::close_reason reason
+	){
+		boost::asio::post(
+			strand_,
+			[this, lock = async_lock(async_calls_), reason]{
+				if(ws_.is_open()){
+					boost::system::error_code ec;
+					ws_.close(reason, ec);
+					if(ec){
+						derived().on_error(location_type::close, ec);
+					}
+					derived().async_erase();
+				}
+			});
+	}
+
+	template < typename Derived >
 	void ws_session< Derived >::do_write(){
 		ws_.text(write_list_.front().is_text);
 		ws_.async_write(
@@ -215,24 +233,6 @@ namespace webservice{
 						do_write();
 					}
 				}));
-	}
-
-	template < typename Derived >
-	void ws_session< Derived >::send(
-		boost::beast::websocket::close_reason reason
-	){
-		boost::asio::post(
-			strand_,
-			[this, lock = async_lock(async_calls_), reason]{
-				if(ws_.is_open()){
-					boost::system::error_code ec;
-					ws_.close(reason, ec);
-					if(ec){
-						derived().on_error(location_type::close, ec);
-					}
-					derived().async_erase();
-				}
-			});
 	}
 
 
