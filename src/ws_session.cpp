@@ -169,8 +169,7 @@ namespace webservice{
 	void ws_session< Derived >::send(
 		std::tuple< Tag, shared_const_buffer > data
 	){
-		boost::asio::dispatch(boost::asio::bind_executor(
-			strand_,
+		strand_.dispatch(
 			[
 				this, lock = async_lock(async_calls_),
 				data = std::move(std::get< 1 >(data))
@@ -188,15 +187,14 @@ namespace webservice{
 				if(was_empty){
 					do_write();
 				}
-			}));
+			}, std::allocator< void >());
 	}
 
 	template < typename Derived >
 	void ws_session< Derived >::send(
 		boost::beast::websocket::close_reason reason
 	){
-		boost::asio::post(
-			strand_,
+		strand_.post(
 			[this, lock = async_lock(async_calls_), reason]{
 				if(ws_.is_open()){
 					boost::system::error_code ec;
@@ -206,7 +204,7 @@ namespace webservice{
 					}
 					derived().async_erase();
 				}
-			});
+			}, std::allocator< void >());
 	}
 
 	template < typename Derived >
@@ -256,15 +254,14 @@ namespace webservice{
 
 	ws_server_session::~ws_server_session(){
 		// Stop timer, close socket
-		boost::asio::post(
-			strand_,
+		strand_.post(
 			[this, lock = async_lock(async_calls_)]{
 				boost::system::error_code ec;
 				timer_.cancel(ec);
 				if(ws_.is_open()){
 					ws_.close("shutdown", ec);
 				}
-			});
+			}, std::allocator< void >());
 
 		// As long as async calls are pending
 		while(async_calls_ > 0){
@@ -335,15 +332,14 @@ namespace webservice{
 
 
 	void ws_server_session::on_open()noexcept{
-		boost::asio::post(
-			handler_strand_,
+		handler_strand_.post(
 			[this, lock = async_lock(async_calls_)]{
 				try{
 					service_.on_open(ws_identifier(this), resource_);
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			});
+			}, std::allocator< void >());
 	}
 
 	void ws_server_session::on_close()noexcept{
@@ -357,8 +353,7 @@ namespace webservice{
 	void ws_server_session::on_text(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		boost::asio::post(
-			handler_strand_,
+		handler_strand_.post(
 			[
 				this, lock = async_lock(async_calls_),
 				buffer = std::move(buffer)
@@ -369,14 +364,13 @@ namespace webservice{
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			});
+			}, std::allocator< void >());
 	}
 
 	void ws_server_session::on_binary(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		boost::asio::post(
-			handler_strand_,
+		handler_strand_.post(
 			[
 				this, lock = async_lock(async_calls_),
 				buffer = std::move(buffer)
@@ -387,15 +381,14 @@ namespace webservice{
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			});
+			}, std::allocator< void >());
 	}
 
 	void ws_server_session::on_error(
 		ws_handler_location location,
 		boost::system::error_code ec
 	)noexcept{
-		boost::asio::post(
-			handler_strand_,
+		handler_strand_.post(
 			[this, lock = async_lock(async_calls_), location, ec]{
 				try{
 					service_.on_error(
@@ -403,17 +396,16 @@ namespace webservice{
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			});
+			}, std::allocator< void >());
 	}
 
 	void ws_server_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
-		boost::asio::post(
-			handler_strand_,
+		handler_strand_.post(
 			[this, lock = async_lock(async_calls_), error]{
 				service_.on_exception(ws_identifier(this), resource_, error);
-			});
+			}, std::allocator< void >());
 	}
 
 
@@ -425,11 +417,10 @@ namespace webservice{
 
 	void ws_server_session::async_erase(){
 		std::call_once(erase_flag_, [this]{
-				boost::asio::post(
-					service_.server()->impl().get_executor(),
+				service_.server()->impl().get_executor().post(
 					[this]{
 						erase_fn_();
-					});
+					}, std::allocator< void >());
 			});
 	}
 
@@ -454,15 +445,14 @@ namespace webservice{
 
 	ws_client_session::~ws_client_session(){
 		// Stop timer, close socket
-		boost::asio::post(
-			strand_,
+		strand_.post(
 			[this, lock = async_lock(async_calls_)]{
 				boost::system::error_code ec;
 				timer_.cancel(ec);
 				if(ws_.is_open()){
 					ws_.close("shutdown", ec);
 				}
-			});
+			}, std::allocator< void >());
 
 		// As long as async calls are pending
 		while(async_calls_ > 0){
@@ -501,47 +491,42 @@ namespace webservice{
 		// continuously, this simplifies the code.
 		do_timer();
 
-		boost::asio::dispatch(
-			boost::asio::bind_executor(
-				strand_,
-				[this, lock = async_lock(async_calls_)]{
-					is_open_ = true;
-					on_open();
-				}));
+		strand_.dispatch(
+			[this, lock = async_lock(async_calls_)]{
+				is_open_ = true;
+				on_open();
+			}, std::allocator< void >());
 
 		do_read();
 	}
 
 
 	void ws_client_session::on_open()noexcept{
-		boost::asio::post(
-			handler_strand_,
+		handler_strand_.post(
 			[this, lock = async_lock(async_calls_)]{
 				try{
 					client_.on_open();
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			});
+			}, std::allocator< void >());
 	}
 
 	void ws_client_session::on_close()noexcept{
-		boost::asio::post(
-			handler_strand_,
+		handler_strand_.post(
 			[this, lock = async_lock(async_calls_)]{
 				try{
 					client_.on_close();
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			});
+			}, std::allocator< void >());
 	}
 
 	void ws_client_session::on_text(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		boost::asio::post(
-			handler_strand_,
+		handler_strand_.post(
 			[
 				this, lock = async_lock(async_calls_),
 				buffer = std::move(buffer)
@@ -551,14 +536,13 @@ namespace webservice{
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			});
+			}, std::allocator< void >());
 	}
 
 	void ws_client_session::on_binary(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		boost::asio::post(
-			handler_strand_,
+		handler_strand_.post(
 			[
 				this, lock = async_lock(async_calls_),
 				buffer = std::move(buffer)
@@ -568,32 +552,30 @@ namespace webservice{
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			});
+			}, std::allocator< void >());
 	}
 
 	void ws_client_session::on_error(
 		ws_client_location location,
 		boost::system::error_code ec
 	)noexcept{
-		boost::asio::post(
-			handler_strand_,
+		handler_strand_.post(
 			[this, lock = async_lock(async_calls_), location, ec]{
 				try{
 					client_.on_error(location, ec);
 				}catch(...){
 					on_exception(std::current_exception());
 				}
-			});
+			}, std::allocator< void >());
 	}
 
 	void ws_client_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
-		boost::asio::post(
-			handler_strand_,
+		handler_strand_.post(
 			[this, lock = async_lock(async_calls_), error]{
 				client_.on_exception(error);
-			});
+			}, std::allocator< void >());
 	}
 
 	void ws_client_session::set_erase_fn(
@@ -604,11 +586,10 @@ namespace webservice{
 
 	void ws_client_session::async_erase(){
 		std::call_once(erase_flag_, [this]{
-				boost::asio::post(
-					client_.get_executor(),
+				client_.get_executor().post(
 					[this]{
 						erase_fn_();
-					});
+					}, std::allocator< void >());
 			});
 	}
 
