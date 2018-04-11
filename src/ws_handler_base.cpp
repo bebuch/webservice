@@ -108,6 +108,10 @@ namespace webservice{
 		on_shutdown();
 	}
 
+	bool ws_handler_base::is_shutdown()noexcept{
+		return list_->is_shutdown();
+	}
+
 
 	void ws_handler_base::send_text(
 		ws_identifier identifier,

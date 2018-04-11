@@ -57,6 +57,10 @@ namespace webservice{
 		on_shutdown();
 	}
 
+	bool http_request_handler::is_shutdown()noexcept{
+		return list_->is_shutdown();
+	}
+
 
 	http_string_response bad_request(
 		http_request const& req,

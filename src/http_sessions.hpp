@@ -87,6 +87,9 @@ namespace webservice{
 
 		void shutdown()noexcept;
 
+		/// \brief true if server is shutting down
+		bool is_shutdown()noexcept;
+
 		void block()noexcept;
 
 

@@ -81,6 +81,10 @@ namespace webservice{
 			});
 	}
 
+	bool ws_sessions::is_shutdown()noexcept{
+		return shutdown_;
+	}
+
 	void ws_sessions::block()noexcept{
 		// As long as async calls are pending
 		while(async_calls_ > 0){

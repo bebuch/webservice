@@ -69,6 +69,9 @@ namespace webservice{
 		/// \brief Shutdown hint called by the server
 		void shutdown()noexcept;
 
+		/// \brief true if server is shutting down
+		bool is_shutdown()noexcept;
+
 
 		/// \brief Set the owning server
 		void set_server(class server& server);

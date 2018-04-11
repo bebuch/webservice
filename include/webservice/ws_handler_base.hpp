@@ -146,6 +146,9 @@ namespace webservice{
 		/// \brief Shutdown hint called by the server
 		void shutdown()noexcept;
 
+		/// \brief true if server is shutting down
+		bool is_shutdown()noexcept;
+
 
 		/// \brief Set max size of incomming WebSocket messages
 		void set_max_read_message_size(std::size_t bytes){
@@ -170,7 +173,9 @@ namespace webservice{
 
 
 		/// \brief Set the owning server
-		void set_server(class server& server);
+		///
+		/// \attention If you override, you have to call the base manually!
+		virtual void set_server(class server& server);
 
 
 		/// \brief Get reference to server

@@ -82,6 +82,10 @@ namespace webservice{
 			}, std::allocator< void >());
 	}
 
+	bool http_sessions::is_shutdown()noexcept{
+		return shutdown_;
+	}
+
 	void http_sessions::block()noexcept{
 		// As long as async calls are pending
 		while(async_calls_ > 0){

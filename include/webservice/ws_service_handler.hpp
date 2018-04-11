@@ -57,8 +57,14 @@ namespace webservice{
 		/// \brief Call shutdown on all services and don't accept any new ones
 		void on_shutdown()noexcept override;
 
+		/// \brief Set the owning server
+		void set_server(class server& server)override;
+
 
 	private:
+		/// \brief Count of running async operations
+		std::atomic< std::size_t > async_calls_{0};
+
 		/// \brief Pointer to implementation
 		std::unique_ptr< struct ws_service_handler_impl > impl_;
 	};
