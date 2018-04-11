@@ -28,7 +28,7 @@ namespace webservice{
 
 
 		/// \brief Create a new ws_server_session
-		void emplace(
+		void async_emplace(
 			boost::asio::ip::tcp::socket&& socket,
 			http_request&& req)override;
 

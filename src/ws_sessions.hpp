@@ -32,8 +32,10 @@ namespace webservice{
 	using http_request
 		= boost::beast::http::request< boost::beast::http::string_body >;
 
+
 	class ws_server_session;
 	class ws_handler_base;
+
 
 	class ws_sessions{
 		struct less{
@@ -78,9 +80,14 @@ namespace webservice{
 	public:
 		using set = std::set< std::unique_ptr< ws_server_session >, less >;
 
+
 		ws_sessions(class server& server);
 
-		ws_sessions(ws_sessions const&) = default;
+		ws_sessions(ws_sessions const&) = delete;
+
+
+		ws_sessions& operator=(ws_sessions const&) = delete;
+
 
 		class server* server()const noexcept;
 

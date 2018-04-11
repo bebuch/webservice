@@ -45,9 +45,12 @@ namespace webservice{
 
 
 		/// \brief Create a new ws_server_session
-		virtual void emplace(
+		virtual void async_emplace(
 			boost::asio::ip::tcp::socket&& socket,
 			http_request&& req);
+
+		/// \brief Called by a ws_server_session
+		void async_erase(class ws_server_session* session);
 
 
 		/// \brief Send a text message to session
@@ -172,10 +175,6 @@ namespace webservice{
 
 		/// \brief Get reference to server
 		class server* server()noexcept;
-
-
-		/// \brief Called by a ws_server_session
-		void async_erase(class ws_server_session* session);
 
 
 	private:

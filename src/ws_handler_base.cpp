@@ -56,7 +56,7 @@ namespace webservice{
 	}
 
 
-	void ws_handler_base::emplace(
+	void ws_handler_base::async_emplace(
 		boost::asio::ip::tcp::socket&& socket,
 		http_request&& req
 	){
@@ -66,6 +66,10 @@ namespace webservice{
 		ws.read_message_max(max_read_message_size());
 
 		list_->async_emplace(std::move(req), std::move(ws), *this, ping_time());
+	}
+
+	void ws_handler_base::async_erase(ws_server_session* session){
+		list_->async_erase(session);
 	}
 
 	void ws_handler_base::on_open(
@@ -241,10 +245,6 @@ namespace webservice{
 
 	class server* ws_handler_base::server()noexcept{
 		return list_->server();
-	}
-
-	void ws_handler_base::async_erase(ws_server_session* session){
-		list_->async_erase(session);
 	}
 
 

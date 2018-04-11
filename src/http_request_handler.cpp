@@ -21,16 +21,19 @@ namespace webservice{
 	namespace http = boost::beast::http;
 
 
-	http_request_handler::http_request_handler()
-		: list_(std::make_unique< http_sessions >()) {}
+	http_request_handler::http_request_handler() = default;
 
 	http_request_handler::~http_request_handler(){
 		list_->block();
 	}
 
 
-	void http_request_handler::emplace(boost::asio::ip::tcp::socket&& socket){
-		list_->emplace(std::move(socket), server()->impl());
+	void http_request_handler::async_emplace(boost::asio::ip::tcp::socket&& socket){
+		list_->async_emplace(std::move(socket), *this);
+	}
+
+	void http_request_handler::async_erase(http_session* session){
+		list_->async_erase(session);
 	}
 
 	void http_request_handler::operator()(
@@ -97,7 +100,7 @@ namespace webservice{
 
 
 	void http_request_handler::set_server(class server& server){
-		list_->set_server(server);
+		list_ = std::make_unique< http_sessions >(server);
 	}
 
 	class server* http_request_handler::server()noexcept{

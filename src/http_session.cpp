@@ -9,9 +9,8 @@
 #include "http_session.hpp"
 #include "server_impl.hpp"
 
+#include <webservice/server.hpp>
 #include <webservice/async_lock.hpp>
-#include <webservice/http_response.hpp>
-#include <webservice/http_request_handler.hpp>
 #include <webservice/ws_handler_base.hpp>
 #include <webservice/error_handler.hpp>
 
@@ -25,9 +24,9 @@ namespace webservice{
 
 	http_session::http_session(
 		boost::asio::ip::tcp::socket&& socket,
-		server_impl& server
+		http_request_handler& handler
 	)
-		: server_(server)
+		: handler_(handler)
 		, socket_(std::move(socket))
 		, strand_(socket_.get_executor())
 		, timer_(socket_.get_executor().context(),
@@ -51,7 +50,7 @@ namespace webservice{
 		// As long as async calls are pending
 		while(async_calls_ > 0){
 			// Request the server to run a handler async
-			if(server_.poll_one() == 0){
+			if(handler_.server()->poll_one() == 0){
 				// If no handler was waiting, the pending one must
 				// currently run in another thread
 				std::this_thread::yield();
@@ -72,10 +71,10 @@ namespace webservice{
 
 				if(ec){
 					try{
-						server_.http().on_error(
+						handler_.server()->impl().http().on_error(
 							http_request_location::timer, ec);
 					}catch(...){
-						server_.http().on_exception(
+						handler_.server()->impl().http().on_exception(
 							std::current_exception());
 					}
 				}else{
@@ -102,7 +101,7 @@ namespace webservice{
 		}
 
 		// Set the timer
-		if(timer_.expires_after(server_.http().timeout()) == 0){
+		if(timer_.expires_after(handler_.server()->impl().http().timeout()) == 0){
 			// if the timer could not be cancelled it was already
 			// expired and the session was closed by the timer
 			return;
@@ -132,10 +131,10 @@ namespace webservice{
 
 					if(ec){
 						try{
-							server_.http().on_error(
+							handler_.server()->impl().http().on_error(
 								http_request_location::read, ec);
 						}catch(...){
-							server_.http().on_exception(
+							handler_.server()->impl().http().on_exception(
 								std::current_exception());
 						}
 						async_erase();
@@ -144,15 +143,15 @@ namespace webservice{
 
 					// See if it is a WebSocket Upgrade
 					if(
-						server_.has_ws() &&
+						handler_.server()->impl().has_ws() &&
 						boost::beast::websocket::is_upgrade(req_)
 					){
-						server_.ws().emplace(
+						handler_.server()->impl().ws().async_emplace(
 							std::move(socket_), std::move(req_));
 						async_erase();
 					}else{
 						// Send the response
-						server_.http()(std::move(req_), http_response{
+						handler_.server()->impl().http()(std::move(req_), http_response{
 								this,
 								async_calls_,
 								&http_session::response,
@@ -179,9 +178,9 @@ namespace webservice{
 
 		if(ec){
 			try{
-				server_.http().on_error(http_request_location::write, ec);
+				handler_.server()->impl().http().on_error(http_request_location::write, ec);
 			}catch(...){
-				server_.http().on_exception(std::current_exception());
+				handler_.server()->impl().http().on_exception(std::current_exception());
 			}
 			async_erase();
 			return;
@@ -218,13 +217,6 @@ namespace webservice{
 		queue_.response(std::move(work));
 	}
 
-	/// \brief Set the function that is called on async_erase
-	void http_session::set_erase_fn(
-		http_sessions_erase_fn&& erase_fn
-	)noexcept{
-		erase_fn_ = std::move(erase_fn);
-	}
-
 	/// \brief Send a request to erase this session from the list
 	///
 	/// The request is sended only once, any call after the fist will be
@@ -232,9 +224,9 @@ namespace webservice{
 	void http_session::async_erase(){
 		std::call_once(erase_flag_, [this]{
 				boost::asio::post(
-					server_.get_executor(),
+					handler_.server()->get_executor(),
 					[this]{
-						erase_fn_();
+						handler_.async_erase(this);
 					});
 			});
 	}

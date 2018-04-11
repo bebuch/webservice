@@ -41,7 +41,10 @@ namespace webservice{
 
 
 		/// \brief Create a new http_session
-		void emplace(boost::asio::ip::tcp::socket&& socket);
+		void async_emplace(boost::asio::ip::tcp::socket&& socket);
+
+		/// \brief Called by a http_session
+		void async_erase(class http_session* session);
 
 
 		/// \brief Process http request

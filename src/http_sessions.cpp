@@ -17,65 +17,81 @@
 namespace webservice{
 
 
-	void http_sessions::set_server(class server& server){
-		server_ = &server;
-	}
+	http_sessions::http_sessions(class server& server)
+		: server_(server)
+		, strand_(server_.get_executor()) {}
+
 
 	class server* http_sessions::server()const noexcept{
-		return server_;
+		return &server_;
 	}
 
 
-	bool http_sessions::is_empty()const{
-		std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-		return list_.empty();
-	}
-
-	std::size_t http_sessions::size()const{
-		std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-		return list_.size();
-	}
-
-	void http_sessions::emplace(
+	void http_sessions::async_emplace(
 		boost::asio::ip::tcp::socket&& socket,
-		server_impl& server
+		http_request_handler& handler
 	){
-		std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-		if(shutdown_){
-			throw std::logic_error(
-				"emplace in http_sessions while shutdown");
-		}
+		strand_.post(
+			[
+				this,
+				lock = async_lock(async_calls_),
+				socket = std::move(socket),
+				&handler
+			]()mutable{
+				if(shutdown_){
+					throw std::logic_error(
+						"emplace in http_sessions while shutdown");
+				}
 
-		auto iter = list_.emplace(list_.end(), std::move(socket), server);
-		iter->set_erase_fn(http_sessions_erase_fn(this, iter));
-		iter->run();
+				auto session = std::make_unique< http_session >(
+					std::move(socket), handler);
+
+				auto iter = set_.insert(set_.end(), std::move(session));
+
+				try{
+					(*iter)->run();
+				}catch(...){
+					async_erase(session.get());
+					throw;
+				}
+			}, std::allocator< void >());
 	}
 
-	void http_sessions::erase(iterator iter){
-		std::unique_lock< std::shared_timed_mutex > lock(mutex_);
-		list_.erase(iter);
+	void http_sessions::async_erase(http_session* session){
+		strand_.post(
+			[this, lock = async_lock(async_calls_), session]{
+				auto iter = set_.find(session);
+				if(iter == set_.end()){
+					throw std::logic_error("session doesn't exist");
+				}
+				set_.erase(iter);
+			}, std::allocator< void >());
 	}
+
 
 	void http_sessions::shutdown()noexcept{
-		std::shared_lock< std::shared_timed_mutex > lock(mutex_);
-		shutdown_ = true;
-
-		for(auto& session: list_){
-			session.async_erase();
-		}
+		strand_.post(
+			[
+				this,
+				lock = async_lock(async_calls_)
+			]()mutable{
+				shutdown_ = true;
+				for(auto& session: set_){
+					session->async_erase();
+				}
+			}, std::allocator< void >());
 	}
 
 	void http_sessions::block()noexcept{
-		// Block until last element has been removed from list
-		while(!is_empty()){
-			assert(server() != nullptr);
-			if(server()->poll_one() == 0){
+		// As long as async calls are pending
+		while(async_calls_ > 0){
+			// Request the server to run a handler async
+			if(server_.poll_one() == 0){
+				// If no handler was waiting, the pending one must
+				// currently run in another thread
 				std::this_thread::yield();
 			}
 		}
-
-		// Block until last erase has been completed
-		std::unique_lock< std::shared_timed_mutex > lock(mutex_);
 	}
 
 }

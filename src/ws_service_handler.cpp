@@ -38,7 +38,7 @@ namespace webservice{
 	ws_service_handler::~ws_service_handler() = default;
 
 
-	void ws_service_handler::emplace(
+	void ws_service_handler::async_emplace(
 		boost::asio::ip::tcp::socket&& socket,
 		http_request&& req
 	){
@@ -53,7 +53,7 @@ namespace webservice{
 
 		auto iter = impl_->services.find(name);
 		if(iter != impl_->services.end()){
-			iter->second->emplace(std::move(socket), std::move(req));
+			iter->second->async_emplace(std::move(socket), std::move(req));
 		}else{
 			throw std::logic_error("service(" + name + ") doesn't exist");
 		}

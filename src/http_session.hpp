@@ -9,7 +9,7 @@
 #ifndef _webservice__http_session__hpp_INCLUDED_
 #define _webservice__http_session__hpp_INCLUDED_
 
-#include "http_sessions_erase_fn.hpp"
+#include <webservice/http_request_handler.hpp>
 
 #include <boost/circular_buffer.hpp>
 
@@ -25,13 +25,15 @@
 namespace webservice{
 
 
+	class http_request_handler;
+
 	/// \brief Handles an HTTP server session
 	class http_session{
 	public:
 		/// \brief Take ownership of the socket and start reading
 		explicit http_session(
 			boost::asio::ip::tcp::socket&& socket,
-			server_impl& server
+			http_request_handler& handler
 		);
 
 		~http_session();
@@ -50,9 +52,6 @@ namespace webservice{
 
 		/// \brief Called by the HTTP handler to send a response.
 		void response(std::unique_ptr< http_session_work >&& work);
-
-		/// \brief Set the function that is called on async_erase
-		void set_erase_fn(http_sessions_erase_fn&& erase_fn)noexcept;
 
 		/// \brief Send a request to erase this session from the list
 		///
@@ -89,7 +88,7 @@ namespace webservice{
 		};
 
 
-		server_impl& server_;
+		http_request_handler& handler_;
 
 		boost::asio::ip::tcp::socket socket_;
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
@@ -98,8 +97,6 @@ namespace webservice{
 
 		http_request req_;
 		queue queue_;
-
-		http_sessions_erase_fn erase_fn_;
 
 		std::once_flag erase_flag_;
 		std::atomic< std::size_t > async_calls_{0};

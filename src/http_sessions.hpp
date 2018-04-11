@@ -9,45 +9,81 @@
 #ifndef _webservice__http_sessions__hpp_INCLUDED_
 #define _webservice__http_sessions__hpp_INCLUDED_
 
-#include "http_sessions_erase_fn.hpp"
+#include <webservice/async_lock.hpp>
 
-#include <list>
-#include <shared_mutex>
+#include <boost/beast/websocket.hpp>
+
+#include <boost/asio/strand.hpp>
+
+#include <set>
+#include <memory>
 
 
 namespace webservice{
 
 
+	using ws_stream
+		= boost::beast::websocket::stream< boost::asio::ip::tcp::socket >;
+
+	using ws_strand
+		= boost::asio::strand< boost::asio::io_context::executor_type >;
+
+	using http_request
+		= boost::beast::http::request< boost::beast::http::string_body >;
+
+
 	class http_session;
+	class http_request_handler;
 
 
 	class http_sessions{
+		struct less{
+			using is_transparent = void;
+
+			bool operator()(
+				std::unique_ptr< http_session > const& l,
+				std::unique_ptr< http_session > const& r
+			)const noexcept{
+				return l.get() < r.get();
+			}
+
+			bool operator()(
+				http_session* l,
+				std::unique_ptr< http_session > const& r
+			)const noexcept{
+				return l < r.get();
+			}
+
+			bool operator()(
+				std::unique_ptr< http_session > const& l,
+				http_session* r
+			)const noexcept{
+				return l.get() < r;
+			}
+		};
+
+
 	public:
-		using iterator = typename std::list< http_session >::iterator;
-		using const_iterator
-			= typename std::list< http_session >::const_iterator;
-
-		http_sessions() = default;
-
-		http_sessions(http_sessions const&) = default;
+		using set = std::set< std::unique_ptr< http_session >, less >;
 
 
-		void set_server(class server& server);
+		http_sessions(class server& server);
+
+		http_sessions(http_sessions const&) = delete;
+
+
+		http_sessions& operator=(http_sessions const&) = delete;
+
 
 		class server* server()const noexcept;
 
 
-		bool is_empty()const;
-
-		std::size_t size()const;
-
-		void emplace(
+		void async_emplace(
 			boost::asio::ip::tcp::socket&& socket,
-			server_impl& server
-		);
+			http_request_handler& handler);
 
+		void async_erase(http_session* session);
 
-		void erase(iterator iter);
 
 		void shutdown()noexcept;
 
@@ -55,10 +91,11 @@ namespace webservice{
 
 
 	private:
+		class server& server_;
 		bool shutdown_{false};
-		std::shared_timed_mutex mutable mutex_;
-		std::list< http_session > list_;
-		class server* server_{nullptr};
+		std::atomic< std::size_t > async_calls_{0};
+		ws_strand strand_;
+		set set_;
 	};
 
 
