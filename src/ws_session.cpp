@@ -259,7 +259,7 @@ namespace webservice{
 
 	ws_server_session::~ws_server_session(){
 		// Stop timer, close socket
-		strand_.post(
+		strand_.dispatch(
 			[this, lock = async_lock(async_calls_)]{
 				boost::system::error_code ec;
 				timer_.cancel(ec);
@@ -338,7 +338,7 @@ namespace webservice{
 
 
 	void ws_server_session::on_open()noexcept{
-		handler_strand_.post(
+		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_)]{
 				try{
 					service_.on_open(ws_identifier(this), resource_);
@@ -359,7 +359,7 @@ namespace webservice{
 	void ws_server_session::on_text(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		handler_strand_.post(
+		handler_strand_.defer(
 			[
 				this, lock = async_lock(async_calls_),
 				buffer = std::move(buffer)
@@ -376,7 +376,7 @@ namespace webservice{
 	void ws_server_session::on_binary(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		handler_strand_.post(
+		handler_strand_.defer(
 			[
 				this, lock = async_lock(async_calls_),
 				buffer = std::move(buffer)
@@ -394,7 +394,7 @@ namespace webservice{
 		ws_handler_location location,
 		boost::system::error_code ec
 	)noexcept{
-		handler_strand_.post(
+		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_), location, ec]{
 				try{
 					service_.on_error(
@@ -408,7 +408,7 @@ namespace webservice{
 	void ws_server_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
-		handler_strand_.post(
+		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_), error]{
 				service_.on_exception(ws_identifier(this), resource_, error);
 			}, std::allocator< void >());
@@ -441,7 +441,7 @@ namespace webservice{
 
 	ws_client_session::~ws_client_session(){
 		// Stop timer, close socket
-		strand_.post(
+		strand_.dispatch(
 			[this, lock = async_lock(async_calls_)]{
 				boost::system::error_code ec;
 				timer_.cancel(ec);
@@ -499,7 +499,7 @@ namespace webservice{
 
 
 	void ws_client_session::on_open()noexcept{
-		handler_strand_.post(
+		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_)]{
 				try{
 					client_.on_open();
@@ -510,7 +510,7 @@ namespace webservice{
 	}
 
 	void ws_client_session::on_close()noexcept{
-		handler_strand_.post(
+		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_)]{
 				try{
 					client_.on_close();
@@ -523,7 +523,7 @@ namespace webservice{
 	void ws_client_session::on_text(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		handler_strand_.post(
+		handler_strand_.defer(
 			[
 				this, lock = async_lock(async_calls_),
 				buffer = std::move(buffer)
@@ -539,7 +539,7 @@ namespace webservice{
 	void ws_client_session::on_binary(
 		boost::beast::multi_buffer&& buffer
 	)noexcept{
-		handler_strand_.post(
+		handler_strand_.defer(
 			[
 				this, lock = async_lock(async_calls_),
 				buffer = std::move(buffer)
@@ -556,7 +556,7 @@ namespace webservice{
 		ws_client_location location,
 		boost::system::error_code ec
 	)noexcept{
-		handler_strand_.post(
+		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_), location, ec]{
 				try{
 					client_.on_error(location, ec);
@@ -569,7 +569,7 @@ namespace webservice{
 	void ws_client_session::on_exception(
 		std::exception_ptr error
 	)noexcept{
-		handler_strand_.post(
+		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_), error]{
 				client_.on_exception(error);
 			}, std::allocator< void >());
