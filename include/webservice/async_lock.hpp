@@ -11,6 +11,8 @@
 
 #include <atomic>
 #include <utility>
+#include <iostream>
+#include <mutex>
 
 
 namespace webservice{
@@ -18,20 +20,29 @@ namespace webservice{
 
 	class async_lock{
 	public:
-		async_lock(std::atomic< std::size_t >& lock_count)
+		static std::mutex mutex;
+
+		async_lock(std::atomic< std::size_t >& lock_count, char const* op)
 			: lock_count_(&lock_count)
+			, op_(op)
 		{
-			++*lock_count_;
+			count_ = ++*lock_count_;
+			std::lock_guard< std::mutex > lock(mutex);
+			std::cout << lock_count_ << ">" << op_ << (count_) << std::endl;
 		}
 
 		async_lock(async_lock const&) = delete;
 
 		async_lock(async_lock&& other)
-			: lock_count_(std::exchange(other.lock_count_, nullptr)) {}
+			: lock_count_(std::exchange(other.lock_count_, nullptr))
+			, count_(other.count_)
+			, op_(other.op_) {}
 
 		~async_lock(){
 			if(lock_count_){
 				--*lock_count_;
+				std::lock_guard< std::mutex > lock(mutex);
+				std::cout << lock_count_ << "<" << op_ << (count_) << std::endl;
 			}
 		}
 
@@ -40,6 +51,8 @@ namespace webservice{
 
 	private:
 		std::atomic< std::size_t >* lock_count_;
+		std::size_t count_;
+		char const* op_;
 	};
 
 

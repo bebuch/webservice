@@ -54,7 +54,7 @@ namespace webservice{
 		impl_->strand_.post(
 			[
 				this,
-				lock = async_lock(async_calls_),
+				lock = async_lock(async_calls_, "ws_service_handler::async_emplace"),
 				socket = std::move(socket),
 				req = std::move(req)
 			]()mutable{
@@ -80,7 +80,7 @@ namespace webservice{
 		impl_->strand_.post(
 			[
 				this,
-				lock = async_lock(async_calls_),
+				lock = async_lock(async_calls_, "ws_service_handler::add_service"),
 				name = std::move(name),
 				service = std::move(service)
 			]()mutable{
@@ -99,7 +99,7 @@ namespace webservice{
 		impl_->strand_.post(
 			[
 				this,
-				lock = async_lock(async_calls_),
+				lock = async_lock(async_calls_, "ws_service_handler::erase_service"),
 				name = std::move(name)
 			]()mutable{
 // 				// Services are erased by destructor if shutdown is active
@@ -122,7 +122,7 @@ namespace webservice{
 		impl_->strand_.post(
 			[
 				this,
-				lock = async_lock(async_calls_)
+				lock = async_lock(async_calls_, "ws_service_handler::on_shutdown")
 			]()mutable{
 				for(auto& service: impl_->services){
 					service.second->shutdown();

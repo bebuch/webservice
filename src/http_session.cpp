@@ -37,7 +37,7 @@ namespace webservice{
 		// Stop timer, close socket
 		boost::asio::post(
 			strand_,
-			[this, lock = async_lock(async_calls_)]{
+			[this, lock = async_lock(async_calls_, "http_sessions::~http_session")]{
 				boost::system::error_code ec;
 				timer_.cancel(ec);
 				if(socket_.is_open()){
@@ -62,7 +62,7 @@ namespace webservice{
 	void http_session::do_timer(){
 		timer_.async_wait(boost::asio::bind_executor(
 			strand_,
-			[this, lock = async_lock(async_calls_)](
+			[this, lock = async_lock(async_calls_, "http_sessions::do_timer")](
 				boost::system::error_code ec
 			){
 				if(ec == boost::asio::error::operation_aborted){
@@ -114,7 +114,7 @@ namespace webservice{
 		boost::beast::http::async_read(socket_, buffer_, req_,
 			boost::asio::bind_executor(
 				strand_,
-				[this, lock = async_lock(async_calls_)](
+				[this, lock = async_lock(async_calls_, "http_sessions::do_read")](
 					boost::system::error_code ec,
 					std::size_t /*bytes_transferred*/
 				){

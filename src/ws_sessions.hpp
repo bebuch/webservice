@@ -107,7 +107,7 @@ namespace webservice{
 			strand_.post(
 				[
 					this,
-					lock = async_lock(async_calls_),
+					lock = async_lock(async_calls_, "ws_sessions::async_call"),
 					fn = static_cast< Fn&& >(fn)
 				]()mutable{
 					fn(set_);

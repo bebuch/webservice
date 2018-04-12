@@ -34,7 +34,7 @@ namespace webservice{
 		strand_.post(
 			[
 				this,
-				lock = async_lock(async_calls_),
+				lock = async_lock(async_calls_, "http_sessions::async_emplace"),
 				socket = std::move(socket),
 				&handler
 			]()mutable{
@@ -59,7 +59,7 @@ namespace webservice{
 
 	void http_sessions::async_erase(http_session* session){
 		strand_.post(
-			[this, lock = async_lock(async_calls_), session]{
+			[this, lock = async_lock(async_calls_, "http_sessions::async_erase"), session]{
 				auto iter = set_.find(session);
 				if(iter == set_.end()){
 					throw std::logic_error("session doesn't exist");
@@ -73,7 +73,7 @@ namespace webservice{
 		strand_.post(
 			[
 				this,
-				lock = async_lock(async_calls_)
+				lock = async_lock(async_calls_, "http_sessions::shutdown")
 			]()mutable{
 				shutdown_ = true;
 				for(auto& session: set_){

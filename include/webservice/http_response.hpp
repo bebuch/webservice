@@ -34,7 +34,7 @@ namespace webservice{
 			bool const need_eof
 		)
 			: self_(self)
-			, async_lock_(async_calls)
+			, async_lock_(async_calls, "http_session_on_write")
 			, need_eof_(need_eof) {}
 
 		void operator()(
