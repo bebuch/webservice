@@ -19,6 +19,7 @@
 
 #include <thread>
 #include <csignal>
+#include <cstdlib>
 
 
 struct request_handler
@@ -55,12 +56,12 @@ struct ws_handler
 	void on_text(
 		webservice::ws_identifier,
 		std::string const&,
-		std::string&& text
+		std::string&& /*text*/
 	)override{
-		if(count % 1000 == 0){
-			std::cout << "\033[1;32mserver pass: '" << text << "'\033[0m"
-				<< std::endl;
-		}
+// 		if(count % 1000 == 0){
+// 			std::cout << "\033[1;32mserver pass: '" << text << "'\033[0m"
+// 				<< std::endl;
+// 		}
 		++count;
 		send_text(std::to_string(count));
 	}
@@ -86,10 +87,10 @@ struct ws_client
 	int count = 0;
 
 	void on_text(std::string&& text)override{
-		if(count % 1000 == 0){
-			std::cout << "\033[1;32mclient pass: '" << text << "'\033[0m"
-				<< std::endl;
-		}
+// 		if(count % 1000 == 0){
+// 			std::cout << "\033[1;32mclient pass: '" << text << "'\033[0m"
+// 				<< std::endl;
+// 		}
 		++count;
 		send_text(text);
 	}
@@ -115,19 +116,28 @@ int main(){
 	std::signal(SIGABRT, &signal_handler);
 	std::signal(SIGINT, &signal_handler);
 
+	std::srand(std::time(nullptr));
+
 	try{
 		{
-			using std::make_unique;
-			ws_client client;
 
-			webservice::server server(
-				make_unique< request_handler >(),
-				make_unique< ws_handler >(),
-				make_unique< webservice::error_printing_error_handler >(),
-				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
-			client.async_connect("127.0.0.1", "1234", "/");
+			for(std::size_t i = 0; i < 1000; ++i){
+				ws_client client;
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				using std::make_unique;
+				webservice::server server(
+					make_unique< request_handler >(),
+					make_unique< ws_handler >(),
+					make_unique< webservice::error_printing_error_handler >(),
+					boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
+				client.async_connect("127.0.0.1", "1234", "/");
+
+				std::this_thread::sleep_for(
+					std::chrono::milliseconds(rand() % 100));
+
+				std::cout << "-" << std::flush;
+			}
+			std::cout << "\n";
 		}
 
 		return 0;
