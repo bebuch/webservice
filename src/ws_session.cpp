@@ -200,6 +200,7 @@ namespace webservice{
 				if(!wait_on_close_ && ws_.is_open()){
 					boost::system::error_code ec;
 					ws_.close(reason, ec);
+					wait_on_close_ = true;
 					if(ec){
 						derived().on_error(location_type::close, ec);
 					}
@@ -582,6 +583,7 @@ namespace webservice{
 						timer_.cancel(ec);
 						if(ws_.is_open()){
 							ws_.close("shutdown", ec);
+							wait_on_close_ = true;
 						}
 						client_.remove_session();
 					}, std::allocator< void >());
