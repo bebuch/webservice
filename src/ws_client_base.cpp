@@ -14,7 +14,6 @@
 #include <boost/beast/core/string.hpp>
 #include <boost/beast/websocket.hpp>
 
-#include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
 
@@ -22,59 +21,25 @@
 #include <string>
 #include <vector>
 #include <thread>
-#include <mutex>
 
 
 namespace webservice{
 
 
-	struct ws_client_base_impl{
-		/// \brief Constructor
-		ws_client_base_impl(
-			std::string&& host,
-			std::string&& port,
-			std::string&& resource
-		)
-			: host_(std::move(host))
-			, port_(std::move(port))
-			, resource_([](std::string&& resource){
-					if(resource.empty()) resource = "/";
-					return std::move(resource);
-				}(std::move(resource)))
-			, work_(boost::asio::make_work_guard(ioc_)) {}
-
-
-		/// \brief Send a message
-		template < typename Data >
-		void send(Data&& data){
-			std::lock_guard< std::recursive_mutex > lock(mutex_);
-			if(session_){
-				session_->send(static_cast< Data&& >(data));
-			}
-		}
-
-		std::string const host_;
-		std::string const port_;
-		std::string const resource_;
-
-		std::atomic< bool > shutdown_{false};
-		std::recursive_mutex mutex_;
-
-		boost::asio::io_context ioc_;
-		boost::asio::executor_work_guard<
-			boost::asio::io_context::executor_type > work_;
-		std::unique_ptr< ws_client_session > session_;
-		std::thread thread_;
-	};
-
-
-	ws_client_base::ws_client_base(
-		std::string host,
-		std::string port,
-		std::string resource
-	)
-		: impl_(std::make_unique< ws_client_base_impl >(
-			std::move(host), std::move(port), std::move(resource))) {}
+	ws_client_base::ws_client_base()
+		: strand_(ioc_.get_executor())
+		, work_(boost::asio::make_work_guard(ioc_))
+		, thread_([this]{
+				// restart io_context if it returned by exception
+				for(;;){
+					try{
+						ioc_.run();
+						return;
+					}catch(...){
+						on_exception(std::current_exception());
+					}
+				}
+			}) {}
 
 	ws_client_base::~ws_client_base(){
 		shutdown();
@@ -82,96 +47,134 @@ namespace webservice{
 	}
 
 
-	void ws_client_base::connect(){
-		std::lock_guard< std::recursive_mutex > lock(impl_->mutex_);
-		if(is_connected()){
-			return;
-		}
-
-		block();
-
-		boost::asio::ip::tcp::resolver resolver(impl_->ioc_);
-		auto results = resolver.resolve(impl_->host_, impl_->port_);
-
-		ws_stream ws(impl_->ioc_);
-		ws.read_message_max(max_read_message_size());
-
-		// Make the connection on the IP address we get from a lookup
-		boost::asio::connect(ws.next_layer(),
-			results.begin(), results.end());
-
-		// Perform the ws handshake
-		ws.handshake(impl_->host_, impl_->resource_);
-
-		// Create a WebSocket session by transferring the socket
-		impl_->session_ = std::make_unique< ws_client_session >(
-			std::move(ws), *this, ping_time());
-		impl_->session_->set_erase_fn(&impl_->session_);
-		impl_->session_->start();
-
-
-		// restart io_context if it returned by exception
-		impl_->thread_ = std::thread([this]{
-				for(;;){
-					try{
-						impl_->ioc_.run();
-						return;
-					}catch(...){
-						on_exception(std::current_exception());
-					}
+	void ws_client_base::shutdown()noexcept{
+		shutdown_ = true;
+		strand_.dispatch(
+			[this]{
+				if(session_){
+					session_->send("shutdown");
 				}
-			});
-	}
 
-	bool ws_client_base::is_connected()const{
-		return static_cast< bool >(impl_->session_.get());
-	}
-
-
-	void ws_client_base::send_text(shared_const_buffer buffer){
-		impl_->send(std::make_tuple(text_tag{}, std::move(buffer)));
-	}
-
-	void ws_client_base::send_binary(shared_const_buffer buffer){
-		impl_->send(std::make_tuple(binary_tag{}, std::move(buffer)));
-	}
-
-
-	void ws_client_base::close(boost::beast::string_view reason){
-		impl_->send(boost::beast::websocket::close_reason(reason));
+				session_.reset();
+				work_.reset();
+			}, std::allocator< void >());
 	}
 
 	void ws_client_base::block()noexcept{
-		std::lock_guard< std::recursive_mutex > lock(impl_->mutex_);
-		if(impl_->thread_.joinable()){
+		std::lock_guard< std::mutex > lock(mutex_);
+		if(thread_.joinable()){
 			try{
-				impl_->thread_.join();
+				thread_.join();
 			}catch(...){
 				on_exception(std::current_exception());
 			}
 		}
 	}
 
-	void ws_client_base::shutdown()noexcept{
-		if(!impl_->shutdown_.exchange(true)){
-			if(impl_->session_){
-				impl_->session_->async_erase();
-			}
-			impl_->work_.reset();
-		}
+	void ws_client_base::async_connect(
+		std::string host,
+		std::string port,
+		std::string resource
+	){
+		strand_.dispatch(
+			[
+				this,
+				host = std::move(host),
+				port = std::move(port),
+				resource = [](std::string&& resource){
+						if(resource.empty()) resource = "/";
+						return std::move(resource);
+					}(std::move(resource))
+			]()mutable{
+				if(shutdown_){
+					throw std::logic_error("can not connect after shutdown");
+				}
+
+				if(is_connected()){
+					throw std::logic_error("ws client is already connected");
+				}
+
+				boost::asio::ip::tcp::resolver resolver(ioc_);
+				auto results = resolver.resolve(host, port);
+
+				ws_stream ws(ioc_);
+				ws.read_message_max(max_read_message_size());
+
+				// Make the connection on the IP address we get from a lookup
+				boost::asio::connect(ws.next_layer(),
+					results.begin(), results.end());
+
+				// Perform the ws handshake
+				ws.handshake(host, resource);
+
+				// Create a WebSocket session by transferring the socket
+				session_ = std::make_unique< ws_client_session >(
+					std::move(ws), *this, ping_time());
+				session_->start();
+			}, std::allocator< void >());
+	}
+
+	bool ws_client_base::is_connected()const{
+		return session_.get() != nullptr;
+	}
+
+
+	void ws_client_base::send_text(shared_const_buffer buffer){
+		strand_.dispatch(
+			[this, buffer = std::move(buffer)]()mutable{
+				if(!session_){
+					throw std::runtime_error(
+						"ws send text: client is not connect");
+				}
+
+				session_->send(
+					std::make_tuple(text_tag{}, std::move(buffer)));
+			}, std::allocator< void >());
+	}
+
+	void ws_client_base::send_binary(shared_const_buffer buffer){
+		strand_.dispatch(
+			[this, buffer = std::move(buffer)]()mutable{
+				if(!session_){
+					throw std::runtime_error(
+						"ws send binary: client is not connect");
+				}
+
+				session_->send(
+					std::make_tuple(binary_tag{}, std::move(buffer)));
+			}, std::allocator< void >());
+	}
+
+
+	void ws_client_base::close(boost::beast::string_view reason){
+		strand_.dispatch(
+			[this, reason]{
+				if(!session_){
+					throw std::runtime_error(
+						"ws send close: client is not connect");
+				}
+
+				session_->send(boost::beast::websocket::close_reason(reason));
+			}, std::allocator< void >());
 	}
 
 	boost::asio::io_context::executor_type ws_client_base::get_executor(){
-		return impl_->ioc_.get_executor();
+		return ioc_.get_executor();
 	}
 
 	std::size_t ws_client_base::poll_one()noexcept{
 		try{
-			return impl_->ioc_.poll_one();
+			return ioc_.poll_one();
 		}catch(...){
 			on_exception(std::current_exception());
 			return 1;
 		}
+	}
+
+	void ws_client_base::remove_session(){
+		ioc_.get_executor().post([this]{
+				session_.reset();
+			}, std::allocator< void >());
 	}
 
 

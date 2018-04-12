@@ -13,31 +13,31 @@
 #include "ws_client_location.hpp"
 
 #include <boost/asio/io_context.hpp>
+#include <boost/asio/strand.hpp>
+#include <boost/asio/executor_work_guard.hpp>
 
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/string.hpp>
-
-#include <boost/any.hpp>
-
-#include <boost/optional.hpp>
 
 #include <memory>
 #include <chrono>
 #include <string>
 #include <vector>
+#include <thread>
+#include <mutex>
 
 
 namespace webservice{
 
 
+	using strand
+		= boost::asio::strand< boost::asio::io_context::executor_type >;
+
+
 	class ws_client_base{
 	public:
 		/// \brief Constructor
-		ws_client_base(
-			std::string host,
-			std::string port,
-			std::string resource
-		);
+		ws_client_base();
 
 		ws_client_base(ws_client_base const&) = delete;
 
@@ -49,9 +49,11 @@ namespace webservice{
 
 
 		/// \brief Connect client to server
-		///
-		/// Does nothing if client is already connected.
-		void connect();
+		void async_connect(
+			std::string host,
+			std::string port,
+			std::string resource
+		);
 
 		/// \brief true if client is connected to server, false otherwise
 		bool is_connected()const;
@@ -78,6 +80,7 @@ namespace webservice{
 		/// This function is not blocking. Call block() if you want to wait
 		/// until all connections are closed.
 		void shutdown()noexcept;
+
 
 		/// \brief Get executor
 		boost::asio::io_context::executor_type get_executor();
@@ -141,6 +144,10 @@ namespace webservice{
 		}
 
 
+		/// \brief Called by the connection when it closes
+		void remove_session();
+
+
 	private:
 		/// \brief Max size of incomming http and WebSocket messages
 		std::size_t max_read_message_size_{16 * 1024 * 1024};
@@ -152,8 +159,34 @@ namespace webservice{
 		/// session is considerd to be dead and will be closed.
 		std::chrono::milliseconds ping_time_{15000};
 
-		/// \brief Pointer to implementation
-		std::unique_ptr< struct ws_client_base_impl > impl_;
+
+		/// \brief Pointer to the current session
+		std::unique_ptr< struct ws_client_session > session_;
+
+
+		/// \brief The clients io_context
+		boost::asio::io_context ioc_;
+
+		/// \brief Operations are done async over this stand
+		strand strand_;
+
+		/// \brief Keeps the io_context running
+		boost::asio::executor_work_guard<
+			boost::asio::io_context::executor_type > work_;
+
+
+		/// \brief Shutdown flag
+		std::atomic< std::size_t > shutdown_{false};
+
+		/// \brief Count of currently running async calls
+		std::atomic< std::size_t > async_calls_{0};
+
+
+		/// \brief Protect thread joins
+		std::mutex mutex_;
+
+		/// \brief The working thread
+		std::thread thread_;
 	};
 
 

@@ -109,7 +109,7 @@ namespace webservice{
 		std::unique_ptr< class error_handler > error_handler_;
 
 		/// \brief Protect thread joins
-		std::recursive_mutex mutex_;
+		std::mutex mutex_;
 
 		/// \brief The worker threads
 		std::vector< std::thread > threads_;

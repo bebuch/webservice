@@ -146,8 +146,8 @@ int main(){
 				make_unique< webservice::error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
-			ws_client client("127.0.0.1", "1234", "/");
-			client.connect();
+			ws_client client;
+			client.async_connect("127.0.0.1", "1234", "/");
 
 			server.block();
 		}

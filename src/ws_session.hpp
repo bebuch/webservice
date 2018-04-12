@@ -199,21 +199,6 @@ namespace webservice{
 	};
 
 
-	class erase_client_session_fn{
-	public:
-		erase_client_session_fn(
-			std::unique_ptr< ws_client_session >* erase_fn = nullptr
-		)
-			: erase_fn_(erase_fn) {}
-
-		void operator()(){
-			erase_fn_->reset();
-		}
-
-	private:
-		std::unique_ptr< ws_client_session >* erase_fn_;
-	};
-
 	class ws_client_session: public ws_session< ws_client_session >{
 	public:
 		/// \brief Take ownership of the socket
@@ -251,9 +236,6 @@ namespace webservice{
 		void on_exception(std::exception_ptr error)noexcept;
 
 
-		/// \brief Set the function that is called on async_erase
-		void set_erase_fn(erase_client_session_fn&& erase_fn)noexcept;
-
 		/// \brief Send a request to erase this session from the list
 		///
 		/// The request is sended only once, any call after the fist will be
@@ -262,8 +244,6 @@ namespace webservice{
 
 
 	private:
-		erase_client_session_fn erase_fn_;
-
 		std::once_flag erase_flag_;
 
 		ws_client_base& client_;

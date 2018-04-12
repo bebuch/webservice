@@ -20,7 +20,6 @@
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/bind_executor.hpp>
-#include <boost/asio/dispatch.hpp>
 
 
 namespace webservice{
@@ -568,17 +567,16 @@ namespace webservice{
 			}, std::allocator< void >());
 	}
 
-	void ws_client_session::set_erase_fn(
-		erase_client_session_fn&& erase_fn
-	)noexcept{
-		erase_fn_ = std::move(erase_fn);
-	}
-
 	void ws_client_session::async_erase(){
 		std::call_once(erase_flag_, [this]{
-				client_.get_executor().post(
-					[this]{
-						erase_fn_();
+				strand_.post(
+					[this, lock = async_lock(async_calls_)]{
+						boost::system::error_code ec;
+						timer_.cancel(ec);
+						if(ws_.is_open()){
+							ws_.close("shutdown", ec);
+						}
+						client_.remove_session();
 					}, std::allocator< void >());
 			});
 	}

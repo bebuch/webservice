@@ -65,8 +65,8 @@ int main(int argc, char* argv[]){
 		auto const port = argv[2];
 		auto const resource = argv[3];
 
-		ws_client client(host, port, resource);
-		client.connect();
+		ws_client client;
+		client.async_connect(host, port, resource);
 
 		client.send_text("text from client");
 

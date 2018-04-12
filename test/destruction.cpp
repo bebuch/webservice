@@ -35,16 +35,16 @@ int main(){
 			std::make_unique< webservice::error_handler >(),
 			boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
-		webservice::ws_client client("127.0.0.1", "1234", "/");
-		client.connect();
+		webservice::ws_client client;
+		client.async_connect("127.0.0.1", "1234", "/");
 
 		client.send_text("abc");
 		service.send_text("xyz");
 
-		client.connect();
+		client.async_connect("127.0.0.1", "1234", "/");
 		client.send_text("abc");
 
-		client.connect();
+		client.async_connect("127.0.0.1", "1234", "/");
 
 		return 0;
 	}catch(std::exception const& e){

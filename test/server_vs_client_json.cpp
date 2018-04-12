@@ -248,8 +248,8 @@ int main(){
 
 			check(state_t::init);
 
-			ws_client client("127.0.0.1", "1234", "/");
-			client.connect();
+			ws_client client;
+			client.async_connect("127.0.0.1", "1234", "/");
 
 			using system_clock = std::chrono::system_clock;
 			auto const start = system_clock::now();

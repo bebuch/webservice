@@ -135,14 +135,14 @@ int main(){
 	try{
 		{
 			using std::make_unique;
-			ws_client client("127.0.0.1", "1234", "/");
+			ws_client client;
 
 			webservice::server server(
 				make_unique< request_handler >(),
 				make_unique< ws_handler >(),
 				make_unique< webservice::error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
-			client.connect();
+			client.async_connect("127.0.0.1", "1234", "/");
 
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}

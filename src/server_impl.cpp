@@ -70,7 +70,7 @@ namespace webservice{
 
 
 	void server_impl::block()noexcept{
-		std::lock_guard< std::recursive_mutex > lock(mutex_);
+		std::lock_guard< std::mutex > lock(mutex_);
 		for(auto& thread: threads_){
 			if(thread.joinable()){
 				try{
