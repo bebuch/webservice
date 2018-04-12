@@ -119,26 +119,23 @@ int main(){
 	std::srand(std::time(nullptr));
 
 	try{
-		{
+		for(std::size_t i = 0; i < 1000; ++i){
+			ws_client client;
 
-			for(std::size_t i = 0; i < 1000; ++i){
-				ws_client client;
+			using std::make_unique;
+			webservice::server server(
+				make_unique< request_handler >(),
+				make_unique< ws_handler >(),
+				make_unique< webservice::error_printing_error_handler >(),
+				boost::asio::ip::make_address("127.0.0.1"), 1234, 2);
+			client.async_connect("127.0.0.1", "1234", "/");
 
-				using std::make_unique;
-				webservice::server server(
-					make_unique< request_handler >(),
-					make_unique< ws_handler >(),
-					make_unique< webservice::error_printing_error_handler >(),
-					boost::asio::ip::make_address("127.0.0.1"), 1234, 2);
-				client.async_connect("127.0.0.1", "1234", "/");
+			std::this_thread::sleep_for(
+				std::chrono::milliseconds(rand() % 100));
 
-				std::this_thread::sleep_for(
-					std::chrono::milliseconds(rand() % 100));
-
-				std::cout << "-" << std::flush;
-			}
-			std::cout << "\n";
+			std::cout << "-" << std::flush;
 		}
+		std::cout << "\n";
 
 		return 0;
 	}catch(std::exception const& e){
