@@ -161,7 +161,7 @@ namespace webservice{
 
 
 		/// \brief Pointer to the current session
-		std::unique_ptr< struct ws_client_session > session_;
+		std::unique_ptr< class ws_client_session > session_;
 
 
 		/// \brief The clients io_context
