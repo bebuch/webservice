@@ -106,6 +106,13 @@ exe extern_destruction
 	/boost//system
 	;
 
+exe client_terror
+	:
+	client_terror.cpp
+	/webservice//webservice
+	/boost//system
+	;
+
 exe text_ping_pong
 	:
 	text_ping_pong.cpp
