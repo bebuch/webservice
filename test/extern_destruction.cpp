@@ -129,7 +129,7 @@ int main(){
 					make_unique< request_handler >(),
 					make_unique< ws_handler >(),
 					make_unique< webservice::error_printing_error_handler >(),
-					boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
+					boost::asio::ip::make_address("127.0.0.1"), 1234, 10);
 				client.async_connect("127.0.0.1", "1234", "/");
 
 				std::this_thread::sleep_for(
