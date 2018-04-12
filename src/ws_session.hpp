@@ -118,6 +118,8 @@ namespace webservice{
 
 		std::atomic< std::size_t > async_calls_{0};
 
+		bool wait_on_close_{false};
+
 
 	private:
 		/// \brief This as actual type

@@ -173,6 +173,8 @@ namespace webservice{
 				this, lock = async_lock(async_calls_),
 				data = std::move(std::get< 1 >(data))
 			]()mutable{
+				if(wait_on_close_) return;
+
 				if(write_list_.full()){
 					throw std::runtime_error("write buffer is full");
 				}
@@ -195,7 +197,7 @@ namespace webservice{
 	){
 		strand_.post(
 			[this, lock = async_lock(async_calls_), reason]{
-				if(ws_.is_open()){
+				if(!wait_on_close_ && ws_.is_open()){
 					boost::system::error_code ec;
 					ws_.close(reason, ec);
 					if(ec){
@@ -208,6 +210,8 @@ namespace webservice{
 
 	template < typename Derived >
 	void ws_session< Derived >::do_write(){
+		if(wait_on_close_) return;
+
 		ws_.text(write_list_.front().is_text);
 		ws_.async_write(
 			std::move(write_list_.front().data),
@@ -226,7 +230,8 @@ namespace webservice{
 					}
 
 					write_list_.pop_front();
-					if(!write_list_.empty()){
+
+					if(!wait_on_close_ && !write_list_.empty()){
 						do_write();
 					}
 				}));
@@ -259,6 +264,7 @@ namespace webservice{
 				timer_.cancel(ec);
 				if(ws_.is_open()){
 					ws_.close("shutdown", ec);
+					wait_on_close_ = true;
 				}
 			}, std::allocator< void >());
 
@@ -440,6 +446,7 @@ namespace webservice{
 				timer_.cancel(ec);
 				if(ws_.is_open()){
 					ws_.close("shutdown", ec);
+					wait_on_close_ = true;
 				}
 			}, std::allocator< void >());
 
