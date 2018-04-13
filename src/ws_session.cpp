@@ -52,6 +52,8 @@ namespace webservice{
 			strand_,
 			[this, lock = async_lock(async_calls_, "ws_session::do_timer")]
 			(boost::system::error_code ec){
+				lock.enter();
+
 				if(ec == boost::asio::error::operation_aborted){
 					return;
 				}
@@ -81,6 +83,8 @@ namespace webservice{
 							[this, lock = async_lock(async_calls_, "ws_session::do_timer_intern")](
 								boost::system::error_code ec
 							){
+								lock.enter();
+
 								// Happens when the timer closes the socket
 								if(ec == boost::asio::error::operation_aborted){
 									return;
@@ -119,7 +123,7 @@ namespace webservice{
 	}
 
 	template < typename Derived >
-	void ws_session< Derived >::do_read(){
+	void ws_session< Derived >::do_read(char const* start_pos){
 		if(!ws_.is_open()){
 			return;
 		}
@@ -131,10 +135,12 @@ namespace webservice{
 			buffer_,
 			boost::asio::bind_executor(
 				strand_,
-				[this, lock = async_lock(async_calls_, "ws_session::do_read")](
+				[this, lock = async_lock(async_calls_, start_pos)](
 					boost::system::error_code ec,
 					std::size_t /*bytes_transferred*/
 				){
+					lock.enter();
+
 					// Happens when the timer closes the socket
 					if(ec == boost::asio::error::operation_aborted){
 						return;
@@ -163,7 +169,7 @@ namespace webservice{
 					buffer_.consume(buffer_.size());
 
 					// Do another read
-					do_read();
+					do_read("ws_session::do_read");
 				}));
 	}
 
@@ -178,6 +184,8 @@ namespace webservice{
 				this, lock = async_lock(async_calls_, "ws_session::send"),
 				data = std::move(std::get< 1 >(data))
 			]()mutable{
+				lock.enter();
+
 				if(wait_on_close_) return;
 
 				if(write_list_.full()){
@@ -202,6 +210,8 @@ namespace webservice{
 	){
 		strand_.post(
 			[this, lock = async_lock(async_calls_, "ws_session::send close"), reason]{
+				lock.enter();
+
 				if(!wait_on_close_ && ws_.is_open()){
 					boost::system::error_code ec;
 					ws_.close(reason, ec);
@@ -227,6 +237,8 @@ namespace webservice{
 					boost::system::error_code ec,
 					std::size_t /*bytes_transferred*/
 				){
+					lock.enter();
+
 					if(ec == boost::asio::error::operation_aborted){
 						return;
 					}
@@ -263,28 +275,21 @@ namespace webservice{
 		, service_(service) {}
 
 	ws_server_session::~ws_server_session(){
+		wait_on_close_ = true;
+
 		// Stop timer, close socket
 		strand_.dispatch(
 			[this, lock = async_lock(async_calls_, "ws_server_session::~ws_server_session")]{
+				lock.enter();
+
 				boost::system::error_code ec;
 				timer_.cancel(ec);
 				if(ws_.is_open()){
 					ws_.close("shutdown", ec);
-					wait_on_close_ = true;
 				}
 			}, std::allocator< void >());
 
-		// As long as async calls are pending
-		while(async_calls_ > 0){
-			assert(service_.server() != nullptr);
-
-			// Request the server to run a handler async
-			if(service_.server()->poll_one() == 0){
-				// If no handler was waiting, the pending one must
-				// currently run in another thread
-				std::this_thread::yield();
-			}
-		}
+		service_.server()->poll_while(async_calls_);
 
 		on_close();
 	}
@@ -322,6 +327,8 @@ namespace webservice{
 				strand_,
 				[this, lock = async_lock(async_calls_, "ws_server_session::do_accept")]
 				(boost::system::error_code ec){
+					lock.enter();
+
 					// Happens when the timer closes the socket
 					if(ec == boost::asio::error::operation_aborted){
 						return;
@@ -337,7 +344,7 @@ namespace webservice{
 					on_open();
 
 					// Read a message
-					do_read();
+					do_read("ws_server_session::do_accept::read");
 				}));
 	}
 
@@ -345,6 +352,8 @@ namespace webservice{
 	void ws_server_session::on_open()noexcept{
 		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_, "ws_server_session::on_open")]{
+				lock.enter();
+
 				try{
 					service_.on_open(ws_identifier(this), resource_);
 				}catch(...){
@@ -369,6 +378,8 @@ namespace webservice{
 				this, lock = async_lock(async_calls_, "ws_server_session::on_text"),
 				buffer = std::move(buffer)
 			]()mutable{
+				lock.enter();
+
 				try{
 					service_.on_text(
 						ws_identifier(this), resource_, std::move(buffer));
@@ -386,6 +397,8 @@ namespace webservice{
 				this, lock = async_lock(async_calls_, "ws_server_session::on_binary"),
 				buffer = std::move(buffer)
 			]()mutable{
+				lock.enter();
+
 				try{
 					service_.on_binary(
 						ws_identifier(this), resource_, std::move(buffer));
@@ -401,6 +414,8 @@ namespace webservice{
 	)noexcept{
 		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_, "ws_server_session::on_error"), location, ec]{
+				lock.enter();
+
 				try{
 					service_.on_error(
 						ws_identifier(this), resource_, location, ec);
@@ -415,6 +430,8 @@ namespace webservice{
 	)noexcept{
 		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_, "ws_server_session::on_exception"), error]{
+				lock.enter();
+
 				service_.on_exception(ws_identifier(this), resource_, error);
 			}, std::allocator< void >());
 	}
@@ -445,26 +462,21 @@ namespace webservice{
 		, client_(client) {}
 
 	ws_client_session::~ws_client_session(){
+		wait_on_close_ = true;
+
 		// Stop timer, close socket
 		strand_.dispatch(
 			[this, lock = async_lock(async_calls_, "ws_client_session::~ws_client_session")]{
+				lock.enter();
+
 				boost::system::error_code ec;
 				timer_.cancel(ec);
 				if(ws_.is_open()){
 					ws_.close("shutdown", ec);
-					wait_on_close_ = true;
 				}
 			}, std::allocator< void >());
 
-		// As long as async calls are pending
-		while(async_calls_ > 0){
-			// Request the client to run a handler async
-			if(client_.poll_one() == 0){
-				// If no handler was waiting, the pending one must
-				// currently run in another thread
-				std::this_thread::yield();
-			}
-		}
+		client_.poll_while(async_calls_);
 
 		if(is_open_){
 			on_close();
@@ -495,17 +507,21 @@ namespace webservice{
 
 		strand_.dispatch(
 			[this, lock = async_lock(async_calls_, "ws_client_session::start")]{
+				lock.enter();
+
 				is_open_ = true;
 				on_open();
 			}, std::allocator< void >());
 
-		do_read();
+		do_read("ws_client_session::start::read");
 	}
 
 
 	void ws_client_session::on_open()noexcept{
 		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_, "ws_client_session::on_open")]{
+				lock.enter();
+
 				try{
 					client_.on_open();
 				}catch(...){
@@ -517,6 +533,8 @@ namespace webservice{
 	void ws_client_session::on_close()noexcept{
 		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_, "ws_client_session::on_close")]{
+				lock.enter();
+
 				try{
 					client_.on_close();
 				}catch(...){
@@ -533,6 +551,8 @@ namespace webservice{
 				this, lock = async_lock(async_calls_, "ws_client_session::on_text"),
 				buffer = std::move(buffer)
 			]()mutable{
+				lock.enter();
+
 				try{
 					client_.on_text(std::move(buffer));
 				}catch(...){
@@ -549,6 +569,8 @@ namespace webservice{
 				this, lock = async_lock(async_calls_, "ws_client_session::on_binary"),
 				buffer = std::move(buffer)
 			]()mutable{
+				lock.enter();
+
 				try{
 					client_.on_binary(std::move(buffer));
 				}catch(...){
@@ -563,6 +585,8 @@ namespace webservice{
 	)noexcept{
 		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_, "ws_client_session::on_error"), location, ec]{
+				lock.enter();
+
 				try{
 					client_.on_error(location, ec);
 				}catch(...){
@@ -576,6 +600,8 @@ namespace webservice{
 	)noexcept{
 		handler_strand_.defer(
 			[this, lock = async_lock(async_calls_, "ws_client_session::on_exception"), error]{
+				lock.enter();
+
 				client_.on_exception(error);
 			}, std::allocator< void >());
 	}
@@ -584,6 +610,8 @@ namespace webservice{
 		std::call_once(erase_flag_, [this]{
 				strand_.post(
 					[this, lock = async_lock(async_calls_, "ws_client_session::async_erase")]{
+						lock.enter();
+
 						boost::system::error_code ec;
 						timer_.cancel(ec);
 						if(ws_.is_open()){

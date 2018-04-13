@@ -85,8 +85,8 @@ namespace webservice{
 		/// \brief Get executor
 		boost::asio::io_context::executor_type get_executor();
 
-		/// \brief Run one task in client thread
-		std::size_t poll_one()noexcept;
+		/// \brief Poll tasks as long as async_calls is not 0
+		void poll_while(std::atomic< std::size_t > const& async_calls)noexcept;
 
 
 		/// \brief Called when the sessions starts

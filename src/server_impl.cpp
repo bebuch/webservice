@@ -102,8 +102,11 @@ namespace webservice{
 	}
 
 
-	std::size_t server_impl::poll_one()noexcept{
-		return server_.poll_one();
+	void server_impl::poll_while(
+		std::atomic< std::size_t > const& async_calls
+	)noexcept{
+		server_.poll_while(async_calls);
 	}
+
 
 }

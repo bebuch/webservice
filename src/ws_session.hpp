@@ -90,7 +90,7 @@ namespace webservice{
 		void activity();
 
 		/// \brief Read another message
-		void do_read();
+		void do_read(char const* position);
 
 		/// \brief Called when a message was written
 		void on_write(boost::system::error_code ec);

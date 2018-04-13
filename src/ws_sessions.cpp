@@ -33,7 +33,7 @@ namespace webservice{
 		ws_handler_base& service,
 		std::chrono::milliseconds ping_time
 	){
-		strand_.post(
+		strand_.defer(
 			[
 				this,
 				lock = async_lock(async_calls_, "ws_sessions::async_emplace"),
@@ -42,6 +42,8 @@ namespace webservice{
 				&service,
 				ping_time
 			]()mutable{
+				lock.enter();
+
 				if(shutdown_){
 					throw std::logic_error(
 						"emplace in ws_sessions while shutdown");
@@ -62,8 +64,10 @@ namespace webservice{
 	}
 
 	void ws_sessions::async_erase(ws_server_session* session){
-		strand_.post(
+		strand_.defer(
 			[this, lock = async_lock(async_calls_, "ws_sessions::async_erase"), session]{
+				lock.enter();
+
 				auto iter = set_.find(session);
 				if(iter == set_.end()){
 					throw std::logic_error("session doesn't exist");
@@ -86,15 +90,7 @@ namespace webservice{
 	}
 
 	void ws_sessions::block()noexcept{
-		// As long as async calls are pending
-		while(async_calls_ > 0){
-			// Request the server to run a handler async
-			if(server_.poll_one() == 0){
-				// If no handler was waiting, the pending one must
-				// currently run in another thread
-				std::this_thread::yield();
-			}
-		}
+		server_.poll_while(async_calls_);
 	}
 
 

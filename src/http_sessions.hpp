@@ -9,8 +9,6 @@
 #ifndef _webservice__http_sessions__hpp_INCLUDED_
 #define _webservice__http_sessions__hpp_INCLUDED_
 
-#include <webservice/async_lock.hpp>
-
 #include <boost/beast/websocket.hpp>
 
 #include <boost/asio/strand.hpp>

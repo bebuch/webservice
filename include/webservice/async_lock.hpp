@@ -33,7 +33,7 @@ namespace webservice{
 			++*lock_count_;
 			std::lock_guard< std::mutex > lock(mutex);
 				std::cout
-					<< std::setw(8) << (count_) << " > "
+					<< std::setw(8) << (count_) << " 1 "
 					<< "0x" << std::setfill('0') << std::hex << std::setw(16)
 						<< reinterpret_cast< std::size_t >(lock_count_) << " - "
 					<< std::dec << std::setfill(' ') << op_ << std::endl;
@@ -51,7 +51,7 @@ namespace webservice{
 				--*lock_count_;
 				std::lock_guard< std::mutex > lock(mutex);
 				std::cout
-					<< std::setw(8) << (count_) << " < "
+					<< std::setw(8) << (count_) << " 3 "
 					<< "0x" << std::setfill('0') << std::hex << std::setw(16)
 						<< reinterpret_cast< std::size_t >(lock_count_) << " - "
 					<< std::dec << std::setfill(' ') << op_ << std::endl;
@@ -59,6 +59,15 @@ namespace webservice{
 		}
 
 		async_lock& operator=(async_lock const&) = delete;
+
+		void enter()const{
+			std::lock_guard< std::mutex > lock(mutex);
+			std::cout
+				<< std::setw(8) << (count_) << " 2 "
+				<< "0x" << std::setfill('0') << std::hex << std::setw(16)
+					<< reinterpret_cast< std::size_t >(lock_count_) << " - "
+				<< std::dec << std::setfill(' ') << op_ << std::endl;
+		}
 
 
 	private:

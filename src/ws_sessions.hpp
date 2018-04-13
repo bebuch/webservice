@@ -104,12 +104,14 @@ namespace webservice{
 
 		template < typename Fn >
 		void async_call(Fn&& fn){
-			strand_.post(
+			strand_.defer(
 				[
 					this,
 					lock = async_lock(async_calls_, "ws_sessions::async_call"),
 					fn = static_cast< Fn&& >(fn)
 				]()mutable{
+					lock.enter();
+
 					fn(set_);
 				}, std::allocator< void >());
 		}

@@ -38,6 +38,8 @@ namespace webservice{
 		boost::asio::post(
 			strand_,
 			[this, lock = async_lock(async_calls_, "http_sessions::~http_session")]{
+				lock.enter();
+
 				boost::system::error_code ec;
 				timer_.cancel(ec);
 				if(socket_.is_open()){
@@ -47,15 +49,7 @@ namespace webservice{
 				}
 			});
 
-		// As long as async calls are pending
-		while(async_calls_ > 0){
-			// Request the server to run a handler async
-			if(handler_.server()->poll_one() == 0){
-				// If no handler was waiting, the pending one must
-				// currently run in another thread
-				std::this_thread::yield();
-			}
-		}
+		handler_.server()->poll_while(async_calls_);
 	}
 
 	// Called when the timer expires.
@@ -65,6 +59,8 @@ namespace webservice{
 			[this, lock = async_lock(async_calls_, "http_sessions::do_timer")](
 				boost::system::error_code ec
 			){
+				lock.enter();
+
 				if(ec == boost::asio::error::operation_aborted){
 					return;
 				}
@@ -118,6 +114,8 @@ namespace webservice{
 					boost::system::error_code ec,
 					std::size_t /*bytes_transferred*/
 				){
+					lock.enter();
+
 					// Happens when the timer closes the socket
 					if(ec == boost::asio::error::operation_aborted){
 						return;
@@ -266,6 +264,8 @@ namespace webservice{
 		boost::system::error_code ec,
 		std::size_t /*bytes_transferred*/
 	)const{
+		async_lock_.enter();
+
 		self_->on_write(ec, need_eof_);
 	}
 

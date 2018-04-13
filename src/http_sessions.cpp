@@ -31,13 +31,15 @@ namespace webservice{
 		boost::asio::ip::tcp::socket&& socket,
 		http_request_handler& handler
 	){
-		strand_.post(
+		strand_.defer(
 			[
 				this,
 				lock = async_lock(async_calls_, "http_sessions::async_emplace"),
 				socket = std::move(socket),
 				&handler
 			]()mutable{
+				lock.enter();
+
 				if(shutdown_){
 					throw std::logic_error(
 						"emplace in http_sessions while shutdown");
@@ -58,8 +60,10 @@ namespace webservice{
 	}
 
 	void http_sessions::async_erase(http_session* session){
-		strand_.post(
+		strand_.defer(
 			[this, lock = async_lock(async_calls_, "http_sessions::async_erase"), session]{
+				lock.enter();
+
 				auto iter = set_.find(session);
 				if(iter == set_.end()){
 					throw std::logic_error("session doesn't exist");
@@ -70,11 +74,13 @@ namespace webservice{
 
 
 	void http_sessions::shutdown()noexcept{
-		strand_.post(
+		strand_.defer(
 			[
 				this,
 				lock = async_lock(async_calls_, "http_sessions::shutdown")
 			]()mutable{
+				lock.enter();
+
 				shutdown_ = true;
 				for(auto& session: set_){
 					session->async_erase();
@@ -87,15 +93,7 @@ namespace webservice{
 	}
 
 	void http_sessions::block()noexcept{
-		// As long as async calls are pending
-		while(async_calls_ > 0){
-			// Request the server to run a handler async
-			if(server_.poll_one() == 0){
-				// If no handler was waiting, the pending one must
-				// currently run in another thread
-				std::this_thread::yield();
-			}
-		}
+		server_.poll_while(async_calls_);
 	}
 
 }

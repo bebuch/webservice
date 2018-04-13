@@ -162,12 +162,21 @@ namespace webservice{
 		return ioc_.get_executor();
 	}
 
-	std::size_t ws_client_base::poll_one()noexcept{
-		try{
-			return ioc_.poll_one();
-		}catch(...){
-			on_exception(std::current_exception());
-			return 1;
+	void ws_client_base::poll_while(
+		std::atomic< std::size_t > const& async_calls
+	)noexcept{
+		// As long as async calls are pending
+		while(async_calls > 0){
+			try{
+				// Request the client to run a handler async
+				if(ioc_.poll_one() == 0){
+					// If no handler was waiting, the pending one must
+					// currently run in another thread
+					std::this_thread::yield();
+				}
+			}catch(...){
+				on_exception(std::current_exception());
+			}
 		}
 	}
 

@@ -29,15 +29,7 @@ namespace webservice{
 	ws_service_handler::ws_service_handler() = default;
 
 	ws_service_handler::~ws_service_handler(){
-		// As long as async calls are pending
-		while(async_calls_ > 0){
-			// Request the server to run a handler async
-			if(server()->poll_one() == 0){
-				// If no handler was waiting, the pending one must
-				// currently run in another thread
-				std::this_thread::yield();
-			}
-		}
+		server()->poll_while(async_calls_);
 	}
 
 	void ws_service_handler::set_server(class server& server){
@@ -58,6 +50,8 @@ namespace webservice{
 				socket = std::move(socket),
 				req = std::move(req)
 			]()mutable{
+				lock.enter();
+
 				std::string name(req.target());
 				auto iter = impl_->services.find(name);
 				if(iter != impl_->services.end()){
@@ -84,6 +78,8 @@ namespace webservice{
 				name = std::move(name),
 				service = std::move(service)
 			]()mutable{
+				lock.enter();
+
 				auto r = impl_->services.emplace(std::move(name), std::move(service));
 				if(r.second){
 					r.first->second->set_server(*server());
@@ -102,6 +98,8 @@ namespace webservice{
 				lock = async_lock(async_calls_, "ws_service_handler::erase_service"),
 				name = std::move(name)
 			]()mutable{
+				lock.enter();
+
 // 				// Services are erased by destructor if shutdown is active
 // 				if(is_shutdown()) return;
 
@@ -124,6 +122,8 @@ namespace webservice{
 				this,
 				lock = async_lock(async_calls_, "ws_service_handler::on_shutdown")
 			]()mutable{
+				lock.enter();
+
 				for(auto& service: impl_->services){
 					service.second->shutdown();
 				}

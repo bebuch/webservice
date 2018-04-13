@@ -67,8 +67,8 @@ namespace webservice{
 		boost::asio::io_context& get_io_context()noexcept;
 
 
-		/// \brief Run one task in server threads
-		std::size_t poll_one()noexcept;
+		/// \brief Poll tasks as long as async_calls is not 0
+		void poll_while(std::atomic< std::size_t > const& async_calls)noexcept;
 
 
 		/// \brief Get implementation
