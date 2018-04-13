@@ -11,7 +11,9 @@
 
 #include <atomic>
 #include <utility>
+
 #include <iostream>
+#include <iomanip>
 #include <mutex>
 
 
@@ -21,14 +23,20 @@ namespace webservice{
 	class async_lock{
 	public:
 		static std::mutex mutex;
+		static std::atomic< std::size_t > counter;
 
 		async_lock(std::atomic< std::size_t >& lock_count, char const* op)
 			: lock_count_(&lock_count)
 			, op_(op)
 		{
-			count_ = ++*lock_count_;
+			count_ = counter++;
+			++*lock_count_;
 			std::lock_guard< std::mutex > lock(mutex);
-			std::cout << lock_count_ << ">" << op_ << (count_) << std::endl;
+				std::cout
+					<< std::setw(8) << (count_) << " > "
+					<< "0x" << std::setfill('0') << std::hex << std::setw(16)
+						<< reinterpret_cast< std::size_t >(lock_count_) << " - "
+					<< std::dec << std::setfill(' ') << op_ << std::endl;
 		}
 
 		async_lock(async_lock const&) = delete;
@@ -42,7 +50,11 @@ namespace webservice{
 			if(lock_count_){
 				--*lock_count_;
 				std::lock_guard< std::mutex > lock(mutex);
-				std::cout << lock_count_ << "<" << op_ << (count_) << std::endl;
+				std::cout
+					<< std::setw(8) << (count_) << " < "
+					<< "0x" << std::setfill('0') << std::hex << std::setw(16)
+						<< reinterpret_cast< std::size_t >(lock_count_) << " - "
+					<< std::dec << std::setfill(' ') << op_ << std::endl;
 			}
 		}
 

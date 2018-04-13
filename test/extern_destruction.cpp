@@ -131,7 +131,7 @@ int main(){
 			client.async_connect("127.0.0.1", "1234", "/");
 
 			std::this_thread::sleep_for(
-				std::chrono::milliseconds(rand() % 100));
+				std::chrono::milliseconds(rand() % 10));
 
 			std::cout << "-" << std::flush;
 		}

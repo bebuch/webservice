@@ -27,6 +27,8 @@ namespace webservice{
 
 	std::mutex async_lock::mutex;
 
+	std::atomic< std::size_t > async_lock::counter{0};
+
 
 	template < typename Derived >
 	ws_session< Derived >::ws_session(
