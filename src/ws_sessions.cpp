@@ -20,7 +20,7 @@ namespace webservice{
 	ws_sessions::ws_sessions(class server& server)
 		: server_(server)
 		, locker_([]()noexcept{})
-		, run_lock_(locker_.first_lock())
+		, run_lock_(locker_.make_first_lock("ws_sessions::ws_sessions"))
 		, strand_(server_.get_executor()) {}
 
 
@@ -38,7 +38,7 @@ namespace webservice{
 		strand_.dispatch(
 			[
 				this,
-				lock = locker_.lock("ws_sessions::async_emplace"),
+				lock = locker_.make_lock("ws_sessions::async_emplace"),
 				req = std::move(req),
 				ws = std::move(ws),
 				&service,
@@ -46,7 +46,7 @@ namespace webservice{
 			]()mutable{
 				lock.enter();
 
-				if(shutdown_){
+				if(is_shutdown()){
 					throw std::logic_error(
 						"emplace in ws_sessions while shutdown");
 				}
@@ -67,7 +67,7 @@ namespace webservice{
 
 	void ws_sessions::async_erase(ws_server_session* session){
 		strand_.dispatch(
-			[this, lock = locker_.lock("ws_sessions::async_erase"), session]{
+			[this, lock = locker_.make_lock("ws_sessions::async_erase"), session]{
 				lock.enter();
 
 				auto iter = set_.find(session);
@@ -80,13 +80,12 @@ namespace webservice{
 
 	void ws_sessions::shutdown()noexcept{
 		strand_.defer(
-			[this, lock = locker_.lock("ws_sessions::shutdown")]{
+			[this, lock = locker_.make_lock("ws_sessions::shutdown")]{
 				lock.enter();
 
-				for(auto& session: sessions){
+				for(auto& session: set_){
 					session->send("shutdown");
 				}
-
 			}, std::allocator< void >());
 
 		run_lock_.unlock();

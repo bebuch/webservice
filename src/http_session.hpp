@@ -45,6 +45,9 @@ namespace webservice{
 		/// \brief Called by the HTTP handler to send a response.
 		void response(std::unique_ptr< http_session_work >&& work);
 
+		/// \brief Called when data was received
+		void on_write(boost::system::error_code ec, bool close);
+
 
 	private:
 		/// \brief Async wait on timer
@@ -52,9 +55,6 @@ namespace webservice{
 
 		/// \brief Async wait on read
 		void do_read();
-
-		/// \brief Called when data was received
-		void on_write(boost::system::error_code ec, bool close);
 
 
 		/// \brief This queue is used for HTTP pipelining.

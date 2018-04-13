@@ -11,6 +11,7 @@
 
 #include <atomic>
 #include <utility>
+#include <functional>
 
 #include <iostream>
 #include <iomanip>
@@ -44,12 +45,12 @@ namespace webservice{
 				// that it must be decreased by 1. This makes sure that if
 				// lock_count_ is 0 the on_last_async() was already fired and
 				// no new calles are accepted
-				if(locker_->lock_count_ != 0){
+				if((*locker_).lock_count_ != 0){
 					throw std::runtime_error("async call after shutdown");
 				}
 
 				// If the call was valid increas the counter
-				++locker_->lock_count_;
+				++(*locker_).lock_count_;
 
 	// 			std::lock_guard< std::mutex > lock(mutex);
 	// 				std::cout
@@ -74,6 +75,7 @@ namespace webservice{
 					std::memory_order_relaxed);
 				count_ = other.count_;
 				op_ = other.op_;
+				return *this;
 			}
 
 			/// \brief Call unlock()
@@ -89,6 +91,8 @@ namespace webservice{
 					std::memory_order_relaxed)
 				){
 					if(--locker->lock_count_ == 0){
+						locker->on_last_async_callback_();
+
 						std::lock_guard< std::mutex > lock(mutex);
 						std::cout
 							<< std::setw(8) << (count_) << " 0 "
@@ -133,9 +137,10 @@ namespace webservice{
 		///        last async operation returns
 		template < typename Fn >
 		async_locker(Fn&& fn)
-			: fn(static_cast< Fn >(fn))
+			: on_last_async_callback_(static_cast< Fn >(fn))
 		{
-			static_assert(noexcept(fn()), "fn must be a noexcept function");
+			static_assert(noexcept(std::declval< Fn >()),
+				"fn must be a noexcept function");
 		}
 
 		/// \brief Generate the first lock object
@@ -146,14 +151,15 @@ namespace webservice{
 		///                           running
 		lock make_first_lock(char const* op){
 			// set lock_count_ to 1 if it was 0 only
-			if(!lock_count_.compare_exchange_strong(0, 1,
-				std::memory_order_relaxed, std::memory_order_relaxed)
+			std::size_t expected = 0;
+			if(!lock_count_.compare_exchange_strong(expected, 1,
+				std::memory_order_relaxed)
 			){
 				throw std::logic_error(
 					"async_locker::first_lock() called after first lock.");
 			}
 
-			lock result(lock_count_, op);
+			lock result(*this, op);
 
 			// undo the first increase from compare_exchange_strong
 			--lock_count_;
@@ -167,7 +173,7 @@ namespace webservice{
 		///                           before or no other async operation is
 		///                           still running
 		lock make_lock(char const* op){
-			return lock(lock_count_, op);
+			return lock(*this, op);
 		}
 
 		/// \brief Current count of running async operations
@@ -185,7 +191,7 @@ namespace webservice{
 		/// Inreased on every lock()/first_lock() construction, decreased on
 		/// every destruction.
 		std::atomic< std::size_t > lock_count_{0};
-	}
+	};
 
 
 }

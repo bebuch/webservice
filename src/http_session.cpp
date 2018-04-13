@@ -41,7 +41,7 @@ namespace webservice{
 	void http_session::do_timer(){
 		timer_.async_wait(boost::asio::bind_executor(
 			strand_,
-			[this, lock = locker_.lock("http_session::do_timer")](
+			[this, lock = locker_.make_lock("http_session::do_timer")](
 				boost::system::error_code ec
 			){
 				lock.enter();
@@ -70,7 +70,7 @@ namespace webservice{
 
 	void http_session::run(){
 		// lock until the first async operations has been started
-		auto lock = locker_.first_lock();
+		auto lock = locker_.make_first_lock("http_session::run");
 
 		// start timer
 		do_timer();
@@ -100,7 +100,7 @@ namespace webservice{
 		boost::beast::http::async_read(socket_, buffer_, req_,
 			boost::asio::bind_executor(
 				strand_,
-				[this, lock = locker_.lock("http_session::do_read")](
+				[this, lock = locker_.make_lock("http_session::do_read")](
 					boost::system::error_code ec,
 					std::size_t /*bytes_transferred*/
 				){

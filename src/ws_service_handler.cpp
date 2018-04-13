@@ -22,7 +22,7 @@ namespace webservice{
 		/// \brief Constructor
 		ws_service_handler_impl(class server& server)
 			: locker_([]()noexcept{})
-			, run_lock_(locker_.first_lock())
+			, run_lock_(locker_.make_first_lock("ws_service_handler_impl"))
 			, strand_(server.get_executor()) {}
 
 
@@ -62,10 +62,10 @@ namespace webservice{
 	){
 		assert(impl_ != nullptr);
 
-		impl_->strand_.post(
+		impl_->strand_.dispatch(
 			[
 				this,
-				lock = locker_.lock("ws_service_handler::async_emplace"),
+				lock = impl_->locker_.make_lock("ws_service_handler::async_emplace"),
 				socket = std::move(socket),
 				req = std::move(req)
 			]()mutable{
@@ -90,10 +90,10 @@ namespace webservice{
 	){
 		assert(impl_ != nullptr);
 
-		impl_->strand_.post(
+		impl_->strand_.dispatch(
 			[
 				this,
-				lock = locker_.lock("ws_service_handler::add_service"),
+				lock = impl_->locker_.make_lock("ws_service_handler::add_service"),
 				name = std::move(name),
 				service = std::move(service)
 			]()mutable{
@@ -111,10 +111,10 @@ namespace webservice{
 	void ws_service_handler::erase_service(std::string name){
 		assert(impl_ != nullptr);
 
-		impl_->strand_.post(
+		impl_->strand_.dispatch(
 			[
 				this,
-				lock = locker_.lock("ws_service_handler::erase_service"),
+				lock = impl_->locker_.make_lock("ws_service_handler::erase_service"),
 				name = std::move(name)
 			]()mutable{
 				lock.enter();
@@ -136,10 +136,10 @@ namespace webservice{
 	void ws_service_handler::on_shutdown()noexcept{
 		assert(impl_ != nullptr);
 
-		impl_->strand_.post(
+		impl_->strand_.defer(
 			[
 				this,
-				lock = locker_.lock("ws_service_handler::on_shutdown")
+				lock = impl_->locker_.make_lock("ws_service_handler::on_shutdown")
 			]()mutable{
 				lock.enter();
 
@@ -147,6 +147,8 @@ namespace webservice{
 					service.second->shutdown();
 				}
 			}, std::allocator< void >());
+
+		impl_->run_lock_.unlock();
 	}
 
 

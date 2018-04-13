@@ -44,7 +44,7 @@ namespace webservice{
 
 	private:
 		class http_session* self_;
-		async_lock lock_;
+		async_locker::lock lock_;
 		bool const need_eof_;
 	};
 
@@ -102,7 +102,7 @@ namespace webservice{
 						boost::asio::bind_executor(
 							strand_,
 							http_session_on_write(
-								self_, locker_.lock("http_session_on_write"), msg_.need_eof())
+								self_, locker_.make_lock("http_session_on_write"), msg_.need_eof())
 						));
 				}
 

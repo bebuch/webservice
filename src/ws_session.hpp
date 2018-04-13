@@ -9,6 +9,7 @@
 #ifndef _webservice__ws_session__hpp_INCLUDED_
 #define _webservice__ws_session__hpp_INCLUDED_
 
+#include <webservice/async_lock.hpp>
 #include <webservice/ws_handler_location.hpp>
 #include <webservice/ws_client_location.hpp>
 #include <webservice/shared_const_buffer.hpp>
@@ -110,15 +111,17 @@ namespace webservice{
 		/// \brief The websocket stream
 		ws_stream ws_;
 
+		/// \brief Serialized operations on websocket
 		ws_strand strand_;
 
+		/// \brief Serialized call of the handlers
 		ws_strand handler_strand_;
 
+		/// \brief Send ping after timeout, close session after second timeout
 		boost::asio::steady_timer timer_;
 
-		std::atomic< std::size_t > async_calls_{0};
-
-		bool wait_on_close_{false};
+		/// \brief Protectes async operations
+		async_locker locker_;
 
 
 	private:
@@ -143,7 +146,7 @@ namespace webservice{
 
 		std::size_t ping_counter_;
 
-		std::atomic< bool > wait_on_pong_{false};
+		bool wait_on_pong_{false};
 	};
 
 
@@ -184,16 +187,11 @@ namespace webservice{
 		void on_exception(std::exception_ptr error)noexcept;
 
 
-		/// \brief Send a request to erase this session from the list
-		///
-		/// The request is sended only once, any call after the fist will be
-		/// ignored.
-		void async_erase();
+		/// \brief Remove session from handler list
+		void remove()noexcept;
 
 
 	private:
-		std::once_flag erase_flag_;
-
 		ws_handler_base& service_;
 
 		std::string resource_;
@@ -238,16 +236,11 @@ namespace webservice{
 		void on_exception(std::exception_ptr error)noexcept;
 
 
-		/// \brief Send a request to erase this session from the list
-		///
-		/// The request is sended only once, any call after the fist will be
-		/// ignored.
-		void async_erase();
+		/// \brief Remove session on client
+		void remove()noexcept;
 
 
 	private:
-		std::once_flag erase_flag_;
-
 		ws_client_base& client_;
 		bool is_open_ = false;
 	};

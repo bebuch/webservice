@@ -11,6 +11,8 @@
 
 #include "listener.hpp"
 
+#include <webservice/server.hpp>
+
 #include <boost/asio/executor.hpp>
 #include <boost/asio/ip/address.hpp>
 
@@ -69,7 +71,7 @@ namespace webservice{
 		/// \brief Poll tasks as long as fn returns true
 		template < typename Fn >
 		void poll_while(Fn&& fn)noexcept{
-			server_.poll_while(async_calls);
+			server_.poll_while(static_cast< Fn&& >(fn));
 		}
 
 

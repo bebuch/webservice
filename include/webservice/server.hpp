@@ -73,7 +73,8 @@ namespace webservice{
 		/// support noexcept functions.
 		template < typename Fn >
 		void poll_while(Fn&& fn)noexcept{
-			static_assert(noexcept(fn()));
+			static_assert(noexcept(std::declval< Fn >()),
+				"fn must be a noexcept function");
 			do_poll_while(static_cast< Fn&& >(fn));
 		}
 

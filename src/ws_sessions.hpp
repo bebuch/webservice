@@ -107,7 +107,7 @@ namespace webservice{
 			strand_.dispatch(
 				[
 					this,
-					lock = locker_.lock("ws_sessions::async_call"),
+					lock = locker_.make_lock("ws_sessions::async_call"),
 					fn = static_cast< Fn&& >(fn)
 				]()mutable{
 					lock.enter();
