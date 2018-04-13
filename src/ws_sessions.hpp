@@ -104,10 +104,10 @@ namespace webservice{
 
 		template < typename Fn >
 		void async_call(Fn&& fn){
-			strand_.defer(
+			strand_.dispatch(
 				[
 					this,
-					lock = async_lock(async_calls_, "ws_sessions::async_call"),
+					lock = locker_.lock("ws_sessions::async_call"),
 					fn = static_cast< Fn&& >(fn)
 				]()mutable{
 					lock.enter();
@@ -127,8 +127,8 @@ namespace webservice{
 
 	private:
 		class server& server_;
-		bool shutdown_{false};
-		std::atomic< std::size_t > async_calls_{0};
+		async_locker locker_;
+		async_locker::lock run_lock_;
 		ws_strand strand_;
 		set set_;
 	};

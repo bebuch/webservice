@@ -19,6 +19,8 @@ namespace webservice{
 
 	ws_sessions::ws_sessions(class server& server)
 		: server_(server)
+		, locker_([]()noexcept{})
+		, run_lock_(locker_.first_lock())
 		, strand_(server_.get_executor()) {}
 
 
@@ -33,10 +35,10 @@ namespace webservice{
 		ws_handler_base& service,
 		std::chrono::milliseconds ping_time
 	){
-		strand_.defer(
+		strand_.dispatch(
 			[
 				this,
-				lock = async_lock(async_calls_, "ws_sessions::async_emplace"),
+				lock = locker_.lock("ws_sessions::async_emplace"),
 				req = std::move(req),
 				ws = std::move(ws),
 				&service,
@@ -64,8 +66,8 @@ namespace webservice{
 	}
 
 	void ws_sessions::async_erase(ws_server_session* session){
-		strand_.defer(
-			[this, lock = async_lock(async_calls_, "ws_sessions::async_erase"), session]{
+		strand_.dispatch(
+			[this, lock = locker_.lock("ws_sessions::async_erase"), session]{
 				lock.enter();
 
 				auto iter = set_.find(session);
@@ -77,20 +79,25 @@ namespace webservice{
 	}
 
 	void ws_sessions::shutdown()noexcept{
-		async_call([this](set const& sessions){
-				shutdown_ = true;
+		strand_.defer(
+			[this, lock = locker_.lock("ws_sessions::shutdown")]{
+				lock.enter();
+
 				for(auto& session: sessions){
-					session->async_erase();
+					session->send("shutdown");
 				}
-			});
+
+			}, std::allocator< void >());
+
+		run_lock_.unlock();
 	}
 
 	bool ws_sessions::is_shutdown()noexcept{
-		return shutdown_;
+		return !run_lock_.is_locked();
 	}
 
 	void ws_sessions::block()noexcept{
-		server_.poll_while(async_calls_);
+		server_.poll_while([this]()noexcept{ return locker_.count() > 0; });
 	}
 
 

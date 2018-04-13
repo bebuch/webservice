@@ -85,8 +85,15 @@ namespace webservice{
 		/// \brief Get executor
 		boost::asio::io_context::executor_type get_executor();
 
-		/// \brief Poll tasks as long as async_calls is not 0
-		void poll_while(std::atomic< std::size_t > const& async_calls)noexcept;
+		/// \brief Poll tasks as long as fn returns true
+		///
+		/// Implementation as template since std::function doesn't directly
+		/// support noexcept functions.
+		template < typename Fn >
+		void poll_while(Fn&& fn)noexcept{
+			static_assert(noexcept(fn()));
+			do_poll_while(static_cast< Fn&& >(fn));
+		}
 
 
 		/// \brief Called when the sessions starts
@@ -149,6 +156,10 @@ namespace webservice{
 
 
 	private:
+		/// \brief Implementation of poll_while
+		void do_poll_while(std::function< bool() > const& fn)noexcept;
+
+
 		/// \brief Max size of incomming http and WebSocket messages
 		std::size_t max_read_message_size_{16 * 1024 * 1024};
 

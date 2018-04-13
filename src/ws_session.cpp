@@ -275,23 +275,7 @@ namespace webservice{
 		, service_(service) {}
 
 	ws_server_session::~ws_server_session(){
-		wait_on_close_ = true;
-
-		// Stop timer, close socket
-		strand_.dispatch(
-			[this, lock = async_lock(async_calls_, "ws_server_session::~ws_server_session")]{
-				lock.enter();
-
-				boost::system::error_code ec;
-				timer_.cancel(ec);
-				if(ws_.is_open()){
-					ws_.close("shutdown", ec);
-				}
-			}, std::allocator< void >());
-
-		service_.server()->poll_while(async_calls_);
-
-		on_close();
+		assert(async_calls_ == 0);
 	}
 
 	void ws_server_session::do_accept(http_request&& req){
@@ -438,7 +422,30 @@ namespace webservice{
 
 	void ws_server_session::async_erase(){
 		std::call_once(erase_flag_, [this]{
-				service_.async_erase(this);
+				wait_on_close_ = true;
+
+				// Stop timer, close socket
+				strand_.defer(
+					[this, lock = async_lock(async_calls_, "ws_server_session::async_erase")]{
+						lock.enter();
+
+						if(ws_.is_open()){
+							ws_.async_close("shutdown", boost::asio::bind_executor(
+								strand_,
+								[this, lock = async_lock(async_calls_, "ws_server_session::async_erase::async_close")](boost::system::error_code ec){
+									timer_.cancel(ec);
+								}));
+						}
+
+						strand_.defer(
+							[this, lock = async_lock(async_calls_, "ws_server_session::async_erase")]{
+								lock.enter();
+
+								on_close();
+
+								service_.async_erase(this);
+							}, std::allocator< void >());
+					}, std::allocator< void >());
 			});
 	}
 

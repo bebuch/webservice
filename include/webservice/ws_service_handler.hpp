@@ -24,6 +24,8 @@ namespace webservice{
 		ws_service_handler();
 
 		/// \brief Destructor
+		///
+		/// Block until last async operation has finished.
 		~ws_service_handler()override;
 
 
@@ -62,9 +64,6 @@ namespace webservice{
 
 
 	private:
-		/// \brief Count of running async operations
-		std::atomic< std::size_t > async_calls_{0};
-
 		/// \brief Pointer to implementation
 		std::unique_ptr< struct ws_service_handler_impl > impl_;
 	};

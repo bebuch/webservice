@@ -31,32 +31,17 @@ namespace webservice{
 		, strand_(socket_.get_executor())
 		, timer_(socket_.get_executor().context(),
 			std::chrono::steady_clock::time_point::max())
+		, locker_([this]{
+				handler_.async_erase(this);
+			})
 		{}
 
-	http_session::~http_session(){
-		// Stop timer, close socket
-		boost::asio::post(
-			strand_,
-			[this, lock = async_lock(async_calls_, "http_sessions::~http_session")]{
-				lock.enter();
-
-				boost::system::error_code ec;
-				timer_.cancel(ec);
-				if(socket_.is_open()){
-					using socket = boost::asio::ip::tcp::socket;
-					socket_.shutdown(socket::shutdown_both, ec);
-					socket_.close(ec);
-				}
-			});
-
-		handler_.server()->poll_while(async_calls_);
-	}
 
 	// Called when the timer expires.
 	void http_session::do_timer(){
 		timer_.async_wait(boost::asio::bind_executor(
 			strand_,
-			[this, lock = async_lock(async_calls_, "http_sessions::do_timer")](
+			[this, lock = locker_.lock("http_session::do_timer")](
 				boost::system::error_code ec
 			){
 				lock.enter();
@@ -73,18 +58,21 @@ namespace webservice{
 						handler_.server()->impl().http().on_exception(
 							std::current_exception());
 					}
-				}else{
-					// Closing the socket cancels all outstanding operations.
-					// They will complete with operation_aborted
-					using socket = boost::asio::ip::tcp::socket;
-					socket_.shutdown(socket::shutdown_both, ec);
-					socket_.close(ec);
 				}
-				async_erase();
+
+				// Closing the socket cancels all outstanding operations.
+				// They will complete with operation_aborted
+				using socket = boost::asio::ip::tcp::socket;
+				socket_.shutdown(socket::shutdown_both, ec);
+				socket_.close(ec);
 			}));
 	}
 
 	void http_session::run(){
+		// lock until the first async operations has been started
+		auto lock = locker_.first_lock();
+
+		// start timer
 		do_timer();
 
 		// Start the asynchronous operation
@@ -97,7 +85,9 @@ namespace webservice{
 		}
 
 		// Set the timer
-		if(timer_.expires_after(handler_.server()->impl().http().timeout()) == 0){
+		if(timer_.expires_after(
+			handler_.server()->impl().http().timeout()) == 0
+		){
 			// if the timer could not be cancelled it was already
 			// expired and the session was closed by the timer
 			return;
@@ -110,7 +100,7 @@ namespace webservice{
 		boost::beast::http::async_read(socket_, buffer_, req_,
 			boost::asio::bind_executor(
 				strand_,
-				[this, lock = async_lock(async_calls_, "http_sessions::do_read")](
+				[this, lock = locker_.lock("http_session::do_read")](
 					boost::system::error_code ec,
 					std::size_t /*bytes_transferred*/
 				){
@@ -135,7 +125,7 @@ namespace webservice{
 							handler_.server()->impl().http().on_exception(
 								std::current_exception());
 						}
-						async_erase();
+						do_close();
 						return;
 					}
 
@@ -146,12 +136,13 @@ namespace webservice{
 					){
 						handler_.server()->impl().ws().async_emplace(
 							std::move(socket_), std::move(req_));
-						async_erase();
+						do_close();
 					}else{
 						// Send the response
-						handler_.server()->impl().http()(std::move(req_), http_response{
+						handler_.server()->impl().http()(std::move(req_),
+							http_response{
 								this,
-								async_calls_,
+								locker_,
 								&http_session::response,
 								socket_,
 								strand_
@@ -162,7 +153,7 @@ namespace webservice{
 						if(!queue_.is_full()){
 							do_read();
 						}else{
-							async_erase();
+							do_close();
 						}
 					}
 				}));
@@ -176,11 +167,13 @@ namespace webservice{
 
 		if(ec){
 			try{
-				handler_.server()->impl().http().on_error(http_request_location::write, ec);
+				handler_.server()->impl().http()
+					.on_error(http_request_location::write, ec);
 			}catch(...){
-				handler_.server()->impl().http().on_exception(std::current_exception());
+				handler_.server()->impl().http()
+					.on_exception(std::current_exception());
 			}
-			async_erase();
+			do_close();
 			return;
 		}
 
@@ -195,8 +188,6 @@ namespace webservice{
 		if(queue_.on_write()){
 			// Read another request
 			do_read();
-		}else{
-			async_erase();
 		}
 	}
 
@@ -205,7 +196,6 @@ namespace webservice{
 		boost::system::error_code ec;
 		using socket = boost::asio::ip::tcp::socket;
 		socket_.shutdown(socket::shutdown_send, ec);
-		async_erase();
 	}
 
 	/// \brief Called by the HTTP handler to send a response.
@@ -213,20 +203,6 @@ namespace webservice{
 		std::unique_ptr< http_session_work >&& work
 	){
 		queue_.response(std::move(work));
-	}
-
-	/// \brief Send a request to erase this session from the list
-	///
-	/// The request is sended only once, any call after the fist will be
-	/// ignored.
-	void http_session::async_erase(){
-		std::call_once(erase_flag_, [this]{
-				boost::asio::post(
-					handler_.server()->get_executor(),
-					[this]{
-						handler_.async_erase(this);
-					});
-			});
 	}
 
 
@@ -264,7 +240,7 @@ namespace webservice{
 		boost::system::error_code ec,
 		std::size_t /*bytes_transferred*/
 	)const{
-		async_lock_.enter();
+		lock_.enter();
 
 		self_->on_write(ec, need_eof_);
 	}

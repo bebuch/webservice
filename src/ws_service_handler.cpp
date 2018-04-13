@@ -17,11 +17,25 @@
 namespace webservice{
 
 
+	/// \brief Implementation of ws_service_handler
 	struct ws_service_handler_impl{
+		/// \brief Constructor
 		ws_service_handler_impl(class server& server)
-			: strand_(server.get_executor()) {}
+			: locker_([]()noexcept{})
+			, run_lock_(locker_.first_lock())
+			, strand_(server.get_executor()) {}
 
+
+		/// \brief Protectes async operations
+		async_locker locker_;
+
+		/// \brief Keep one async operation alive until shutdown
+		async_locker::lock run_lock_;
+
+		/// \brief Run async operation sequential
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
+
+		/// \brief Map from service name to object
 		std::map< std::string, std::unique_ptr< ws_handler_base > > services;
 	};
 
@@ -29,8 +43,13 @@ namespace webservice{
 	ws_service_handler::ws_service_handler() = default;
 
 	ws_service_handler::~ws_service_handler(){
-		server()->poll_while(async_calls_);
+		if(!impl_) return;
+
+		server()->poll_while([this]()noexcept{
+			return impl_->locker_.count() > 0;
+		});
 	}
+
 
 	void ws_service_handler::set_server(class server& server){
 		ws_handler_base::set_server(server);
@@ -46,7 +65,7 @@ namespace webservice{
 		impl_->strand_.post(
 			[
 				this,
-				lock = async_lock(async_calls_, "ws_service_handler::async_emplace"),
+				lock = locker_.lock("ws_service_handler::async_emplace"),
 				socket = std::move(socket),
 				req = std::move(req)
 			]()mutable{
@@ -74,7 +93,7 @@ namespace webservice{
 		impl_->strand_.post(
 			[
 				this,
-				lock = async_lock(async_calls_, "ws_service_handler::add_service"),
+				lock = locker_.lock("ws_service_handler::add_service"),
 				name = std::move(name),
 				service = std::move(service)
 			]()mutable{
@@ -95,7 +114,7 @@ namespace webservice{
 		impl_->strand_.post(
 			[
 				this,
-				lock = async_lock(async_calls_, "ws_service_handler::erase_service"),
+				lock = locker_.lock("ws_service_handler::erase_service"),
 				name = std::move(name)
 			]()mutable{
 				lock.enter();
@@ -120,7 +139,7 @@ namespace webservice{
 		impl_->strand_.post(
 			[
 				this,
-				lock = async_lock(async_calls_, "ws_service_handler::on_shutdown")
+				lock = locker_.lock("ws_service_handler::on_shutdown")
 			]()mutable{
 				lock.enter();
 

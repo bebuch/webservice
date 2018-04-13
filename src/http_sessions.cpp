@@ -19,6 +19,8 @@ namespace webservice{
 
 	http_sessions::http_sessions(class server& server)
 		: server_(server)
+		, locker_([]()noexcept{})
+		, run_lock_(locker_.first_lock())
 		, strand_(server_.get_executor()) {}
 
 
@@ -31,10 +33,10 @@ namespace webservice{
 		boost::asio::ip::tcp::socket&& socket,
 		http_request_handler& handler
 	){
-		strand_.defer(
+		strand_.dispatch(
 			[
 				this,
-				lock = async_lock(async_calls_, "http_sessions::async_emplace"),
+				lock = locker_.lock("http_sessions::async_emplace"),
 				socket = std::move(socket),
 				&handler
 			]()mutable{
@@ -60,8 +62,8 @@ namespace webservice{
 	}
 
 	void http_sessions::async_erase(http_session* session){
-		strand_.defer(
-			[this, lock = async_lock(async_calls_, "http_sessions::async_erase"), session]{
+		strand_.dispatch(
+			[this, lock = locker_.lock("http_sessions::async_erase"), session]{
 				lock.enter();
 
 				auto iter = set_.find(session);
@@ -77,23 +79,27 @@ namespace webservice{
 		strand_.defer(
 			[
 				this,
-				lock = async_lock(async_calls_, "http_sessions::shutdown")
+				lock = locker_.lock("http_sessions::shutdown")
 			]()mutable{
 				lock.enter();
 
-				shutdown_ = true;
 				for(auto& session: set_){
-					session->async_erase();
+					session->do_close();
 				}
 			}, std::allocator< void >());
+
+		run_lock_.unlock();
 	}
 
 	bool http_sessions::is_shutdown()noexcept{
-		return shutdown_;
+		return !run_lock_.is_locked();
 	}
 
 	void http_sessions::block()noexcept{
-		server_.poll_while(async_calls_);
+		server_.poll_while([this]()noexcept{
+				return locker_.count() > 0;
+			});
 	}
+
 
 }

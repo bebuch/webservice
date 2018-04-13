@@ -30,11 +30,11 @@ namespace webservice{
 	public:
 		http_session_on_write(
 			class http_session* self,
-			std::atomic< std::size_t >& async_calls,
+			async_locker::lock&& lock,
 			bool const need_eof
 		)
 			: self_(self)
-			, async_lock_(async_calls, "http_session_on_write")
+			, lock_(std::move(lock))
 			, need_eof_(need_eof) {}
 
 		void operator()(
@@ -44,7 +44,7 @@ namespace webservice{
 
 	private:
 		class http_session* self_;
-		async_lock async_lock_;
+		async_lock lock_;
 		bool const need_eof_;
 	};
 
@@ -61,14 +61,14 @@ namespace webservice{
 
 		http_response(
 			class http_session* self,
-			std::atomic< std::size_t >& async_calls,
+			async_locker& locker,
 			response_fn fn,
 			boost::asio::ip::tcp::socket& socket,
 			boost::asio::strand<
 				boost::asio::io_context::executor_type >& strand
 		)
 			: self_(self)
-			, async_calls_(async_calls)
+			, locker_(locker)
 			, fn_(fn)
 			, socket_(socket)
 			, strand_(strand) {}
@@ -83,14 +83,14 @@ namespace webservice{
 			public:
 				work_impl(
 					class http_session* self,
-					std::atomic< std::size_t >& async_calls,
+					async_locker& locker,
 					boost::asio::ip::tcp::socket& socket,
 					boost::asio::strand<
 						boost::asio::io_context::executor_type >& strand,
 					boost::beast::http::response< Body, Fields >&& msg
 				)
 					: self_(self)
-					, async_calls_(async_calls)
+					, locker_(locker)
 					, socket_(socket)
 					, strand_(strand)
 					, msg_(std::move(msg)) {}
@@ -102,13 +102,13 @@ namespace webservice{
 						boost::asio::bind_executor(
 							strand_,
 							http_session_on_write(
-								self_, async_calls_, msg_.need_eof())
+								self_, locker_.lock("http_session_on_write"), msg_.need_eof())
 						));
 				}
 
 			private:
 				class http_session* self_;
-				std::atomic< std::size_t >& async_calls_;
+				async_locker& locker_;
 				boost::asio::ip::tcp::socket& socket_;
 				boost::asio::strand<
 					boost::asio::io_context::executor_type >& strand_;
@@ -116,12 +116,12 @@ namespace webservice{
 			};
 
 			((*self_).*fn_)(std::make_unique< work_impl >(
-				self_, async_calls_, socket_, strand_, std::move(msg)));
+				self_, locker_, socket_, strand_, std::move(msg)));
 		}
 
 	private:
 		class http_session* self_;
-		std::atomic< std::size_t >& async_calls_;
+		async_locker& locker_;
 		response_fn fn_;
 		boost::asio::ip::tcp::socket& socket_;
 		boost::asio::strand< boost::asio::io_context::executor_type >& strand_;

@@ -93,8 +93,8 @@ namespace webservice{
 
 	private:
 		class server& server_;
-		bool shutdown_{false};
-		std::atomic< std::size_t > async_calls_{0};
+		async_locker locker_;
+		async_locker::lock run_lock_;
 		ws_strand strand_;
 		set set_;
 	};

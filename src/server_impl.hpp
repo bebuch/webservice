@@ -66,8 +66,11 @@ namespace webservice{
 		boost::asio::io_context& get_io_context()noexcept;
 
 
-		/// \brief Poll tasks as long as async_calls is not 0
-		void poll_while(std::atomic< std::size_t > const& async_calls)noexcept;
+		/// \brief Poll tasks as long as fn returns true
+		template < typename Fn >
+		void poll_while(Fn&& fn)noexcept{
+			server_.poll_while(async_calls);
+		}
 
 
 		/// \brief true if a WebSocket handler is set, false otherwise

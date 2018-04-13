@@ -36,16 +36,8 @@ namespace webservice{
 			http_request_handler& handler
 		);
 
-		~http_session();
-
-		// Called when the timer expires.
-		void do_timer();
-
+		/// \brief Start timer and read
 		void run();
-
-		void do_read();
-
-		void on_write(boost::system::error_code ec, bool close);
 
 		/// \brief Send a TCP shutdown
 		void do_close();
@@ -53,36 +45,41 @@ namespace webservice{
 		/// \brief Called by the HTTP handler to send a response.
 		void response(std::unique_ptr< http_session_work >&& work);
 
-		/// \brief Send a request to erase this session from the list
-		///
-		/// The request is sended only once, any call after the fist will be
-		/// ignored.
-		void async_erase();
-
 
 	private:
-		// This queue is used for HTTP pipelining.
+		/// \brief Async wait on timer
+		void do_timer();
+
+		/// \brief Async wait on read
+		void do_read();
+
+		/// \brief Called when data was received
+		void on_write(boost::system::error_code ec, bool close);
+
+
+		/// \brief This queue is used for HTTP pipelining.
 		class queue{
 			/// \brief Maximum number of responses we will queue
 			static constexpr std::size_t limit = 64;
 
 		public:
-			static_assert(limit > 0, "queue limit must be positive");
-
+			/// \brief Constructor
 			explicit queue();
 
-			// Returns `true` if we have reached the queue limit
+			/// \brief Returns true if we have reached the queue limit
 			bool is_full()const;
 
-			// Called when a message finishes sending
-			// Returns `true` if the caller should initiate a read
+			/// \brief Called when a message finishes sending
+			///
+			/// Returns true if the caller should initiate a read
 			bool on_write();
 
-			// Called by the HTTP handler to send a response.
+			/// \brief Called by the HTTP handler to send a response.
 			void response(std::unique_ptr< http_session_work >&& work);
 
 
 		private:
+			/// \brief
 			boost::circular_buffer< std::unique_ptr< http_session_work > >
 				items_;
 		};
@@ -98,8 +95,7 @@ namespace webservice{
 		http_request req_;
 		queue queue_;
 
-		std::once_flag erase_flag_;
-		std::atomic< std::size_t > async_calls_{0};
+		async_locker locker_;
 	};
 
 
