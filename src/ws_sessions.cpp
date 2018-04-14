@@ -83,22 +83,22 @@ namespace webservice{
 	}
 
 	void ws_sessions::shutdown()noexcept{
-		strand_.defer(
-			[this, lock = locker_.make_lock("ws_sessions::shutdown")]{
-				lock.enter();
-
-				if(set_.empty()){
-					shutdown_lock_.unlock();
-				}else{
-					for(auto& session: set_){
-						session->send("shutdown");
-					}
-				}
-			}, std::allocator< void >());
-
 		auto lock = std::move(run_lock_);
 		if(lock.is_locked()){
 			shutdown_lock_ = std::move(lock);
+
+			strand_.defer(
+				[this, lock = locker_.make_lock("ws_sessions::shutdown")]{
+					lock.enter();
+
+					if(set_.empty()){
+						shutdown_lock_.unlock();
+					}else{
+						for(auto& session: set_){
+							session->send("shutdown");
+						}
+					}
+				}, std::allocator< void >());
 		}
 	}
 
