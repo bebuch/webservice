@@ -24,11 +24,15 @@ namespace webservice{
 	http_request_handler::http_request_handler() = default;
 
 	http_request_handler::~http_request_handler(){
-		list_->block();
+		if(list_){
+			list_->block();
+		}
 	}
 
 
-	void http_request_handler::async_emplace(boost::asio::ip::tcp::socket&& socket){
+	void http_request_handler::async_emplace(
+		boost::asio::ip::tcp::socket&& socket
+	){
 		list_->async_emplace(std::move(socket), *this);
 	}
 

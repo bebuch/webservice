@@ -52,7 +52,9 @@ namespace webservice{
 	ws_handler_base::ws_handler_base() = default;
 
 	ws_handler_base::~ws_handler_base(){
-		list_->block();
+		if(list_){
+			list_->block();
+		}
 	}
 
 
