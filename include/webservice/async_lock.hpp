@@ -31,6 +31,12 @@ namespace webservice{
 			static std::mutex mutex;
 			static std::atomic< std::size_t > counter;
 
+			/// \brief Initialize without lock
+			lock()
+				: locker_(nullptr)
+				, op_("") {}
+
+
 			/// \brief Increase the counter
 			///
 			/// \throw std::runtime_error If no other async operation is still
@@ -52,12 +58,12 @@ namespace webservice{
 				// If the call was valid increas the counter
 				++(*locker_).lock_count_;
 
-	// 			std::lock_guard< std::mutex > lock(mutex);
-	// 				std::cout
-	// 					<< std::setw(8) << (count_) << " 1 "
-	// 					<< "0x" << std::setfill('0') << std::hex << std::setw(16)
-	// 						<< reinterpret_cast< std::size_t >(locker_) << " - "
-	// 					<< std::dec << std::setfill(' ') << op_ << std::endl;
+				std::lock_guard< std::mutex > lock(mutex);
+					std::cout
+						<< std::setw(8) << (count_) << " 1 "
+						<< "0x" << std::setfill('0') << std::hex << std::setw(16)
+							<< reinterpret_cast< std::size_t >(locker_.load()) << " - "
+						<< std::dec << std::setfill(' ') << op_ << std::endl;
 			}
 
 			lock(lock const&) = delete;
@@ -93,20 +99,20 @@ namespace webservice{
 					if(--locker->lock_count_ == 0){
 						locker->on_last_async_callback_();
 
-						std::lock_guard< std::mutex > lock(mutex);
-						std::cout
-							<< std::setw(8) << (count_) << " 0 "
-							<< "0x" << std::setfill('0') << std::hex << std::setw(16)
-								<< reinterpret_cast< std::size_t >(locker) << " - "
-							<< std::dec << std::setfill(' ') << op_ << std::endl;
+// 						std::lock_guard< std::mutex > lock(mutex);
+// 						std::cout
+// 							<< std::setw(8) << (count_) << " 0 "
+// 							<< "0x" << std::setfill('0') << std::hex << std::setw(16)
+// 								<< reinterpret_cast< std::size_t >(locker) << " - "
+// 							<< std::dec << std::setfill(' ') << op_ << std::endl;
 					}
 
-	// 				std::lock_guard< std::mutex > lock(mutex);
-	// 				std::cout
-	// 					<< std::setw(8) << (count_) << " 3 "
-	// 					<< "0x" << std::setfill('0') << std::hex << std::setw(16)
-	// 						<< reinterpret_cast< std::size_t >(locker) << " - "
-	// 					<< std::dec << std::setfill(' ') << op_ << std::endl;
+					std::lock_guard< std::mutex > lock(mutex);
+					std::cout
+						<< std::setw(8) << (count_) << " 3 "
+						<< "0x" << std::setfill('0') << std::hex << std::setw(16)
+							<< reinterpret_cast< std::size_t >(locker) << " - "
+						<< std::dec << std::setfill(' ') << op_ << std::endl;
 				}
 			}
 
@@ -116,12 +122,12 @@ namespace webservice{
 			}
 
 			void enter()const{
-	// 			std::lock_guard< std::mutex > lock(mutex);
-	// 			std::cout
-	// 				<< std::setw(8) << (count_) << " 2 "
-	// 				<< "0x" << std::setfill('0') << std::hex << std::setw(16)
-	// 					<< reinterpret_cast< std::size_t >(locker_) << " - "
-	// 				<< std::dec << std::setfill(' ') << op_ << std::endl;
+				std::lock_guard< std::mutex > lock(mutex);
+				std::cout
+					<< std::setw(8) << (count_) << " 2 "
+					<< "0x" << std::setfill('0') << std::hex << std::setw(16)
+						<< reinterpret_cast< std::size_t >(locker_.load()) << " - "
+					<< std::dec << std::setfill(' ') << op_ << std::endl;
 			}
 
 
