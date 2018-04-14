@@ -333,7 +333,8 @@ namespace webservice{
 				try{
 					service_.on_open(ws_identifier(this), resource_);
 				}catch(...){
-					on_exception(std::current_exception());
+					service_.on_exception(ws_identifier(this), resource_,
+						std::current_exception());
 				}
 			}, std::allocator< void >());
 	}
@@ -342,7 +343,8 @@ namespace webservice{
 		try{
 			service_.on_close(ws_identifier(this), resource_);
 		}catch(...){
-			on_exception(std::current_exception());
+			service_.on_exception(ws_identifier(this), resource_,
+				std::current_exception());
 		}
 	}
 
@@ -360,7 +362,8 @@ namespace webservice{
 					service_.on_text(
 						ws_identifier(this), resource_, std::move(buffer));
 				}catch(...){
-					on_exception(std::current_exception());
+					service_.on_exception(ws_identifier(this), resource_,
+						std::current_exception());
 				}
 			}, std::allocator< void >());
 	}
@@ -379,7 +382,8 @@ namespace webservice{
 					service_.on_binary(
 						ws_identifier(this), resource_, std::move(buffer));
 				}catch(...){
-					on_exception(std::current_exception());
+					service_.on_exception(ws_identifier(this), resource_,
+						std::current_exception());
 				}
 			}, std::allocator< void >());
 	}
@@ -396,7 +400,8 @@ namespace webservice{
 					service_.on_error(
 						ws_identifier(this), resource_, location, ec);
 				}catch(...){
-					on_exception(std::current_exception());
+					service_.on_exception(ws_identifier(this), resource_,
+						std::current_exception());
 				}
 			}, std::allocator< void >());
 	}
@@ -475,7 +480,7 @@ namespace webservice{
 				try{
 					client_.on_open();
 				}catch(...){
-					on_exception(std::current_exception());
+					client_.on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
 	}
@@ -484,7 +489,7 @@ namespace webservice{
 		try{
 			client_.on_close();
 		}catch(...){
-			on_exception(std::current_exception());
+			client_.on_exception(std::current_exception());
 		}
 	}
 
@@ -501,7 +506,7 @@ namespace webservice{
 				try{
 					client_.on_text(std::move(buffer));
 				}catch(...){
-					on_exception(std::current_exception());
+					client_.on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
 	}
@@ -519,7 +524,7 @@ namespace webservice{
 				try{
 					client_.on_binary(std::move(buffer));
 				}catch(...){
-					on_exception(std::current_exception());
+					client_.on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
 	}
@@ -535,7 +540,7 @@ namespace webservice{
 				try{
 					client_.on_error(location, ec);
 				}catch(...){
-					on_exception(std::current_exception());
+					client_.on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
 	}
