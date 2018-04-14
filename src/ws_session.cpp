@@ -481,16 +481,11 @@ namespace webservice{
 	}
 
 	void ws_client_session::on_close()noexcept{
-		handler_strand_.defer(
-			[this, lock = locker_.make_lock("ws_client_session::on_close")]{
-				lock.enter();
-
-				try{
-					client_.on_close();
-				}catch(...){
-					on_exception(std::current_exception());
-				}
-			}, std::allocator< void >());
+		try{
+			client_.on_close();
+		}catch(...){
+			on_exception(std::current_exception());
+		}
 	}
 
 	void ws_client_session::on_text(
