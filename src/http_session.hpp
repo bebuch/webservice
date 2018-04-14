@@ -56,6 +56,9 @@ namespace webservice{
 		/// \brief Async wait on read
 		void do_read();
 
+		/// \brief Stop the timer
+		void stop_timer()noexcept;
+
 
 		/// \brief This queue is used for HTTP pipelining.
 		class queue{

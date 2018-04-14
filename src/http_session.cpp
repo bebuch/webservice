@@ -114,6 +114,7 @@ namespace webservice{
 					// This means endpoint closed the session
 					if(ec == boost::beast::http::error::end_of_stream){
 						do_close();
+						stop_timer();
 						return;
 					}
 
@@ -126,6 +127,7 @@ namespace webservice{
 								std::current_exception());
 						}
 						do_close();
+						stop_timer();
 						return;
 					}
 
@@ -136,6 +138,7 @@ namespace webservice{
 					){
 						handler_.server()->impl().ws().async_emplace(
 							std::move(socket_), std::move(req_));
+						stop_timer();
 						do_close();
 					}else{
 						// Send the response
@@ -154,9 +157,19 @@ namespace webservice{
 							do_read();
 						}else{
 							do_close();
+							stop_timer();
 						}
 					}
 				}));
+	}
+
+	void http_session::stop_timer()noexcept{
+		try{
+			timer_.cancel();
+		}catch(...){
+			handler_.server()->impl().http()
+				.on_exception(std::current_exception());
+		}
 	}
 
 	void http_session::on_write(boost::system::error_code ec, bool close){
