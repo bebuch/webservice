@@ -158,6 +158,8 @@ namespace webservice{
 
 					if(ec){
 						derived().on_error(location_type::read, ec);
+						send("error while read");
+						return;
 					}else{
 						// Echo the message
 						if(ws_.got_text()){
