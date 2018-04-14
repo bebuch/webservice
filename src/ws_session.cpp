@@ -207,18 +207,25 @@ namespace webservice{
 	void ws_session< Derived >::send(
 		boost::beast::websocket::close_reason reason
 	){
-		strand_.post(
-			[this, lock = locker_.make_lock("ws_session::send close"), reason]{
-				lock.enter();
+		ws_.async_close(reason, boost::asio::bind_executor(
+			strand_,
+			[this, lock = locker_.make_lock("ws_session::send_close")](
+				boost::system::error_code ec
+			){
+				if(ec){
+					// Closing the socket cancels all outstanding operations.
+					// They will complete with operation_aborted
+					using socket = boost::asio::ip::tcp::socket;
+					ws_.next_layer().shutdown(socket::shutdown_both, ec);
+					ws_.next_layer().close(ec);
 
-				if(ws_.is_open()){
-					boost::system::error_code ec;
-					ws_.close(reason, ec);
-					if(ec){
-						derived().on_error(location_type::close, ec);
+					try{
+						timer_.cancel();
+					}catch(...){
+						derived().on_exception(std::current_exception());
 					}
 				}
-			}, std::allocator< void >());
+			}));
 	}
 
 	template < typename Derived >
