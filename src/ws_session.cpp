@@ -61,10 +61,6 @@ namespace webservice{
 					return;
 				}
 
-				if(ec){
-					derived().on_error(location_type::timer, ec);
-				}
-
 				// If this is the first time the timer expired and ec was not
 				// set, then send a ping to see if the other end is there.
 				// Close the session otherwise.
@@ -102,6 +98,10 @@ namespace webservice{
 
 					do_timer();
 				}else{
+					if(ec){
+						derived().on_error(location_type::timer, ec);
+					}
+
 					// Closing the socket cancels all outstanding operations.
 					// They will complete with operation_aborted
 					using socket = boost::asio::ip::tcp::socket;
