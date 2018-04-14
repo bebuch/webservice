@@ -97,6 +97,7 @@ namespace webservice{
 		class server& server_;
 		async_locker locker_;
 		async_locker::lock run_lock_;
+		async_locker::lock shutdown_lock_;
 		ws_strand strand_;
 		set set_;
 	};

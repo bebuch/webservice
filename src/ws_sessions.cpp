@@ -75,6 +75,10 @@ namespace webservice{
 					throw std::logic_error("session doesn't exist");
 				}
 				set_.erase(iter);
+
+				if(set_.empty() && is_shutdown()){
+					shutdown_lock_.unlock();
+				}
 			}, std::allocator< void >());
 	}
 
@@ -83,12 +87,19 @@ namespace webservice{
 			[this, lock = locker_.make_lock("ws_sessions::shutdown")]{
 				lock.enter();
 
-				for(auto& session: set_){
-					session->send("shutdown");
+				if(set_.empty()){
+					shutdown_lock_.unlock();
+				}else{
+					for(auto& session: set_){
+						session->send("shutdown");
+					}
 				}
 			}, std::allocator< void >());
 
-		run_lock_.unlock();
+		auto lock = std::move(run_lock_);
+		if(lock.is_locked()){
+			shutdown_lock_ = std::move(lock);
+		}
 	}
 
 	bool ws_sessions::is_shutdown()noexcept{
@@ -96,7 +107,9 @@ namespace webservice{
 	}
 
 	void ws_sessions::block()noexcept{
-		server_.poll_while([this]()noexcept{ return locker_.count() > 0; });
+		server_.poll_while([this]()noexcept{
+			return locker_.count() > 0;
+		});
 	}
 
 
