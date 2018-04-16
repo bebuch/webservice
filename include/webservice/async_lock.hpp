@@ -63,7 +63,7 @@ namespace webservice{
 						<< std::setw(8) << (count_) << " 1 "
 						<< "0x" << std::setfill('0') << std::hex << std::setw(16)
 							<< reinterpret_cast< std::size_t >(locker_.load()) << " - "
-						<< std::dec << std::setfill(' ') << op_ << std::endl;
+						<< std::dec << std::setfill(' ') << op_ << "1" << std::endl;
 			}
 
 			lock(lock const&) = delete;
@@ -112,7 +112,7 @@ namespace webservice{
 						<< std::setw(8) << (count_) << " 3 "
 						<< "0x" << std::setfill('0') << std::hex << std::setw(16)
 							<< reinterpret_cast< std::size_t >(locker) << " - "
-						<< std::dec << std::setfill(' ') << op_ << std::endl;
+						<< std::dec << std::setfill(' ') << op_ << "3" << std::endl;
 				}
 			}
 
@@ -127,7 +127,7 @@ namespace webservice{
 					<< std::setw(8) << (count_) << " 2 "
 					<< "0x" << std::setfill('0') << std::hex << std::setw(16)
 						<< reinterpret_cast< std::size_t >(locker_.load()) << " - "
-					<< std::dec << std::setfill(' ') << op_ << std::endl;
+					<< std::dec << std::setfill(' ') << op_ << "2" << std::endl;
 			}
 
 

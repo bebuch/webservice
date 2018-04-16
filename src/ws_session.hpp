@@ -85,7 +85,7 @@ namespace webservice{
 		///
 		/// Send a ping after the first timeout. If it timeouts a second time
 		/// after that, close the session.
-		void do_timer();
+		void do_timer(char const* op);
 
 		/// \brief Called to indicate activity from the remote peer
 		void activity();
@@ -98,13 +98,19 @@ namespace webservice{
 
 		/// \brief Send a message
 		template < typename Tag >
-		void send(std::tuple< Tag, shared_const_buffer > data);
+		void send(std::tuple< Tag, shared_const_buffer > data)noexcept;
 
 		/// \brief Close the session
-		void send(boost::beast::websocket::close_reason reason);
+		void send(boost::beast::websocket::close_reason reason)noexcept;
 
 		/// \brief Set timers expires_after
-		void restart_timer();
+		void restart_timer(char const* op);
+
+		/// \brief Close session on socket level
+		void close_socket()noexcept;
+
+		/// \brief Stop the timer
+		void stop_timer()noexcept;
 
 
 	protected:

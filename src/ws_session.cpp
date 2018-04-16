@@ -50,10 +50,10 @@ namespace webservice{
 	}
 
 	template < typename Derived >
-	void ws_session< Derived >::do_timer(){
+	void ws_session< Derived >::do_timer(char const* op){
 		timer_.async_wait(boost::asio::bind_executor(
 			strand_,
-			[this, lock = locker_.make_lock("ws_session::do_timer")]
+			[this, lock = locker_.make_lock(op)]
 			(boost::system::error_code ec){
 				lock.enter();
 
@@ -65,10 +65,14 @@ namespace webservice{
 				// set, then send a ping to see if the other end is there.
 				// Close the session otherwise.
 				if(!ec && !wait_on_pong_){
+					if(!ws_.is_open()){
+						return;
+					}
+
 					wait_on_pong_ = true;
 
 					// Set the timer
-					restart_timer();
+					restart_timer("ws_session::do_timer_recursion");
 
 					auto ping_payload =
 						(std::is_same< Derived, ws_server_session >::value
@@ -81,7 +85,7 @@ namespace webservice{
 							ping_payload.c_str(), ping_payload.size()),
 						boost::asio::bind_executor(
 							strand_,
-							[this, lock = locker_.make_lock("ws_session::do_timer_intern")](
+							[this, lock = locker_.make_lock("ws_session::do_timer_ping")](
 								boost::system::error_code ec
 							){
 								lock.enter();
@@ -93,35 +97,55 @@ namespace webservice{
 
 								if(ec){
 									derived().on_error(location_type::ping, ec);
+									send("ping error");
+									return;
 								}
 							}));
-
-					do_timer();
 				}else{
 					if(ec){
 						derived().on_error(location_type::timer, ec);
 					}
 
-					// Closing the socket cancels all outstanding operations.
-					// They will complete with operation_aborted
-					using socket = boost::asio::ip::tcp::socket;
-					ws_.next_layer().shutdown(socket::shutdown_both, ec);
-					ws_.next_layer().close(ec);
+					close_socket();
 				}
 			}));
 	}
 
 	template < typename Derived >
-	void ws_session< Derived >::restart_timer(){
-		timer_.expires_after(ping_time_);
+	void ws_session< Derived >::close_socket()noexcept{
+		// Closing the socket cancels all outstanding operations.
+		// They will complete with operation_aborted
+		using socket = boost::asio::ip::tcp::socket;
+		boost::system::error_code ec;
+		ws_.next_layer().shutdown(socket::shutdown_both, ec);
+		ws_.next_layer().close(ec);
+
+		stop_timer();
+	}
+
+
+	template < typename Derived >
+	void ws_session< Derived >::stop_timer()noexcept{
+		try{
+			timer_.cancel();
+		}catch(...){
+			derived().on_exception(std::current_exception());
+		}
 	}
 
 	template < typename Derived >
-	void ws_session< Derived >::activity() {
+	void ws_session< Derived >::restart_timer(char const* op){
+		if(timer_.expires_after(ping_time_) != 0 && ws_.is_open()){
+			do_timer(op);
+		}
+	}
+
+	template < typename Derived >
+	void ws_session< Derived >::activity(){
 		// Note that the session is alive
 		wait_on_pong_ = false;
 
-		restart_timer();
+		restart_timer("ws_session::do_timer_restart_activity");
 	}
 
 	template < typename Derived >
@@ -130,7 +154,7 @@ namespace webservice{
 			return;
 		}
 
-		restart_timer();
+		restart_timer("ws_session::do_timer_restart_do_read");
 
 		// Read a message into our buffer
 		ws_.async_read(
@@ -150,6 +174,7 @@ namespace webservice{
 
 					// This indicates that the ws_session was closed
 					if(ec == boost::beast::websocket::error::closed){
+						timer_.cancel();
 						return;
 					}
 
@@ -158,7 +183,7 @@ namespace webservice{
 
 					if(ec){
 						derived().on_error(location_type::read, ec);
-						send("error while read");
+						send("read error");
 						return;
 					}else{
 						// Echo the message
@@ -182,13 +207,17 @@ namespace webservice{
 	template < typename Tag >
 	void ws_session< Derived >::send(
 		std::tuple< Tag, shared_const_buffer > data
-	){
+	)noexcept try{
 		strand_.dispatch(
 			[
 				this, lock = locker_.make_lock("ws_session::send"),
 				data = std::move(std::get< 1 >(data))
 			]()mutable{
 				lock.enter();
+
+				if(!ws_.is_open()){
+					return;
+				}
 
 				if(write_list_.full()){
 					throw std::runtime_error("write buffer is full");
@@ -203,31 +232,30 @@ namespace webservice{
 					do_write();
 				}
 			}, std::allocator< void >());
+	}catch(...){
+		close_socket();
+		derived().on_exception(std::current_exception());
 	}
+
 
 	template < typename Derived >
 	void ws_session< Derived >::send(
 		boost::beast::websocket::close_reason reason
-	){
+	)noexcept try{
 		ws_.async_close(reason, boost::asio::bind_executor(
 			strand_,
 			[this, lock = locker_.make_lock("ws_session::send_close")](
 				boost::system::error_code ec
 			){
-				if(ec){
-					// Closing the socket cancels all outstanding operations.
-					// They will complete with operation_aborted
-					using socket = boost::asio::ip::tcp::socket;
-					ws_.next_layer().shutdown(socket::shutdown_both, ec);
-					ws_.next_layer().close(ec);
+				lock.enter();
 
-					try{
-						timer_.cancel();
-					}catch(...){
-						derived().on_exception(std::current_exception());
-					}
+				if(ec){
+					close_socket();
 				}
 			}));
+	}catch(...){
+		close_socket();
+		derived().on_exception(std::current_exception());
 	}
 
 	template < typename Derived >
@@ -249,6 +277,12 @@ namespace webservice{
 
 					if(ec){
 						derived().on_error(location_type::write, ec);
+						close_socket();
+						return;
+					}
+
+					if(!ws_.is_open()){
+						return;
 					}
 
 					write_list_.pop_front();
@@ -286,7 +320,7 @@ namespace webservice{
 	}
 
 
-	void ws_server_session::do_accept(http_request&& req){
+	void ws_server_session::do_accept(http_request&& req)try{
 		// lock until the first async operations has been started
 		auto lock = locker_.make_first_lock("ws_server_session::do_accept::first");
 
@@ -301,8 +335,7 @@ namespace webservice{
 				activity();
 			});
 
-		do_timer();
-		restart_timer();
+		restart_timer("ws_session::do_timer_restart_do_accept");
 
 		resource_ = std::string(req.target());
 
@@ -331,10 +364,13 @@ namespace webservice{
 					// Read a message
 					do_read("ws_server_session::do_accept::read");
 				}));
+	}catch(...){
+		close_socket();
+		throw;
 	}
 
 
-	void ws_server_session::on_open()noexcept{
+	void ws_server_session::on_open()noexcept try{
 		handler_strand_.defer(
 			[this, lock = locker_.make_lock("ws_server_session::on_open")]{
 				lock.enter();
@@ -342,24 +378,22 @@ namespace webservice{
 				try{
 					service_.on_open(ws_identifier(this), resource_);
 				}catch(...){
-					service_.on_exception(ws_identifier(this), resource_,
-						std::current_exception());
+					on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
+	}catch(...){
+		on_exception(std::current_exception());
 	}
 
-	void ws_server_session::on_close()noexcept{
-		try{
-			service_.on_close(ws_identifier(this), resource_);
-		}catch(...){
-			service_.on_exception(ws_identifier(this), resource_,
-				std::current_exception());
-		}
+	void ws_server_session::on_close()noexcept try{
+		service_.on_close(ws_identifier(this), resource_);
+	}catch(...){
+		on_exception(std::current_exception());
 	}
 
 	void ws_server_session::on_text(
 		boost::beast::multi_buffer&& buffer
-	)noexcept{
+	)noexcept try{
 		handler_strand_.defer(
 			[
 				this, lock = locker_.make_lock("ws_server_session::on_text"),
@@ -371,15 +405,16 @@ namespace webservice{
 					service_.on_text(
 						ws_identifier(this), resource_, std::move(buffer));
 				}catch(...){
-					service_.on_exception(ws_identifier(this), resource_,
-						std::current_exception());
+					on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
+	}catch(...){
+		on_exception(std::current_exception());
 	}
 
 	void ws_server_session::on_binary(
 		boost::beast::multi_buffer&& buffer
-	)noexcept{
+	)noexcept try{
 		handler_strand_.defer(
 			[
 				this, lock = locker_.make_lock("ws_server_session::on_binary"),
@@ -391,16 +426,17 @@ namespace webservice{
 					service_.on_binary(
 						ws_identifier(this), resource_, std::move(buffer));
 				}catch(...){
-					service_.on_exception(ws_identifier(this), resource_,
-						std::current_exception());
+					on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
+	}catch(...){
+		on_exception(std::current_exception());
 	}
 
 	void ws_server_session::on_error(
 		ws_handler_location location,
 		boost::system::error_code ec
-	)noexcept{
+	)noexcept try{
 		handler_strand_.defer(
 			[this, lock = locker_.make_lock("ws_server_session::on_error"), location, ec]{
 				lock.enter();
@@ -409,21 +445,15 @@ namespace webservice{
 					service_.on_error(
 						ws_identifier(this), resource_, location, ec);
 				}catch(...){
-					service_.on_exception(ws_identifier(this), resource_,
-						std::current_exception());
+					on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
+	}catch(...){
+		on_exception(std::current_exception());
 	}
 
-	void ws_server_session::on_exception(
-		std::exception_ptr error
-	)noexcept{
-		handler_strand_.defer(
-			[this, lock = locker_.make_lock("ws_server_session::on_exception"), error]{
-				lock.enter();
-
-				service_.on_exception(ws_identifier(this), resource_, error);
-			}, std::allocator< void >());
+	void ws_server_session::on_exception(std::exception_ptr error)noexcept{
+		service_.on_exception(ws_identifier(this), resource_, error);
 	}
 
 	void ws_server_session::remove()noexcept{
@@ -457,7 +487,7 @@ namespace webservice{
 	}
 
 
-	void ws_client_session::start(){
+	void ws_client_session::start()try{
 		// lock until the first async operations has been started
 		auto lock = locker_.make_first_lock("ws_client_session::start::first");
 
@@ -472,16 +502,19 @@ namespace webservice{
 				activity();
 			});
 
-		do_timer();
+		restart_timer("ws_session::do_timer_start");
 
 		is_open_ = true;
 		on_open();
 
 		do_read("ws_client_session::start::read");
+	}catch(...){
+		close_socket();
+		throw;
 	}
 
 
-	void ws_client_session::on_open()noexcept{
+	void ws_client_session::on_open()noexcept try{
 		handler_strand_.defer(
 			[this, lock = locker_.make_lock("ws_client_session::on_open")]{
 				lock.enter();
@@ -489,22 +522,22 @@ namespace webservice{
 				try{
 					client_.on_open();
 				}catch(...){
-					client_.on_exception(std::current_exception());
+					on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
+	}catch(...){
+		on_exception(std::current_exception());
 	}
 
-	void ws_client_session::on_close()noexcept{
-		try{
-			client_.on_close();
-		}catch(...){
-			client_.on_exception(std::current_exception());
-		}
+	void ws_client_session::on_close()noexcept try{
+		client_.on_close();
+	}catch(...){
+		on_exception(std::current_exception());
 	}
 
 	void ws_client_session::on_text(
 		boost::beast::multi_buffer&& buffer
-	)noexcept{
+	)noexcept try{
 		handler_strand_.defer(
 			[
 				this, lock = locker_.make_lock("ws_client_session::on_text"),
@@ -515,14 +548,16 @@ namespace webservice{
 				try{
 					client_.on_text(std::move(buffer));
 				}catch(...){
-					client_.on_exception(std::current_exception());
+					on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
+	}catch(...){
+		on_exception(std::current_exception());
 	}
 
 	void ws_client_session::on_binary(
 		boost::beast::multi_buffer&& buffer
-	)noexcept{
+	)noexcept try{
 		handler_strand_.defer(
 			[
 				this, lock = locker_.make_lock("ws_client_session::on_binary"),
@@ -533,15 +568,17 @@ namespace webservice{
 				try{
 					client_.on_binary(std::move(buffer));
 				}catch(...){
-					client_.on_exception(std::current_exception());
+					on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
+	}catch(...){
+		on_exception(std::current_exception());
 	}
 
 	void ws_client_session::on_error(
 		ws_client_location location,
 		boost::system::error_code ec
-	)noexcept{
+	)noexcept try{
 		handler_strand_.defer(
 			[this, lock = locker_.make_lock("ws_client_session::on_error"), location, ec]{
 				lock.enter();
@@ -549,20 +586,15 @@ namespace webservice{
 				try{
 					client_.on_error(location, ec);
 				}catch(...){
-					client_.on_exception(std::current_exception());
+					on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
+	}catch(...){
+		on_exception(std::current_exception());
 	}
 
-	void ws_client_session::on_exception(
-		std::exception_ptr error
-	)noexcept{
-		handler_strand_.defer(
-			[this, lock = locker_.make_lock("ws_client_session::on_exception"), error]{
-				lock.enter();
-
-				client_.on_exception(error);
-			}, std::allocator< void >());
+	void ws_client_session::on_exception(std::exception_ptr error)noexcept{
+		client_.on_exception(error);
 	}
 
 	void ws_client_session::remove()noexcept{

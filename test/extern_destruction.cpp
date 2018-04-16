@@ -119,21 +119,34 @@ int main(){
 	std::srand(std::time(nullptr));
 
 	try{
-		for(std::size_t i = 0; i < 1000; ++i){
+		for(std::size_t i = 0; i < 10000; ++i){
+			struct on_destruction_t{
+				~on_destruction_t(){
+					std::lock_guard< std::mutex > mutex(webservice::async_locker::lock::mutex);
+					std::cout << "\n\n\n\n\n\n";
+				}
+			} on_destruction;
+
 			ws_client client;
 
-			using std::make_unique;
+			auto http_handler = std::make_unique< request_handler >();
+			http_handler->set_timeout(std::chrono::milliseconds(1500));
+
+			auto ws_handler = std::make_unique< class ws_handler >();
+			ws_handler->set_ping_time(std::chrono::milliseconds(1000));
+
 			webservice::server server(
-				make_unique< request_handler >(),
-				make_unique< ws_handler >(),
-				make_unique< webservice::error_printing_error_handler >(),
+				std::move(http_handler),
+				std::move(ws_handler),
+				std::make_unique< webservice::error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 2);
 			client.async_connect("127.0.0.1", "1234", "/");
 
 			std::this_thread::sleep_for(
 				std::chrono::milliseconds(rand() % 10));
 
-			std::cout << "-" << std::flush;
+			std::lock_guard< std::mutex > mutex(webservice::async_locker::lock::mutex);
+			std::cout << "\n";
 		}
 		std::cout << "\n";
 

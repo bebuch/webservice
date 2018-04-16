@@ -57,6 +57,7 @@ namespace webservice{
 					}catch(...){
 						server_.error().on_exception(std::current_exception());
 					}
+					return;
 				}else{
 					// Create and run the http_session
 					server_.http().async_emplace(std::move(socket_));
