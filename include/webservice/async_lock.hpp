@@ -52,7 +52,7 @@ namespace webservice{
 				// lock_count_ is 0 the on_last_async() was already fired and
 				// no new calles are accepted
 				if((*locker_).lock_count_ == 0){
-					throw std::runtime_error("async call after shutdown");
+					throw std::runtime_error(std::string("async call after shutdown - ") + op);
 				}
 
 				// If the call was valid increas the counter

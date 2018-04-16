@@ -335,6 +335,7 @@ namespace webservice{
 				activity();
 			});
 
+		do_timer("ws_session::do_timer_do_accept");
 		restart_timer("ws_session::do_timer_restart_do_accept");
 
 		resource_ = std::string(req.target());
@@ -502,7 +503,8 @@ namespace webservice{
 				activity();
 			});
 
-		restart_timer("ws_session::do_timer_start");
+		do_timer("ws_session::do_timer_start");
+		restart_timer("ws_session::do_timer_restart_start");
 
 		is_open_ = true;
 		on_open();
