@@ -136,15 +136,9 @@ namespace webservice{
 			return static_cast< Derived& >(*this);
 		}
 
-		void do_write();
-
 		using location_type = typename session_location_type< Derived >::type;
 
-		struct write_data{
-			bool is_text;
-			shared_const_buffer data;
-		};
-		boost::circular_buffer< write_data > write_list_;
+		bool wait_on_close_{false};
 
 		std::chrono::milliseconds const ping_time_;
 

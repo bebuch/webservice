@@ -43,7 +43,6 @@ namespace webservice{
 		, locker_([this]()noexcept{
 				derived().remove();
 			})
-		, write_list_(64)
 		, ping_time_(ping_time)
 	{
 		ws_.auto_fragment(true);
@@ -215,22 +214,32 @@ namespace webservice{
 			]()mutable{
 				lock.enter();
 
-				if(!ws_.is_open()){
+				if(!ws_.is_open() || wait_on_close_){
 					return;
 				}
 
-				if(write_list_.full()){
-					throw std::runtime_error("write buffer is full");
-				}
-
-				bool was_empty = write_list_.empty();
-
 				constexpr bool is_text = std::is_same< Tag, text_tag >::value;
-				write_list_.push_back(write_data{is_text, std::move(data)});
+				ws_.text(is_text);
+				ws_.async_write(
+					std::move(data),
+					boost::asio::bind_executor(
+						strand_,
+						[this, lock = locker_.make_lock("ws_session::do_write")](
+							boost::system::error_code ec,
+							std::size_t /*bytes_transferred*/
+						){
+							lock.enter();
 
-				if(was_empty){
-					do_write();
-				}
+							if(ec == boost::asio::error::operation_aborted){
+								return;
+							}
+
+							if(ec){
+								derived().on_error(location_type::write, ec);
+								close_socket();
+							}
+						}));
+
 			}, std::allocator< void >());
 	}catch(...){
 		close_socket();
@@ -242,55 +251,33 @@ namespace webservice{
 	void ws_session< Derived >::send(
 		boost::beast::websocket::close_reason reason
 	)noexcept try{
-		ws_.async_close(reason, boost::asio::bind_executor(
-			strand_,
-			[this, lock = locker_.make_lock("ws_session::send_close")](
-				boost::system::error_code ec
-			){
-				lock.enter();
+		strand_.dispatch(
+			[
+				this, lock = locker_.make_lock("ws_session::send_close_dispatch"),
+				reason
+			]()noexcept{
+				try{
+					ws_.async_close(reason, boost::asio::bind_executor(
+						strand_,
+						[this, lock = locker_.make_lock("ws_session::send_close")](
+							boost::system::error_code ec
+						){
+							lock.enter();
 
-				if(ec){
+							if(ec){
+								close_socket();
+							}else{
+								wait_on_close_ = true;
+							}
+						}));
+				}catch(...){
 					close_socket();
+					derived().on_exception(std::current_exception());
 				}
-			}));
+			}, std::allocator< void >());
 	}catch(...){
 		close_socket();
 		derived().on_exception(std::current_exception());
-	}
-
-	template < typename Derived >
-	void ws_session< Derived >::do_write(){
-		ws_.text(write_list_.front().is_text);
-		ws_.async_write(
-			std::move(write_list_.front().data),
-			boost::asio::bind_executor(
-				strand_,
-				[this, lock = locker_.make_lock("ws_session::do_write")](
-					boost::system::error_code ec,
-					std::size_t /*bytes_transferred*/
-				){
-					lock.enter();
-
-					if(ec == boost::asio::error::operation_aborted){
-						return;
-					}
-
-					if(ec){
-						derived().on_error(location_type::write, ec);
-						close_socket();
-						return;
-					}
-
-					if(!ws_.is_open()){
-						return;
-					}
-
-					write_list_.pop_front();
-
-					if(!write_list_.empty()){
-						do_write();
-					}
-				}));
 	}
 
 
