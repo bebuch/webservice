@@ -242,17 +242,23 @@ namespace webservice{
 	void ws_session< Derived >::send(
 		boost::beast::websocket::close_reason reason
 	)noexcept try{
-		ws_.async_close(reason, boost::asio::bind_executor(
-			strand_,
-			[this, lock = locker_.make_lock("ws_session::send_close")](
-				boost::system::error_code ec
-			){
+		strand_.dispatch(
+			[
+				this, lock = locker_.make_lock("ws_session::send"),
+				reason
+			]{
 				lock.enter();
 
-				if(ec){
-					close_socket();
+				if(!ws_.is_open()){
+					return;
 				}
-			}));
+
+				close_reason_ = std::make_unique< boost::beast::websocket::close_reason >(reason);
+
+				if(write_list_.empty()){
+					do_write();
+				}
+			}, std::allocator< void >());
 	}catch(...){
 		close_socket();
 		derived().on_exception(std::current_exception());
@@ -260,37 +266,57 @@ namespace webservice{
 
 	template < typename Derived >
 	void ws_session< Derived >::do_write(){
-		ws_.text(write_list_.front().is_text);
-		ws_.async_write(
-			std::move(write_list_.front().data),
-			boost::asio::bind_executor(
+		if(!ws_.is_open()){
+			return;
+		}
+
+		if(close_reason_){
+			ws_.async_close(*close_reason_, boost::asio::bind_executor(
 				strand_,
-				[this, lock = locker_.make_lock("ws_session::do_write")](
-					boost::system::error_code ec,
-					std::size_t /*bytes_transferred*/
+				[this, lock = locker_.make_lock("ws_session::send_close")](
+					boost::system::error_code ec
 				){
 					lock.enter();
-
-					if(ec == boost::asio::error::operation_aborted){
-						return;
-					}
 
 					if(ec){
 						derived().on_error(location_type::write, ec);
 						close_socket();
 						return;
 					}
-
-					if(!ws_.is_open()){
-						return;
-					}
-
-					write_list_.pop_front();
-
-					if(!write_list_.empty()){
-						do_write();
-					}
 				}));
+		}else{
+			ws_.text(write_list_.front().is_text);
+			ws_.async_write(
+				std::move(write_list_.front().data),
+				boost::asio::bind_executor(
+					strand_,
+					[this, lock = locker_.make_lock("ws_session::do_write")](
+						boost::system::error_code ec,
+						std::size_t /*bytes_transferred*/
+					){
+						lock.enter();
+
+						if(ec == boost::asio::error::operation_aborted){
+							return;
+						}
+
+						if(ec){
+							derived().on_error(location_type::write, ec);
+							close_socket();
+							return;
+						}
+
+						if(!ws_.is_open()){
+							return;
+						}
+
+						write_list_.pop_front();
+
+						if(!write_list_.empty()){
+							do_write();
+						}
+					}));
+		}
 	}
 
 

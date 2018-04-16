@@ -145,6 +145,7 @@ namespace webservice{
 			shared_const_buffer data;
 		};
 		boost::circular_buffer< write_data > write_list_;
+		std::unique_ptr< boost::beast::websocket::close_reason > close_reason_;
 
 		std::chrono::milliseconds const ping_time_;
 
