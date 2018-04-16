@@ -84,6 +84,11 @@ struct ws_client
 {
 	using error_printing_ws_client::error_printing_ws_client;
 
+	~ws_client(){
+		shutdown();
+		block();
+	}
+
 	int count = 0;
 
 	void on_text(std::string&& text)override{
@@ -119,27 +124,29 @@ int main(){
 	std::srand(std::time(nullptr));
 
 	try{
-		using std::make_unique;
-		webservice::server server(
-			make_unique< request_handler >(),
-			make_unique< ws_handler >(),
-			make_unique< webservice::error_printing_error_handler >(),
-			boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
+		for(std::size_t i = 0; i < 100; ++i){
+			using std::make_unique;
+// 			webservice::server server(
+// 				make_unique< request_handler >(),
+// 				make_unique< ws_handler >(),
+// 				make_unique< webservice::error_printing_error_handler >(),
+// 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
-		constexpr std::size_t client_count = 10;
-		std::vector< std::thread > client_threads;
-		client_threads.reserve(client_count);
-		for(std::size_t i = 0; i < client_count; ++i){
-			client_threads.emplace_back([]{
-					ws_client client;
-					client.async_connect("127.0.0.1", "1234", "/");
-					std::this_thread::sleep_for(
-						std::chrono::milliseconds(rand() % 100));
-				});
-		}
+			constexpr std::size_t client_count = 100;
+			std::vector< std::thread > client_threads;
+			client_threads.reserve(client_count);
+			for(std::size_t i = 0; i < client_count; ++i){
+				client_threads.emplace_back([]{
+						ws_client client;
+						client.async_connect("127.0.0.1", "1234", "/");
+						std::this_thread::sleep_for(
+							std::chrono::milliseconds(rand() % 100));
+					});
+			}
 
-		for(auto& thread: client_threads){
-			thread.join();
+			for(auto& thread: client_threads){
+				thread.join();
+			}
 		}
 
 		return 0;
