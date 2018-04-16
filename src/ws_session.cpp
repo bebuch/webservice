@@ -215,7 +215,7 @@ namespace webservice{
 			]()mutable{
 				lock.enter();
 
-				if(!ws_.is_open()){
+				if(!ws_.is_open() || close_reason_){
 					return;
 				}
 
@@ -249,11 +249,12 @@ namespace webservice{
 			]{
 				lock.enter();
 
-				if(!ws_.is_open()){
+				if(!ws_.is_open() || close_reason_){
 					return;
 				}
 
-				close_reason_ = std::make_unique< boost::beast::websocket::close_reason >(reason);
+				using close_reason = boost::beast::websocket::close_reason;
+				close_reason_ = std::make_unique< close_reason >(reason);
 
 				if(write_list_.empty()){
 					do_write();
@@ -266,10 +267,6 @@ namespace webservice{
 
 	template < typename Derived >
 	void ws_session< Derived >::do_write(){
-		if(!ws_.is_open()){
-			return;
-		}
-
 		if(close_reason_){
 			ws_.async_close(*close_reason_, boost::asio::bind_executor(
 				strand_,
@@ -308,13 +305,12 @@ namespace webservice{
 							return;
 						}
 
-						if(!ws_.is_open()){
-							return;
-						}
-
 						write_list_.pop_front();
 
-						if(!write_list_.empty()){
+						if(
+							ws_.is_open() &&
+							(!write_list_.empty() || close_reason_)
+						){
 							do_write();
 						}
 					}));
