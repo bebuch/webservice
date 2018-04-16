@@ -126,11 +126,11 @@ int main(){
 	try{
 		for(std::size_t i = 0; i < 100; ++i){
 			using std::make_unique;
-// 			webservice::server server(
-// 				make_unique< request_handler >(),
-// 				make_unique< ws_handler >(),
-// 				make_unique< webservice::error_printing_error_handler >(),
-// 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
+			webservice::server server(
+				make_unique< request_handler >(),
+				make_unique< ws_handler >(),
+				make_unique< webservice::error_printing_error_handler >(),
+				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
 			constexpr std::size_t client_count = 100;
 			std::vector< std::thread > client_threads;
