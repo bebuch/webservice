@@ -283,6 +283,8 @@ namespace webservice{
 						close_socket();
 						return;
 					}
+
+					stop_timer();
 				}));
 		}else{
 			ws_.text(write_list_.front().is_text);

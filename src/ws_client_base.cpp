@@ -55,7 +55,6 @@ namespace webservice{
 					session_->send("shutdown");
 				}
 
-				session_.reset();
 				work_.reset();
 			}, std::allocator< void >());
 	}
@@ -86,12 +85,13 @@ namespace webservice{
 						return std::move(resource);
 					}(std::move(resource))
 			]()mutable{
-				if(shutdown_){
-					throw std::logic_error("can not connect after shutdown");
-				}
-
 				if(is_connected()){
 					throw std::logic_error("ws client is already connected");
+				}
+
+				if(shutdown_){
+					remove_session();
+					throw std::logic_error("can not connect after shutdown");
 				}
 
 				boost::asio::ip::tcp::resolver resolver(ioc_);
@@ -181,7 +181,7 @@ namespace webservice{
 	}
 
 	void ws_client_base::remove_session(){
-		ioc_.get_executor().post([this]{
+		strand_.post([this]{
 				session_.reset();
 			}, std::allocator< void >());
 	}
