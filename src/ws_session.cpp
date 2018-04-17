@@ -178,24 +178,21 @@ namespace webservice{
 						return;
 					}
 
-					// Note that there is activity
-					activity();
-
 					if(ec){
 						derived().on_error(location_type::read, ec);
 						send("read error");
 						return;
-					}else{
-						// Echo the message
-						if(ws_.got_text()){
-							derived().on_text(std::move(buffer_));
-						}else{
-							derived().on_binary(std::move(buffer_));
-						}
 					}
 
-					// Clear the buffer
-					buffer_.consume(buffer_.size());
+					// Note that there is activity
+					activity();
+
+					// Echo the message
+					if(ws_.got_text()){
+						derived().on_text(std::move(buffer_));
+					}else{
+						derived().on_binary(std::move(buffer_));
+					}
 
 					// Do another read
 					do_read("ws_session::do_read");
@@ -215,7 +212,12 @@ namespace webservice{
 			]()mutable{
 				lock.enter();
 
-				if(!ws_.is_open() || close_reason_){
+				if(!ws_.is_open()){
+					timer_.cancel();
+					return;
+				}
+
+				if(close_reason_){
 					return;
 				}
 
@@ -233,7 +235,6 @@ namespace webservice{
 				}
 			}, std::allocator< void >());
 	}catch(...){
-		close_socket();
 		derived().on_exception(std::current_exception());
 	}
 
@@ -249,7 +250,12 @@ namespace webservice{
 			]{
 				lock.enter();
 
-				if(!ws_.is_open() || close_reason_){
+				if(!ws_.is_open()){
+					timer_.cancel();
+					return;
+				}
+
+				if(close_reason_){
 					return;
 				}
 
@@ -261,7 +267,6 @@ namespace webservice{
 				}
 			}, std::allocator< void >());
 	}catch(...){
-		close_socket();
 		derived().on_exception(std::current_exception());
 	}
 
@@ -277,11 +282,11 @@ namespace webservice{
 
 					if(ec){
 						derived().on_error(location_type::write, ec);
-						close_socket();
-						return;
 					}
 
-					stop_timer();
+					if(!ws_.is_open()){
+						stop_timer();
+					}
 				}));
 		}else{
 			ws_.text(write_list_.front().is_text);
@@ -301,7 +306,7 @@ namespace webservice{
 
 						if(ec){
 							derived().on_error(location_type::write, ec);
-							close_socket();
+							send("write error");
 							return;
 						}
 
