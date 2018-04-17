@@ -119,7 +119,7 @@ int main(){
 	std::srand(std::time(nullptr));
 
 	try{
-		for(std::size_t i = 0; i < 10000; ++i){
+		for(std::size_t i = 0; i < 1000; ++i){
 			struct on_destruction_t{
 				~on_destruction_t(){
 					std::lock_guard< std::mutex > mutex(webservice::async_locker::lock::mutex);

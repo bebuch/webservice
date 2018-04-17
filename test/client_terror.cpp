@@ -124,15 +124,22 @@ int main(){
 	std::srand(std::time(nullptr));
 
 	try{
-		for(std::size_t i = 0; i < 100; ++i){
+		for(std::size_t i = 0; i < 10000; ++i){
 			using std::make_unique;
+			struct on_destruction_t{
+				~on_destruction_t(){
+					std::lock_guard< std::mutex > mutex(webservice::async_locker::lock::mutex);
+					std::cout << "\n\n\n\n\n\n";
+				}
+			} on_destruction;
+
 			webservice::server server(
 				make_unique< request_handler >(),
 				make_unique< ws_handler >(),
 				make_unique< webservice::error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
-			constexpr std::size_t client_count = 100;
+			constexpr std::size_t client_count = 10;
 			std::vector< std::thread > client_threads;
 			client_threads.reserve(client_count);
 			for(std::size_t i = 0; i < client_count; ++i){
@@ -147,6 +154,9 @@ int main(){
 			for(auto& thread: client_threads){
 				thread.join();
 			}
+
+			std::lock_guard< std::mutex > mutex(webservice::async_locker::lock::mutex);
+			std::cout << "\n";
 		}
 
 		return 0;
