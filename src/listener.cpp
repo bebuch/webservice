@@ -52,11 +52,9 @@ namespace webservice{
 				}
 
 				if(ec){
-					try{
-						server_.error().on_error(ec);
-					}catch(...){
-						server_.error().on_exception(std::current_exception());
-					}
+					server_.error().on_exception(
+						std::make_exception_ptr(boost::system::system_error(
+							ec, "server listener accept")));
 					return;
 				}else{
 					// Create and run the http_session

@@ -10,8 +10,6 @@
 #define _webservice__ws_session__hpp_INCLUDED_
 
 #include <webservice/async_lock.hpp>
-#include <webservice/ws_handler_location.hpp>
-#include <webservice/ws_client_location.hpp>
 #include <webservice/shared_const_buffer.hpp>
 
 #include <boost/beast/core/buffers_to_string.hpp>
@@ -50,20 +48,6 @@ namespace webservice{
 
 	using http_request
 		= boost::beast::http::request< boost::beast::http::string_body >;
-
-
-	template < typename Derived >
-	struct session_location_type;
-
-	template <>
-	struct session_location_type< ws_server_session >{
-		using type = ws_handler_location;
-	};
-
-	template <>
-	struct session_location_type< ws_client_session >{
-		using type = ws_client_location;
-	};
 
 
 	/// \brief Base of WebSocket sessions
@@ -138,8 +122,6 @@ namespace webservice{
 
 		void do_write();
 
-		using location_type = typename session_location_type< Derived >::type;
-
 		struct write_data{
 			bool is_text;
 			shared_const_buffer data;
@@ -187,7 +169,7 @@ namespace webservice{
 
 		/// \brief Called when an error occured
 		void on_error(
-			ws_handler_location location,
+			boost::beast::string_view location,
 			boost::system::error_code ec)noexcept;
 
 		/// \brief Called when an exception was thrown
@@ -236,7 +218,7 @@ namespace webservice{
 
 		/// \brief Called when an error occured
 		void on_error(
-			ws_client_location location,
+			boost::beast::string_view location,
 			boost::system::error_code ec)noexcept;
 
 		/// \brief Called when an exception was thrown

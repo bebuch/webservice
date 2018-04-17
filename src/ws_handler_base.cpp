@@ -92,12 +92,6 @@ namespace webservice{
 		std::string const& /*resource*/,
 		boost::beast::multi_buffer&& /*buffer*/){}
 
-	void ws_handler_base::on_error(
-		ws_identifier /*identifier*/,
-		std::string const& /*resource*/,
-		ws_handler_location /*location*/,
-		boost::system::error_code /*ec*/){}
-
 	void ws_handler_base::on_exception(
 		ws_identifier /*identifier*/,
 		std::string const& /*resource*/,

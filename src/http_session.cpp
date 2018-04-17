@@ -51,13 +51,9 @@ namespace webservice{
 				}
 
 				if(ec){
-					try{
-						handler_.server()->impl().http().on_error(
-							http_request_location::timer, ec);
-					}catch(...){
-						handler_.server()->impl().http().on_exception(
-							std::current_exception());
-					}
+					handler_.server()->impl().http().on_exception(
+						std::make_exception_ptr(boost::system::system_error(
+							ec, "http session timer")));
 				}
 
 				// Closing the socket cancels all outstanding operations.
@@ -118,13 +114,9 @@ namespace webservice{
 					}
 
 					if(ec){
-						try{
-							handler_.server()->impl().http().on_error(
-								http_request_location::read, ec);
-						}catch(...){
-							handler_.server()->impl().http().on_exception(
-								std::current_exception());
-						}
+						handler_.server()->impl().http().on_exception(
+							std::make_exception_ptr(boost::system::system_error(
+								ec, "http session read")));
 						do_close();
 						return;
 					}
@@ -175,13 +167,10 @@ namespace webservice{
 		}
 
 		if(ec){
-			try{
-				handler_.server()->impl().http()
-					.on_error(http_request_location::write, ec);
-			}catch(...){
-				handler_.server()->impl().http()
-					.on_exception(std::current_exception());
-			}
+			handler_.server()->impl().http().on_exception(
+				std::make_exception_ptr(boost::system::system_error(
+					ec, "http session write")));
+
 			do_close();
 			return;
 		}

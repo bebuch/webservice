@@ -60,14 +60,6 @@ namespace webservice{
 			ws_identifier /*identifier*/,
 			ReceiveBinaryType&& /*data*/){}
 
-		/// \brief Called when an error occured
-		///
-		/// Default implementation does nothing.
-		virtual void on_error(
-			ws_identifier /*identifier*/,
-			ws_handler_location /*location*/,
-			boost::system::error_code /*ec*/){}
-
 		/// \brief Called when an exception was thrown
 		///
 		/// Default implementation does nothing.
@@ -129,22 +121,6 @@ namespace webservice{
 		)final{
 			try{
 				on_binary(identifier, std::move(data));
-			}catch(...){
-				on_exception(identifier, std::current_exception());
-			}
-		}
-
-		/// \brief Called when an error occured
-		///
-		/// Default implementation does nothing.
-		void on_error(
-			ws_identifier identifier,
-			std::string const& /*resource*/,
-			ws_handler_location location,
-			boost::system::error_code ec
-		)final{
-			try{
-				on_error(identifier, location, ec);
 			}catch(...){
 				on_exception(identifier, std::current_exception());
 			}

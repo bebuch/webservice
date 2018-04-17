@@ -47,10 +47,6 @@ namespace webservice{
 		send(not_found(req, req.target()));
 	}
 
-	void http_request_handler::on_error(
-		http_request_location /*location*/,
-		boost::system::error_code /*ec*/){}
-
 	void http_request_handler::on_exception(
 		std::exception_ptr /*error*/)noexcept{}
 

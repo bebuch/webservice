@@ -9,7 +9,6 @@
 #ifndef _webservice__http_request_handler__hpp_INCLUDED_
 #define _webservice__http_request_handler__hpp_INCLUDED_
 
-#include "http_request_location.hpp"
 #include "http_response.hpp"
 
 #include <boost/beast/http.hpp>
@@ -50,13 +49,6 @@ namespace webservice{
 		/// \brief Process http request
 		virtual void operator()(http_request&& req, http_response&& send);
 
-
-		/// \brief Called when an error occured
-		///
-		/// Default implementation does nothing.
-		virtual void on_error(
-			http_request_location location,
-			boost::system::error_code ec);
 
 		/// \brief Called when an exception occurred
 		///

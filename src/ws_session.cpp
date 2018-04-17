@@ -96,14 +96,14 @@ namespace webservice{
 								}
 
 								if(ec){
-									derived().on_error(location_type::ping, ec);
+									derived().on_error("ping", ec);
 									send("ping error");
 									return;
 								}
 							}));
 				}else{
 					if(ec){
-						derived().on_error(location_type::timer, ec);
+						derived().on_error("timer", ec);
 					}
 
 					close_socket();
@@ -178,14 +178,22 @@ namespace webservice{
 						return;
 					}
 
-					if(ec){
-						derived().on_error(location_type::read, ec);
-						send("read error");
-						return;
-					}
-
 					// Note that there is activity
 					activity();
+
+					if(ec){
+						derived().on_error("read", ec);
+
+						if(ws_.is_open()){
+							// close connection
+							send("read error");
+
+							// Do another read
+							do_read("ws_session::do_read_after_close");
+						}
+
+						return;
+					}
 
 					// Echo the message
 					if(ws_.got_text()){
@@ -281,7 +289,7 @@ namespace webservice{
 					lock.enter();
 
 					if(ec){
-						derived().on_error(location_type::write, ec);
+						derived().on_error("close", ec);
 					}
 
 					if(!ws_.is_open()){
@@ -305,7 +313,7 @@ namespace webservice{
 						}
 
 						if(ec){
-							derived().on_error(location_type::write, ec);
+							derived().on_error("write", ec);
 							send("write error");
 							return;
 						}
@@ -384,7 +392,7 @@ namespace webservice{
 					}
 
 					if(ec){
-						on_error(ws_handler_location::accept, ec);
+						on_error("accept", ec);
 						return;
 					}
 
@@ -464,22 +472,11 @@ namespace webservice{
 	}
 
 	void ws_server_session::on_error(
-		ws_handler_location location,
+		boost::beast::string_view location,
 		boost::system::error_code ec
-	)noexcept try{
-		handler_strand_.defer(
-			[this, lock = locker_.make_lock("ws_server_session::on_error"), location, ec]{
-				lock.enter();
-
-				try{
-					service_.on_error(
-						ws_identifier(this), resource_, location, ec);
-				}catch(...){
-					on_exception(std::current_exception());
-				}
-			}, std::allocator< void >());
-	}catch(...){
-		on_exception(std::current_exception());
+	)noexcept{
+		on_exception(std::make_exception_ptr(boost::system::system_error(ec,
+			"websocket server session " + std::string(location))));
 	}
 
 	void ws_server_session::on_exception(std::exception_ptr error)noexcept{
@@ -607,21 +604,12 @@ namespace webservice{
 	}
 
 	void ws_client_session::on_error(
-		ws_client_location location,
+		boost::beast::string_view location,
 		boost::system::error_code ec
-	)noexcept try{
-		handler_strand_.defer(
-			[this, lock = locker_.make_lock("ws_client_session::on_error"), location, ec]{
-				lock.enter();
-
-				try{
-					client_.on_error(location, ec);
-				}catch(...){
-					on_exception(std::current_exception());
-				}
-			}, std::allocator< void >());
-	}catch(...){
-		on_exception(std::current_exception());
+	)noexcept{
+		client_.on_exception(
+			std::make_exception_ptr(boost::system::system_error(ec,
+				"websocket client session " + std::string(location))));
 	}
 
 	void ws_client_session::on_exception(std::exception_ptr error)noexcept{

@@ -9,8 +9,6 @@
 #ifndef _webservice__error_handler__hpp_INCLUDED_
 #define _webservice__error_handler__hpp_INCLUDED_
 
-#include "http_request_location.hpp"
-
 #include <boost/system/error_code.hpp>
 
 #include <exception>
@@ -32,11 +30,6 @@ namespace webservice{
 		/// \brief Destructor
 		virtual ~error_handler();
 
-
-		/// \brief Called when an error occured
-		///
-		/// Default implementation does nothing.
-		virtual void on_error(boost::system::error_code ec);
 
 		/// \brief Called when an exception occurred
 		///

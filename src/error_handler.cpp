@@ -14,8 +14,6 @@ namespace webservice{
 
 	error_handler::~error_handler(){}
 
-	void error_handler::on_error(boost::system::error_code /*ec*/){}
-
 	void error_handler::on_exception(std::exception_ptr /*error*/)noexcept{}
 
 

@@ -139,7 +139,7 @@ int main(){
 				make_unique< webservice::error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
-			constexpr std::size_t client_count = 10;
+			constexpr std::size_t client_count = 50;
 			std::vector< std::thread > client_threads;
 			client_threads.reserve(client_count);
 			for(std::size_t i = 0; i < client_count; ++i){

@@ -129,16 +129,6 @@ struct request_handler
 std::string const test_text = "{\"key\":\"value\"}";
 
 struct ws_service_handler: webservice::ws_service_handler{
-	void on_error(
-		webservice::ws_identifier,
-		std::string const&,
-		webservice::ws_handler_location location,
-		boost::system::error_code ec
-	)override{
-		throw boost::system::system_error(ec,
-			"location " + std::string(to_string_view(location)));
-	}
-
 	void on_exception(
 		webservice::ws_identifier,
 		std::string const&,

@@ -9,7 +9,6 @@
 #ifndef _webservice__error_printing_ws_handler__hpp_INCLUDED_
 #define _webservice__error_printing_ws_handler__hpp_INCLUDED_
 
-#include <webservice/ws_handler_location.hpp>
 #include <webservice/ws_identifier.hpp>
 
 #include <boost/system/error_code.hpp>
@@ -26,16 +25,6 @@ namespace webservice{
 	template < typename Base >
 	struct error_printing_ws_handler: Base{
 		using Base::Base;
-
-		void on_error(
-			ws_identifier,
-			std::string const&,
-			ws_handler_location location,
-			boost::system::error_code ec
-		)override{
-			throw boost::system::system_error(ec,
-				"location " + std::string(to_string_view(location)));
-		}
 
 		void on_exception(
 			ws_identifier,

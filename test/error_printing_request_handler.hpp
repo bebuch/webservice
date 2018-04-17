@@ -9,8 +9,6 @@
 #ifndef _webservice__error_printing_request_handler__hpp_INCLUDED_
 #define _webservice__error_printing_request_handler__hpp_INCLUDED_
 
-#include <webservice/http_request_location.hpp>
-
 #include <boost/system/error_code.hpp>
 #include <boost/system/system_error.hpp>
 
@@ -25,14 +23,6 @@ namespace webservice{
 	template < typename Base >
 	struct error_printing_request_handler: Base{
 		using Base::Base;
-
-		void on_error(
-			http_request_location location,
-			boost::system::error_code ec
-		)override{
-			throw boost::system::system_error(ec,
-				"location " + std::string(to_string_view(location)));
-		}
 
 		void on_exception(std::exception_ptr error)noexcept override{
 			try{

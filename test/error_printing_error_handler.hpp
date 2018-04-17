@@ -18,10 +18,6 @@ namespace webservice{
 
 
 	struct error_printing_error_handler: error_handler{
-		void on_error(boost::system::error_code ec)override{
-			throw boost::system::system_error(ec);
-		}
-
 		void on_exception(std::exception_ptr error)noexcept override{
 			try{
 				std::rethrow_exception(error);

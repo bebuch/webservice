@@ -10,7 +10,6 @@
 #define _webservice__ws_client_base__hpp_INCLUDED_
 
 #include "shared_const_buffer.hpp"
-#include "ws_client_location.hpp"
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/strand.hpp>
@@ -116,13 +115,6 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_binary(boost::beast::multi_buffer&& buffer);
-
-		/// \brief Called when an error occured
-		///
-		/// Default implementation does nothing.
-		virtual void on_error(
-			ws_client_location location,
-			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown
 		///

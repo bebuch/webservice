@@ -10,7 +10,6 @@
 #define _webservice__ws_handler_base__hpp_INCLUDED_
 
 #include "shared_const_buffer.hpp"
-#include "ws_handler_location.hpp"
 #include "ws_identifier.hpp"
 
 #include <boost/asio/ip/tcp.hpp>
@@ -123,15 +122,6 @@ namespace webservice{
 			ws_identifier identifier,
 			std::string const& resource,
 			boost::beast::multi_buffer&& buffer);
-
-		/// \brief Called when an error occured
-		///
-		/// Default implementation does nothing.
-		virtual void on_error(
-			ws_identifier identifier,
-			std::string const& resource,
-			ws_handler_location location,
-			boost::system::error_code ec);
 
 		/// \brief Called when an exception was thrown
 		///

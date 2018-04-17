@@ -197,10 +197,6 @@ namespace webservice{
 	void ws_client_base::on_binary(
 		boost::beast::multi_buffer&& /*buffer*/){}
 
-	void ws_client_base::on_error(
-		ws_client_location /*location*/,
-		boost::system::error_code /*ec*/){}
-
 	void ws_client_base::on_exception(std::exception_ptr /*error*/)noexcept{}
 
 
