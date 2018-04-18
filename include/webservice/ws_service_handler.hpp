@@ -18,7 +18,7 @@
 namespace webservice{
 
 
-	class ws_service_handler: public ws_handler_base{
+	final class ws_service_handler: public ws_handler_interface{
 	public:
 		/// \brief Constructor
 		ws_service_handler();
@@ -27,12 +27,6 @@ namespace webservice{
 		///
 		/// Block until last async operation has finished.
 		~ws_service_handler()override;
-
-
-		/// \brief Create a new ws_server_session
-		void async_emplace(
-			boost::asio::ip::tcp::socket&& socket,
-			http_request&& req)override;
 
 
 		/// \brief Add ws_handler_base that is used for sessions with resource
@@ -56,14 +50,19 @@ namespace webservice{
 		void erase_service(std::string name);
 
 
-		/// \brief Call shutdown on all services and don't accept any new ones
+	private:
+		/// \brief Create the service map
+		void on_server(class server& server)override;
+
+		/// \brief Create a new ws_server_session
+		void on_make(
+			boost::asio::ip::tcp::socket&& socket,
+			http_request&& req)override;
+
+		/// \brief Call shutdown on all services
 		void on_shutdown()noexcept override;
 
-		/// \brief Set the owning server
-		void set_server(class server& server)override;
 
-
-	private:
 		/// \brief Pointer to implementation
 		std::unique_ptr< struct ws_service_handler_impl > impl_;
 	};

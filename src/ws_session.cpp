@@ -11,7 +11,7 @@
 
 #include <webservice/server.hpp>
 #include <webservice/async_lock.hpp>
-#include <webservice/ws_handler_base.hpp>
+#include <webservice/ws_service_base.hpp>
 #include <webservice/ws_client_base.hpp>
 
 #include <boost/beast/websocket.hpp>
@@ -343,7 +343,7 @@ namespace webservice{
 
 	ws_server_session::ws_server_session(
 		ws_stream&& ws,
-		ws_handler_base& service,
+		ws_service_base& service,
 		std::chrono::milliseconds ping_time
 	)
 		: ws_session< ws_server_session >(std::move(ws), ping_time)
@@ -374,8 +374,6 @@ namespace webservice{
 
 		do_timer("ws_session::do_timer_do_accept");
 		restart_timer("ws_session::do_timer_restart_do_accept");
-
-		resource_ = std::string(req.target());
 
 		// Accept the WebSocket handshake
 		ws_.async_accept(
@@ -414,7 +412,7 @@ namespace webservice{
 				lock.enter();
 
 				try{
-					service_.on_open(ws_identifier(this), resource_);
+					service_.on_open(ws_identifier(this));
 				}catch(...){
 					on_exception(std::current_exception());
 				}
@@ -424,7 +422,7 @@ namespace webservice{
 	}
 
 	void ws_server_session::on_close()noexcept try{
-		service_.on_close(ws_identifier(this), resource_);
+		service_.on_close(ws_identifier(this));
 	}catch(...){
 		on_exception(std::current_exception());
 	}
@@ -440,8 +438,7 @@ namespace webservice{
 				lock.enter();
 
 				try{
-					service_.on_text(
-						ws_identifier(this), resource_, std::move(buffer));
+					service_.on_text(ws_identifier(this), std::move(buffer));
 				}catch(...){
 					on_exception(std::current_exception());
 				}
@@ -461,8 +458,7 @@ namespace webservice{
 				lock.enter();
 
 				try{
-					service_.on_binary(
-						ws_identifier(this), resource_, std::move(buffer));
+					service_.on_binary(ws_identifier(this), std::move(buffer));
 				}catch(...){
 					on_exception(std::current_exception());
 				}
@@ -480,7 +476,7 @@ namespace webservice{
 	}
 
 	void ws_server_session::on_exception(std::exception_ptr error)noexcept{
-		service_.on_exception(ws_identifier(this), resource_, error);
+		service_.on_exception(ws_identifier(this), error);
 	}
 
 	void ws_server_session::remove()noexcept{

@@ -32,11 +32,21 @@ namespace webservice{
 		/// \brief Keep one async operation alive until shutdown
 		async_locker::lock run_lock_;
 
+		/// \brief Keep one async operation alive until last async finished
+		async_locker::lock shutdown_lock_;
+
 		/// \brief Run async operation sequential
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
 
 		/// \brief Map from service name to object
 		std::map< std::string, std::unique_ptr< ws_handler_base > > services;
+
+
+		/// \brief true if on_shutdown was called
+		bool is_shutdown()noexcept{
+			return !run_lock_.is_locked();
+		}
+
 	};
 
 
@@ -51,44 +61,13 @@ namespace webservice{
 	}
 
 
-	void ws_service_handler::set_server(class server& server){
-		ws_handler_base::set_server(server);
-		impl_ = std::make_unique< ws_service_handler_impl >(server);
-	}
-
-	void ws_service_handler::async_emplace(
-		boost::asio::ip::tcp::socket&& socket,
-		http_request&& req
-	){
-		assert(impl_ != nullptr);
-
-		impl_->strand_.dispatch(
-			[
-				this,
-				lock = impl_->locker_.make_lock("ws_service_handler::async_emplace"),
-				socket = std::move(socket),
-				req = std::move(req)
-			]()mutable{
-				lock.enter();
-
-				std::string name(req.target());
-				auto iter = impl_->services.find(name);
-				if(iter != impl_->services.end()){
-					iter->second->async_emplace(
-						std::move(socket), std::move(req));
-				}else{
-					throw std::logic_error("service(" + name
-						+ ") doesn't exist");
-				}
-			}, std::allocator< void >());
-	}
-
-
 	void ws_service_handler::add_service(
 		std::string name,
 		std::unique_ptr< class ws_handler_base > service
 	){
-		assert(impl_ != nullptr);
+		if(!impl_){
+			throw std::logic_error("add_service without server");
+		}
 
 		impl_->strand_.dispatch(
 			[
@@ -99,17 +78,21 @@ namespace webservice{
 			]()mutable{
 				lock.enter();
 
-				auto r = impl_->services.emplace(std::move(name), std::move(service));
+				auto r = impl_->services.emplace(std::move(name),
+					std::move(service));
 				if(r.second){
 					r.first->second->set_server(*server());
 				}else{
-					throw std::logic_error("service(" + name + ") already exists");
+					throw std::logic_error("service(" + name
+						+ ") already exists");
 				}
 			}, std::allocator< void >());
 	}
 
 	void ws_service_handler::erase_service(std::string name){
-		assert(impl_ != nullptr);
+		if(!impl_){
+			throw std::logic_error("erase_service without server");
+		}
 
 		impl_->strand_.dispatch(
 			[
@@ -118,9 +101,6 @@ namespace webservice{
 				name = std::move(name)
 			]()mutable{
 				lock.enter();
-
-// 				// Services are erased by destructor if shutdown is active
-// 				if(is_shutdown()) return;
 
 				auto iter = impl_->services.find(name);
 				if(iter != impl_->services.end()){
@@ -133,23 +113,67 @@ namespace webservice{
 			}, std::allocator< void >());
 	}
 
-	void ws_service_handler::on_shutdown()noexcept{
+
+	void ws_service_handler::on_server(class server& server){
+		impl_ = std::make_unique< ws_service_handler_impl >(server);
+	}
+
+	void ws_service_handler::on_make(
+		boost::asio::ip::tcp::socket&& socket,
+		http_request&& req
+	){
 		assert(impl_ != nullptr);
 
-		impl_->strand_.defer(
+		impl_->strand_.dispatch(
 			[
 				this,
-				lock = impl_->locker_.make_lock("ws_service_handler::on_shutdown")
+				lock = impl_->locker_.make_lock("ws_service_handler::on_make"),
+				socket = std::move(socket),
+				req = std::move(req)
 			]()mutable{
 				lock.enter();
 
-				for(auto& service: impl_->services){
-					service.second->shutdown();
+				std::string name(req.target());
+				auto iter = impl_->services.find(name);
+				if(iter != impl_->services.end()){
+					iter->second->make(std::move(socket), std::move(req));
+
+					if(impl_->services.empty() && is_shutdown()){
+						impl_->shutdown_lock_.unlock();
+					}
+				}else{
+					throw std::logic_error("service(" + name
+						+ ") doesn't exist");
 				}
 			}, std::allocator< void >());
 
-		impl_->run_lock_.unlock();
 	}
+
+	void ws_service_handler::on_shutdown()noexcept{
+		assert(impl_ != nullptr);
+
+		auto lock = std::move(impl_->run_lock_);
+		if(lock.is_locked()){
+			impl_->shutdown_lock_ = std::move(lock);
+
+			impl_->strand_.defer(
+				[
+					this,
+					lock = impl_->locker_.make_lock("ws_service_handler::on_shutdown")
+				]()mutable{
+					lock.enter();
+
+					if(impl_->services.empty()){
+						impl_->shutdown_lock_.unlock();
+					}else{
+						for(auto& service: impl_->services){
+							service.second->shutdown();
+						}
+					}
+				}, std::allocator< void >());
+		}
+	}
+
 
 
 }
