@@ -23,6 +23,7 @@ namespace webservice{
 		= boost::beast::http::request< boost::beast::http::string_body >;
 
 
+	/// \brief The interface for creating server websocket sessions
 	class ws_handler_interface{
 	public:
 		/// \brief Constructor

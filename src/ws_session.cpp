@@ -11,7 +11,7 @@
 
 #include <webservice/server.hpp>
 #include <webservice/async_lock.hpp>
-#include <webservice/ws_service_base.hpp>
+#include <webservice/ws_service_interface.hpp>
 #include <webservice/ws_client_base.hpp>
 
 #include <boost/beast/websocket.hpp>
@@ -343,7 +343,7 @@ namespace webservice{
 
 	ws_server_session::ws_server_session(
 		ws_stream&& ws,
-		ws_service_base& service,
+		ws_service_interface& service,
 		std::chrono::milliseconds ping_time
 	)
 		: ws_session< ws_server_session >(std::move(ws), ping_time)
@@ -480,7 +480,7 @@ namespace webservice{
 	}
 
 	void ws_server_session::remove()noexcept{
-		service_.async_erase(this);
+		service_.on_erase(ws_identifier(this));
 	}
 
 

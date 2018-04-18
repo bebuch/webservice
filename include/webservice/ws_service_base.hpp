@@ -24,6 +24,8 @@
 namespace webservice{
 
 
+	/// \brief Base for any server websocket service that handels standing
+	///        sessions
 	template < typename Value >
 	class ws_service_base
 		: ws_handler_interface

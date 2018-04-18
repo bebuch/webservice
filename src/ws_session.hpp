@@ -35,7 +35,7 @@ namespace webservice{
 	class binary_tag{};
 	class text_tag{};
 
-	class ws_service_base;
+	class ws_service_interface;
 	class ws_client_base;
 	class ws_server_session;
 	class ws_client_session;
@@ -144,7 +144,7 @@ namespace webservice{
 		/// \brief Take ownership of the socket
 		explicit ws_server_session(
 			ws_stream&& ws,
-			ws_service_base& service,
+			ws_service_interface& service,
 			std::chrono::milliseconds ping_time);
 
 		/// \brief Destructor
@@ -181,7 +181,7 @@ namespace webservice{
 
 
 	private:
-		ws_service_base& service_;
+		ws_service_interface& service_;
 
 		bool is_open_ = false;
 	};

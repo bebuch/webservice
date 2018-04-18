@@ -40,13 +40,6 @@ namespace webservice{
 
 		/// \brief Map from service name to object
 		std::map< std::string, std::unique_ptr< ws_handler_base > > services;
-
-
-		/// \brief true if on_shutdown was called
-		bool is_shutdown()noexcept{
-			return !run_lock_.is_locked();
-		}
-
 	};
 
 

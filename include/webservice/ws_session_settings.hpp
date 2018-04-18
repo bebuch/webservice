@@ -15,6 +15,7 @@
 namespace webservice{
 
 
+	/// \brief Settings for websocket sessions
 	class ws_session_settings{
 	public:
 		/// \brief Set max size of incomming WebSocket messages

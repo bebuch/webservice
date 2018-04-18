@@ -28,5 +28,7 @@ namespace webservice{
 		ws_identifier identifier,
 		std::exception_ptr error)noexcept{}
 
+	void ws_service_interface::on_erase(ws_identifier identifier)noexcept{}
+
 
 }

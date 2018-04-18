@@ -18,6 +18,7 @@
 namespace webservice{
 
 
+	/// \brief Refers sessions to sub-service by the requested target name
 	final class ws_service_handler: public ws_handler_interface{
 	public:
 		/// \brief Constructor
@@ -48,6 +49,12 @@ namespace webservice{
 		///
 		/// Thread safe: Yes.
 		void erase_service(std::string name);
+
+
+		/// \brief true if on_shutdown was called
+		bool is_shutdown()noexcept{
+			return !run_lock_.is_locked();
+		}
 
 
 	private:

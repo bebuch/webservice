@@ -19,6 +19,7 @@
 namespace webservice{
 
 
+	/// \brief The virtual callback functions for server websocket sessions
 	class ws_service_interface{
 	public:
 		/// \brief Destructor
@@ -55,6 +56,11 @@ namespace webservice{
 		virtual void on_exception(
 			ws_identifier identifier,
 			std::exception_ptr error)noexcept;
+
+		/// \brief Called when a sessions is ready to be erased
+		///
+		/// Default implementation does nothing.
+		virtual void on_erase(ws_identifier identifier)noexcept;
 	};
 
 
