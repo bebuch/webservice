@@ -7,8 +7,7 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include <webservice/ws_client_base.hpp>
-
-#include "ws_session.hpp"
+#include <webservice/ws_client_session.hpp>
 
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/core/string.hpp>
@@ -52,7 +51,7 @@ namespace webservice{
 		strand_.dispatch(
 			[this]{
 				if(session_){
-					session_->send("shutdown");
+					session_->close("shutdown");
 				}
 
 				work_.reset();
@@ -127,8 +126,7 @@ namespace webservice{
 						"ws send text: client is not connect");
 				}
 
-				session_->send(
-					std::make_tuple(text_tag{}, std::move(buffer)));
+				session_->send(true, std::move(buffer));
 			}, std::allocator< void >());
 	}
 
@@ -140,8 +138,7 @@ namespace webservice{
 						"ws send binary: client is not connect");
 				}
 
-				session_->send(
-					std::make_tuple(binary_tag{}, std::move(buffer)));
+				session_->send(false, std::move(buffer));
 			}, std::allocator< void >());
 	}
 
@@ -154,7 +151,7 @@ namespace webservice{
 						"ws send close: client is not connect");
 				}
 
-				session_->send(boost::beast::websocket::close_reason(reason));
+				session_->close(boost::beast::websocket::close_reason(reason));
 			}, std::allocator< void >());
 	}
 

@@ -16,14 +16,21 @@ namespace webservice{
 
 
 	class ws_server_session;
-	class ws_handler_base;
+	class ws_handler_interface;
+	class shared_const_buffer;
 
+
+	/// \brief Wrapper around a websocket server session
 	class ws_identifier{
 	private:
-		explicit constexpr ws_identifier(ws_server_session* session)noexcept
-			: session(session) {}
+		/// \brief Constructor
+		explicit constexpr ws_identifier(ws_server_session& session)noexcept
+			: session(&session) {}
 
+
+		/// \brief The corresponding session
 		ws_server_session* session;
+
 
 		template < typename CharT, typename Traits >
 		friend std::basic_ostream< CharT, Traits >& operator<<(
@@ -77,7 +84,8 @@ namespace webservice{
 		}
 
 
-		friend class ws_handler_base;
+		template < typename Value >
+		friend class ws_service_base;
 		friend class ws_server_session;
 		friend class ws_sessions;
 	};

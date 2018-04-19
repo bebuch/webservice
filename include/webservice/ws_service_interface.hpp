@@ -9,6 +9,7 @@
 #ifndef _webservice__ws_service_interface__hpp_INCLUDED_
 #define _webservice__ws_service_interface__hpp_INCLUDED_
 
+#include "ws_handler_interface.hpp"
 #include "ws_identifier.hpp"
 
 #include <boost/beast/core/multi_buffer.hpp>
@@ -20,7 +21,7 @@ namespace webservice{
 
 
 	/// \brief The virtual callback functions for server websocket sessions
-	class ws_service_interface{
+	class ws_service_interface: public ws_handler_interface{
 	public:
 		/// \brief Destructor
 		virtual ~ws_service_interface() = default;
@@ -50,12 +51,6 @@ namespace webservice{
 			ws_identifier identifier,
 			boost::beast::multi_buffer&& buffer);
 
-		/// \brief Called when an exception was thrown
-		///
-		/// Default implementation does nothing.
-		virtual void on_exception(
-			ws_identifier identifier,
-			std::exception_ptr error)noexcept;
 
 		/// \brief Called when a sessions is ready to be erased
 		///

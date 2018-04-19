@@ -9,7 +9,8 @@
 #ifndef _webservice__ws_service_handler__hpp_INCLUDED_
 #define _webservice__ws_service_handler__hpp_INCLUDED_
 
-#include "ws_handler_base.hpp"
+#include "ws_handler_interface.hpp"
+#include "ws_service_interface.hpp"
 
 #include <memory>
 #include <set>
@@ -19,7 +20,7 @@ namespace webservice{
 
 
 	/// \brief Refers sessions to sub-service by the requested target name
-	final class ws_service_handler: public ws_handler_interface{
+	class ws_service_handler: public ws_handler_interface{
 	public:
 		/// \brief Constructor
 		ws_service_handler();
@@ -30,44 +31,43 @@ namespace webservice{
 		~ws_service_handler()override;
 
 
-		/// \brief Add ws_handler_base that is used for sessions with resource
-		///        name
+		/// \brief Add ws_service_interface that is used for sessions with
+		///        resource name
 		///
-		/// \throw std::logic_error if a ws_handler_base with same name did
-		///                         already exist
+		/// \throw std::logic_error if a ws_service_interface with same name
+		///                         did already exist
 		///
 		/// Thread safe: Yes.
 		void add_service(
 			std::string name,
-			std::unique_ptr< class ws_handler_base > service);
+			std::unique_ptr< class ws_service_interface > service);
 
-		/// \brief Erase ws_handler_base with name
+		/// \brief Erase ws_service_interface with name
 		///
 		/// \attention A service must not remove itself!
 		///
-		/// \throw std::logic_error if no ws_handler_base with name did exist
+		/// \throw std::logic_error if no ws_service_interface with name did
+		///                         exist
 		///
 		/// Thread safe: Yes.
 		void erase_service(std::string name);
 
 
 		/// \brief true if on_shutdown was called
-		bool is_shutdown()noexcept{
-			return !run_lock_.is_locked();
-		}
+		bool is_shutdown()noexcept;
 
 
 	private:
 		/// \brief Create the service map
-		void on_server(class server& server)override;
+		void on_server()final;
 
 		/// \brief Create a new ws_server_session
 		void on_make(
 			boost::asio::ip::tcp::socket&& socket,
-			http_request&& req)override;
+			http_request&& req)final;
 
 		/// \brief Call shutdown on all services
-		void on_shutdown()noexcept override;
+		void on_shutdown()noexcept final;
 
 
 		/// \brief Pointer to implementation

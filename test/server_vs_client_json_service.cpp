@@ -131,16 +131,15 @@ std::string const test_text = "{\"key\":\"value\"}";
 struct ws_service_handler: webservice::ws_service_handler{
 	void on_exception(
 		webservice::ws_identifier,
-		std::string const&,
 		std::exception_ptr error
 	)noexcept override{
 		try{
 			std::rethrow_exception(error);
 		}catch(std::exception const& e){
-			std::cout << "\033[1;31mfail ws_handler: unexpected exception: "
+			std::cout << "\033[1;31mfail ws_service: unexpected exception: "
 				<< e.what() << "\033[0m\n";
 		}catch(...){
-			std::cout << "\033[1;31mfail ws_handler: unexpected unknown "
+			std::cout << "\033[1;31mfail ws_service: unexpected unknown "
 				"exception\033[0m\n";
 		}
 	}
@@ -256,15 +255,15 @@ int main(){
 	try{
 		{
 			using std::make_unique;
-			auto ws_handler_ptr = make_unique< ws_service_handler >();
-			auto& ws_handler = *ws_handler_ptr;
+			auto ws_service_ptr = make_unique< ws_service_handler >();
+			auto& ws_service = *ws_service_ptr;
 			webservice::server server(
 				make_unique< request_handler >(),
-				std::move(ws_handler_ptr),
+				std::move(ws_service_ptr),
 				make_unique< webservice::error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
-			ws_handler.add_service("/", make_unique< ws_service >());
+			ws_service.add_service("/", make_unique< struct ws_service >());
 
 			check(state_t::init);
 

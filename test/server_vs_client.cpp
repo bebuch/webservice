@@ -6,13 +6,13 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include "error_printing_ws_handler.hpp"
+#include "error_printing_ws_service.hpp"
 #include "error_printing_error_handler.hpp"
 #include "error_printing_request_handler.hpp"
 #include "error_printing_ws_client.hpp"
 
 #include <webservice/server.hpp>
-#include <webservice/ws_handler.hpp>
+#include <webservice/ws_service.hpp>
 #include <webservice/ws_client.hpp>
 
 #include <thread>
@@ -128,21 +128,20 @@ struct request_handler
 std::string const test_text = "test text values";
 
 
-struct ws_handler
-	: webservice::error_printing_ws_handler< webservice::ws_handler >
+struct ws_service
+	: webservice::error_printing_ws_service< webservice::ws_service >
 {
-	void on_open(webservice::ws_identifier, std::string const&)override{
+	void on_open(webservice::ws_identifier)override{
 		check(state_t::ws_server_open);
 		send_text(test_text);
 	}
 
-	void on_close(webservice::ws_identifier, std::string const&)override{
+	void on_close(webservice::ws_identifier)override{
 		check(state_t::ws_server_close);
 	}
 
 	void on_text(
 		webservice::ws_identifier,
-		std::string const&,
 		std::string&& text
 	)override{
 		check(state_t::ws_server_text);
@@ -161,7 +160,6 @@ struct ws_handler
 
 	void on_binary(
 		webservice::ws_identifier,
-		std::string const&,
 		std::vector< std::uint8_t >&& data
 	)override{
 		check(state_t::ws_server_binary);
@@ -242,7 +240,7 @@ int main(){
 			using std::make_unique;
 			webservice::server server(
 				make_unique< request_handler >(),
-				make_unique< ws_handler >(),
+				make_unique< ws_service >(),
 				make_unique< webservice::error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 

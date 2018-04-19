@@ -37,7 +37,7 @@ namespace webservice{
 		server_impl(
 			class server& server,
 			std::unique_ptr< class http_request_handler >&& http_handler,
-			std::unique_ptr< class ws_handler_base >&& service,
+			std::unique_ptr< class ws_handler_interface >&& service,
 			std::unique_ptr< class error_handler >&& error_handler,
 			boost::asio::ip::address address,
 			std::uint16_t port,
@@ -77,7 +77,7 @@ namespace webservice{
 
 		/// \brief true if a WebSocket handler is set, false otherwise
 		bool has_ws()const{
-			return service_.get() != nullptr;
+			return ws_handler_.get() != nullptr;
 		}
 
 
@@ -88,15 +88,15 @@ namespace webservice{
 
 		/// \brief Reference to the http handler
 		class http_request_handler& http()const{
-			return *handler_;
+			return *http_handler_;
 		}
 
 		/// \brief Reference to the WebSocket handler
 		///
 		/// \pre has_ws() must be true
-		class ws_handler_base& ws()const{
-			assert(service_.get() != nullptr);
-			return *service_;
+		class ws_handler_interface& ws()const{
+			assert(ws_handler_.get() != nullptr);
+			return *ws_handler_;
 		}
 
 
@@ -105,10 +105,10 @@ namespace webservice{
 		class server& server_;
 
 		/// \brief Handler for HTTP sessions
-		std::unique_ptr< class http_request_handler > handler_;
+		std::unique_ptr< class http_request_handler > http_handler_;
 
 		/// \brief Handler for WebSocket sessions
-		std::unique_ptr< class ws_handler_base > service_;
+		std::unique_ptr< class ws_handler_interface > ws_handler_;
 
 		/// \brief Handles errors and exceptions in the server
 		std::unique_ptr< class error_handler > error_handler_;

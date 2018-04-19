@@ -7,7 +7,7 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include <webservice/file_request_handler.hpp>
-#include <webservice/ws_handler.hpp>
+#include <webservice/ws_service.hpp>
 #include <webservice/server.hpp>
 
 #include <boost/lexical_cast.hpp>
@@ -17,24 +17,17 @@
 #include <csignal>
 
 
-struct mirror_ws_handler: webservice::ws_handler{
-	void on_open(
-		webservice::ws_identifier identifier,
-		std::string const& resource      // target of the session ("/path")
-	)override{
-		std::cout << "open session " << identifier << "->" << resource << "\n";
+struct mirror_ws_service: webservice::ws_service{
+	void on_open(webservice::ws_identifier identifier)override{
+		std::cout << "open session " << identifier << "\n";
 	}
 
-	void on_close(
-		webservice::ws_identifier identifier,
-		std::string const& /*resource*/  // target of the session ("/path")
-	)override{
+	void on_close(webservice::ws_identifier identifier)override{
 		std::cout << identifier << " closed\n";
 	}
 
 	void on_text(
 		webservice::ws_identifier identifier,
-		std::string const& /*resource*/, // target of the session ("/path")
 		std::string&& text
 	)override{
 		std::cout << identifier << " received text message: " << text << "\n";
@@ -45,7 +38,6 @@ struct mirror_ws_handler: webservice::ws_handler{
 
 	void on_binary(
 		webservice::ws_identifier identifier,
-		std::string const& /*resource*/, // target of the session ("/path")
 		std::vector< std::uint8_t >&& data
 	)override{
 		std::cout << identifier << " received binary message\n";
@@ -94,7 +86,7 @@ int main(int argc, char* argv[]){
 		using webservice::server;
 		server server(
 			std::make_unique< file_request_handler >(doc_root),
-			std::make_unique< mirror_ws_handler >(),
+			std::make_unique< mirror_ws_service >(),
 			nullptr, // ignore errors and exceptions
 			address, port, thread_count);
 

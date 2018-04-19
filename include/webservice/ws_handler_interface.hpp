@@ -59,9 +59,17 @@ namespace webservice{
 		class server* server()noexcept;
 
 
+		/// \brief Called when an exception was thrown
+		///
+		/// Default implementation does nothing.
+		virtual void on_exception(
+			ws_identifier identifier,
+			std::exception_ptr error)noexcept;
+
+
 	private:
 		/// \brief Called by set_server
-		virtual void on_server(class server& server) = 0;
+		virtual void on_server() = 0;
 
 		/// \brief Create a new ws_server_session
 		virtual void on_make(

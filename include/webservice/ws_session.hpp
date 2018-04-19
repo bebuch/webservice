@@ -9,45 +9,32 @@
 #ifndef _webservice__ws_session__hpp_INCLUDED_
 #define _webservice__ws_session__hpp_INCLUDED_
 
-#include <webservice/async_lock.hpp>
-#include <webservice/shared_const_buffer.hpp>
+#include "async_lock.hpp"
+#include "shared_const_buffer.hpp"
 
-#include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/websocket.hpp>
 
 #include <boost/asio/strand.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/steady_timer.hpp>
-#include <boost/asio/bind_executor.hpp>
 
 #include <boost/circular_buffer.hpp>
 
-#include <boost/any.hpp>
-
 #include <memory>
 #include <chrono>
-#include <mutex>
 
 
 namespace webservice{
 
 
-	class binary_tag{};
-	class text_tag{};
-
-	class ws_service_interface;
-	class ws_client_base;
-	class ws_server_session;
-	class ws_client_session;
+	using http_request
+		= boost::beast::http::request< boost::beast::http::string_body >;
 
 	using ws_stream
 		= boost::beast::websocket::stream< boost::asio::ip::tcp::socket >;
 
 	using ws_strand
 		= boost::asio::strand< boost::asio::io_context::executor_type >;
-
-	using http_request
-		= boost::beast::http::request< boost::beast::http::string_body >;
 
 
 	/// \brief Base of WebSocket sessions
@@ -81,11 +68,10 @@ namespace webservice{
 		void on_write(boost::system::error_code ec);
 
 		/// \brief Send a message
-		template < typename Tag >
-		void send(std::tuple< Tag, shared_const_buffer > data)noexcept;
+		void send(bool is_text, shared_const_buffer buffer)noexcept;
 
 		/// \brief Close the session
-		void send(boost::beast::websocket::close_reason reason)noexcept;
+		void close(boost::beast::websocket::close_reason reason)noexcept;
 
 		/// \brief Set timers expires_after
 		void restart_timer(char const* op);
@@ -120,13 +106,17 @@ namespace webservice{
 			return static_cast< Derived& >(*this);
 		}
 
+		/// \brief Send the next outstanding message or close
 		void do_write();
+
 
 		struct write_data{
 			bool is_text;
 			shared_const_buffer data;
 		};
+
 		boost::circular_buffer< write_data > write_list_;
+
 		std::unique_ptr< boost::beast::websocket::close_reason > close_reason_;
 
 		std::chrono::milliseconds const ping_time_;
@@ -136,101 +126,6 @@ namespace webservice{
 		std::size_t ping_counter_;
 
 		bool wait_on_pong_{false};
-	};
-
-
-	class ws_server_session: public ws_session< ws_server_session >{
-	public:
-		/// \brief Take ownership of the socket
-		explicit ws_server_session(
-			ws_stream&& ws,
-			ws_service_interface& service,
-			std::chrono::milliseconds ping_time);
-
-		/// \brief Destructor
-		~ws_server_session();
-
-
-		/// \brief Start the asynchronous operation
-		void do_accept(http_request&& req);
-
-
-		/// \brief Called with when a sessions starts
-		void on_open()noexcept;
-
-		/// \brief Called with when a sessions ends
-		void on_close()noexcept;
-
-		/// \brief Called when a text message
-		void on_text(boost::beast::multi_buffer&& buffer)noexcept;
-
-		/// \brief Called when a binary message
-		void on_binary(boost::beast::multi_buffer&& buffer)noexcept;
-
-		/// \brief Called when an error occured
-		void on_error(
-			boost::beast::string_view location,
-			boost::system::error_code ec)noexcept;
-
-		/// \brief Called when an exception was thrown
-		void on_exception(std::exception_ptr error)noexcept;
-
-
-		/// \brief Remove session from handler list
-		void remove()noexcept;
-
-
-	private:
-		ws_service_interface& service_;
-
-		bool is_open_ = false;
-	};
-
-
-	class ws_client_session: public ws_session< ws_client_session >{
-	public:
-		/// \brief Take ownership of the socket
-		explicit ws_client_session(
-			ws_stream&& ws,
-			ws_client_base& client,
-			std::chrono::milliseconds ping_time);
-
-		/// \brief Destructor
-		~ws_client_session();
-
-
-		/// \brief Start the session
-		void start();
-
-
-		/// \brief Called when the sessions start
-		void on_open()noexcept;
-
-		/// \brief Called when the sessions ends
-		void on_close()noexcept;
-
-		/// \brief Called when the session received a text message
-		void on_text(boost::beast::multi_buffer&& buffer)noexcept;
-
-		/// \brief Called when the session received a binary message
-		void on_binary(boost::beast::multi_buffer&& buffer)noexcept;
-
-		/// \brief Called when an error occured
-		void on_error(
-			boost::beast::string_view location,
-			boost::system::error_code ec)noexcept;
-
-		/// \brief Called when an exception was thrown
-		void on_exception(std::exception_ptr error)noexcept;
-
-
-		/// \brief Remove session on client
-		void remove()noexcept;
-
-
-	private:
-		ws_client_base& client_;
-		bool is_open_ = false;
 	};
 
 

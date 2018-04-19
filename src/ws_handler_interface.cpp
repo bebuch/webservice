@@ -14,7 +14,8 @@ namespace webservice{
 
 
 	void ws_handler_interface::set_server(class server& server)noexcept{
-		on_server(server);
+		server_ = &server;
+		on_server();
 	}
 
 	void ws_handler_interface::make(
@@ -32,6 +33,11 @@ namespace webservice{
 	class server* ws_handler_interface::server()noexcept{
 		return server_;
 	}
+
+
+	void ws_handler_interface::on_exception(
+		ws_identifier /*identifier*/,
+		std::exception_ptr /*error*/)noexcept{}
 
 
 }

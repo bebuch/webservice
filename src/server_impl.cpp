@@ -10,7 +10,7 @@
 
 #include <webservice/server.hpp>
 #include <webservice/http_request_handler.hpp>
-#include <webservice/ws_handler_base.hpp>
+#include <webservice/ws_handler_interface.hpp>
 #include <webservice/error_handler.hpp>
 
 
@@ -19,28 +19,31 @@ namespace webservice{
 
 	server_impl::server_impl(
 		class server& server,
-		std::unique_ptr< http_request_handler >&& handler,
-		std::unique_ptr< ws_handler_base >&& service,
+		std::unique_ptr< http_request_handler >&& http_handler,
+		std::unique_ptr< ws_handler_interface >&& ws_handler,
 		std::unique_ptr< error_handler >&& error_handler,
 		boost::asio::ip::address const address,
 		std::uint16_t const port,
 		std::uint8_t thread_count
 	)
 		: server_(server)
-		, handler_([&server, handler = std::move(handler)]()mutable{
-				if(!handler){
-					handler = std::make_unique< http_request_handler >();
+		, http_handler_(
+			[&server, http_handler = std::move(http_handler)]()mutable{
+				if(!http_handler){
+					http_handler = std::make_unique< http_request_handler >();
 				}
-				handler->set_server(server);
-				return std::move(handler);
+				http_handler->set_server(server);
+				return std::move(http_handler);
 			}())
-		, service_([&server, service = std::move(service)]()mutable{
-				if(service){
-					service->set_server(server);
+		, ws_handler_(
+			[&server, ws_handler = std::move(ws_handler)]()mutable{
+				if(ws_handler){
+					ws_handler->set_server(server);
 				}
-				return std::move(service);
+				return std::move(ws_handler);
 			}())
-		, error_handler_([error_handler = std::move(error_handler)]()mutable{
+		, error_handler_(
+			[error_handler = std::move(error_handler)]()mutable{
 				if(!error_handler){
 					error_handler = std::make_unique< class error_handler >();
 				}

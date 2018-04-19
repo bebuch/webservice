@@ -11,7 +11,7 @@
 
 #include <webservice/server.hpp>
 #include <webservice/async_lock.hpp>
-#include <webservice/ws_handler_base.hpp>
+#include <webservice/ws_handler_interface.hpp>
 #include <webservice/error_handler.hpp>
 
 #include <boost/beast/websocket.hpp>
@@ -126,7 +126,7 @@ namespace webservice{
 						handler_.server()->impl().has_ws() &&
 						boost::beast::websocket::is_upgrade(req_)
 					){
-						handler_.server()->impl().ws().async_emplace(
+						handler_.server()->impl().ws().make(
 							std::move(socket_), std::move(req_));
 						do_close();
 					}else{

@@ -9,43 +9,95 @@
 #ifndef _webservice__basic_ws_service__hpp_INCLUDED_
 #define _webservice__basic_ws_service__hpp_INCLUDED_
 
-#include "basic_ws_handler.hpp"
+#include "ws_service_base.hpp"
+#include "conversion.hpp"
 
 
 namespace webservice{
 
+
+	/// \brief Dummy data that can be used as value if you don't need a value
+	struct none_t{};
 
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Woverloaded-virtual"
 #endif
 	template <
+		typename Value,
 		typename SendTextType,
 		typename SendBinaryType = SendTextType,
 		typename ReceiveTextType = SendTextType,
 		typename ReceiveBinaryType = SendBinaryType >
-	class basic_ws_service
-		: public basic_ws_handler< SendTextType, SendBinaryType,
-			ReceiveTextType, ReceiveBinaryType >
-	{
-		using strand
-			= boost::asio::strand< boost::asio::io_context::executor_type >;
+	class basic_ws_service: public ws_service_base< Value >{
 	public:
-		using basic_ws_handler< SendTextType, SendBinaryType,
-			ReceiveTextType, ReceiveBinaryType >::basic_ws_handler;
+		static constexpr to_shared_const_buffer_t< SendTextType >
+			text_to_shared_const_buffer{};
+
+		static constexpr to_shared_const_buffer_t< SendBinaryType >
+			binary_to_shared_const_buffer{};
+
+		static constexpr from_multi_buffer_t< ReceiveTextType >
+			multi_buffer_to_text{};
+
+		static constexpr from_multi_buffer_t< ReceiveBinaryType >
+			multi_buffer_to_binary{};
+
+
+		using ws_service_base< Value >::ws_service_base;
+
+
+		/// \brief Send a text message to all sessions
+		template < typename SendTextTypeT >
+		void send_text(SendTextTypeT&& data){
+			ws_service_base< Value >::send_text(
+				text_to_shared_const_buffer(
+					static_cast< SendTextTypeT&& >(data)));
+		}
+
+		/// \brief Send a text message to session
+		template < typename SendTextTypeT >
+		void send_text(ws_identifier identifier, SendTextTypeT&& data){
+			ws_service_base< Value >::send_text(
+				identifier, text_to_shared_const_buffer(
+					static_cast< SendTextTypeT&& >(data)));
+		}
+
+		/// \brief Send a text message to session
+		template < typename UnaryFunction, typename SendTextTypeT >
+		void send_text_if(UnaryFunction fn, SendTextTypeT&& data){
+			ws_service_base< Value >::send_text(
+				std::move(fn), text_to_shared_const_buffer(
+					static_cast< SendTextTypeT&& >(data)));
+		}
+
+
+		/// \brief Send a binary message to all sessions
+		template < typename SendBinaryTypeT >
+		void send_binary(SendBinaryTypeT&& data){
+			ws_service_base< Value >::send_binary(
+				binary_to_shared_const_buffer(
+					static_cast< SendBinaryTypeT&& >(data)));
+		}
+
+		/// \brief Send a binary message to session
+		template < typename SendBinaryTypeT >
+		void send_binary(ws_identifier identifier, SendBinaryTypeT&& data){
+			ws_service_base< Value >::send_binary(
+				identifier, binary_to_shared_const_buffer(
+					static_cast< SendBinaryTypeT&& >(data)));
+		}
+
+		/// \brief Send a binary message to session
+		template < typename UnaryFunction, typename SendBinaryTypeT >
+		void send_binary_if(UnaryFunction fn, SendBinaryTypeT&& data){
+			ws_service_base< Value >::send_binary(
+				std::move(fn), binary_to_shared_const_buffer(
+					static_cast< SendBinaryTypeT&& >(data)));
+		}
 
 
 	private:
-		/// \brief Called when a sessions starts
-		///
-		/// Default implementation does nothing.
-		virtual void on_open(ws_identifier /*identifier*/){}
-
-		/// \brief Called when a sessions ends
-		///
-		/// Default implementation does nothing.
-		virtual void on_close(ws_identifier /*identifier*/){}
-
 		/// \brief Called when a session received a text message
 		///
 		/// Default implementation does nothing.
@@ -60,54 +112,19 @@ namespace webservice{
 			ws_identifier /*identifier*/,
 			ReceiveBinaryType&& /*data*/){}
 
-		/// \brief Called when an exception was thrown
-		///
-		/// Default implementation does nothing.
-		virtual void on_exception(
-			ws_identifier /*identifier*/,
-			std::exception_ptr /*error*/)noexcept{}
 
-
-		/// \brief Called when a sessions starts
-		///
-		/// Default implementation does nothing.
-		void on_open(
-			ws_identifier identifier,
-			std::string const& /*resource*/
-		)final{
-			try{
-				on_open(identifier);
-			}catch(...){
-				on_exception(identifier, std::current_exception());
-			}
-		}
-
-		/// \brief Called when a sessions ends
-		///
-		/// Default implementation does nothing.
-		void on_close(
-			ws_identifier identifier,
-			std::string const& /*resource*/
-		)final{
-			try{
-				on_close(identifier);
-			}catch(...){
-				on_exception(identifier, std::current_exception());
-			}
-		}
 
 		/// \brief Called when a session received a text message
 		///
 		/// Default implementation does nothing.
 		void on_text(
 			ws_identifier identifier,
-			std::string const& /*resource*/,
-			ReceiveTextType&& data
+			boost::beast::multi_buffer&& buffer
 		)final{
 			try{
-				on_text(identifier, std::move(data));
+				on_text(identifier, multi_buffer_to_text(buffer));
 			}catch(...){
-				on_exception(identifier, std::current_exception());
+				this->on_exception(identifier, std::current_exception());
 			}
 		}
 
@@ -116,30 +133,71 @@ namespace webservice{
 		/// Default implementation does nothing.
 		void on_binary(
 			ws_identifier identifier,
-			std::string const& /*resource*/,
-			ReceiveBinaryType&& data
+			boost::beast::multi_buffer&& buffer
 		)final{
 			try{
-				on_binary(identifier, std::move(data));
+				on_binary(identifier, multi_buffer_to_binary(buffer));
 			}catch(...){
-				on_exception(identifier, std::current_exception());
+				this->on_exception(identifier, std::current_exception());
 			}
-		}
-
-		/// \brief Called when an exception was thrown
-		///
-		/// Default implementation does nothing.
-		void on_exception(
-			ws_identifier identifier,
-			std::string const& /*resource*/,
-			std::exception_ptr error
-		)noexcept final{
-			on_exception(identifier, error);
 		}
 	};
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
+
+
+	template <
+		typename Value,
+		typename SendTextType,
+		typename SendBinaryType,
+		typename ReceiveTextType,
+		typename ReceiveBinaryType >
+	constexpr to_shared_const_buffer_t< SendTextType > basic_ws_service<
+		Value,
+		SendTextType,
+		SendBinaryType,
+		ReceiveTextType,
+		ReceiveBinaryType >::text_to_shared_const_buffer;
+
+	template <
+		typename Value,
+		typename SendTextType,
+		typename SendBinaryType,
+		typename ReceiveTextType,
+		typename ReceiveBinaryType >
+	constexpr to_shared_const_buffer_t< SendBinaryType > basic_ws_service<
+		Value,
+		SendTextType,
+		SendBinaryType,
+		ReceiveTextType,
+		ReceiveBinaryType >::binary_to_shared_const_buffer;
+
+	template <
+		typename Value,
+		typename SendTextType,
+		typename SendBinaryType,
+		typename ReceiveTextType,
+		typename ReceiveBinaryType >
+	constexpr from_multi_buffer_t< ReceiveTextType > basic_ws_service<
+		Value,
+		SendTextType,
+		SendBinaryType,
+		ReceiveTextType,
+		ReceiveBinaryType >::multi_buffer_to_text;
+
+	template <
+		typename Value,
+		typename SendTextType,
+		typename SendBinaryType,
+		typename ReceiveTextType,
+		typename ReceiveBinaryType >
+	constexpr from_multi_buffer_t< ReceiveBinaryType > basic_ws_service<
+		Value,
+		SendTextType,
+		SendBinaryType,
+		ReceiveTextType,
+		ReceiveBinaryType >::multi_buffer_to_binary;
 
 
 }

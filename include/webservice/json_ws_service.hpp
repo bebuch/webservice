@@ -17,20 +17,29 @@ namespace webservice{
 
 
 	template <
+		typename Value,
 		typename SendBinaryType,
 		typename ReceiveBinaryType = SendBinaryType >
 	class basic_json_ws_service
-		: public basic_ws_service<
+		: public basic_ws_service< Value,
 			nlohmann::json, SendBinaryType, nlohmann::json, ReceiveBinaryType >
 	{
-		using basic_ws_service< nlohmann::json, SendBinaryType,
+		using basic_ws_service< Value, nlohmann::json, SendBinaryType,
 			nlohmann::json, ReceiveBinaryType >::basic_ws_service;
 	};
 
 	class json_ws_service
-		: public basic_json_ws_service< std::vector< std::uint8_t > >
+		: public basic_json_ws_service< none_t, std::vector< std::uint8_t > >
 	{
 		using basic_json_ws_service::basic_json_ws_service;
+
+		/// \brief Create a new ws_server_session
+		void on_make(
+			boost::asio::ip::tcp::socket&& socket,
+			http_request&& req
+		){
+			async_make(std::move(socket), std::move(req));
+		}
 	};
 
 

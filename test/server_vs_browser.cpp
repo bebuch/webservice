@@ -6,12 +6,12 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include "error_printing_ws_handler.hpp"
+#include "error_printing_ws_service.hpp"
 #include "error_printing_error_handler.hpp"
 #include "error_printing_request_handler.hpp"
 
 #include <webservice/server.hpp>
-#include <webservice/ws_handler.hpp>
+#include <webservice/ws_service.hpp>
 #include <webservice/file_request_handler.hpp>
 
 #include <thread>
@@ -107,23 +107,22 @@ struct request_handler
 };
 
 
-struct ws_handler
-	: webservice::error_printing_ws_handler< webservice::ws_handler >
+struct ws_service
+	: webservice::error_printing_ws_service< webservice::ws_service >
 {
 	static std::string const test_text;
 
-	void on_open(webservice::ws_identifier, std::string const&)override{
+	void on_open(webservice::ws_identifier)override{
 		check(state_t::ws_open);
 		send_text(test_text);
 	}
 
-	void on_close(webservice::ws_identifier, std::string const&)override{
+	void on_close(webservice::ws_identifier)override{
 		check(state_t::ws_close);
 	}
 
 	void on_text(
 		webservice::ws_identifier,
-		std::string const&,
 		std::string&& text
 	)override{
 		check(state_t::ws_text);
@@ -142,7 +141,6 @@ struct ws_handler
 
 	void on_binary(
 		webservice::ws_identifier,
-		std::string const&,
 		std::vector< std::uint8_t >&& data
 	)override{
 		check(state_t::ws_binary);
@@ -160,7 +158,7 @@ struct ws_handler
 	}
 };
 
-std::string const ws_handler::test_text = "test text values";
+std::string const ws_service::test_text = "test text values";
 
 
 void signal_handler(int signum){
@@ -178,7 +176,7 @@ int main(){
 	try{
 		webservice::server server(
 			std::make_unique< request_handler >("server_vs_browser"),
-			std::make_unique< ws_handler >(),
+			std::make_unique< ws_service >(),
 			std::make_unique< webservice::error_printing_error_handler >(),
 			boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 

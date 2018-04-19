@@ -33,10 +33,10 @@ namespace webservice{
 			try{
 				std::rethrow_exception(error);
 			}catch(std::exception const& e){
-				std::cout << "\033[1;31mfail ws_handler: unexpected exception: "
+				std::cout << "\033[1;31mfail ws_service: unexpected exception: "
 					<< e.what() << "\033[0m\n";
 			}catch(...){
-				std::cout << "\033[1;31mfail ws_handler: unexpected unknown "
+				std::cout << "\033[1;31mfail ws_service: unexpected unknown "
 					"exception\033[0m\n";
 			}
 		}

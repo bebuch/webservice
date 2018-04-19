@@ -15,10 +15,21 @@
 namespace webservice{
 
 
+	/// \brief A WebSocket service without data and with std::string for text
+	///        and std::vector< std::uint8_t > for binary messages
 	class ws_service
-		: public basic_ws_service< std::string, std::vector< std::uint8_t > >
+		: public basic_ws_service<
+			none_t, std::string, std::vector< std::uint8_t > >
 	{
 		using basic_ws_service::basic_ws_service;
+
+		/// \brief Create a new ws_server_session
+		void on_make(
+			boost::asio::ip::tcp::socket&& socket,
+			http_request&& req
+		){
+			async_make(std::move(socket), std::move(req));
+		}
 	};
 
 

@@ -27,17 +27,17 @@ namespace webservice{
 		typename ReceiveBinaryType = SendBinaryType >
 	class basic_ws_client: public ws_client_base{
 	public:
-		static to_shared_const_buffer_t< SendTextType >
-			text_to_shared_const_buffer;
+		static constexpr to_shared_const_buffer_t< SendTextType >
+			text_to_shared_const_buffer{};
 
-		static to_shared_const_buffer_t< SendBinaryType >
-			binary_to_shared_const_buffer;
+		static constexpr to_shared_const_buffer_t< SendBinaryType >
+			binary_to_shared_const_buffer{};
 
-		static from_multi_buffer_t< ReceiveTextType >
-			multi_buffer_to_text;
+		static constexpr from_multi_buffer_t< ReceiveTextType >
+			multi_buffer_to_text{};
 
-		static from_multi_buffer_t< ReceiveBinaryType >
-			multi_buffer_to_binary;
+		static constexpr from_multi_buffer_t< ReceiveBinaryType >
+			multi_buffer_to_binary{};
 
 
 		using ws_client_base::ws_client_base;
@@ -88,7 +88,7 @@ namespace webservice{
 		typename SendBinaryType,
 		typename ReceiveTextType,
 		typename ReceiveBinaryType >
-	to_shared_const_buffer_t< SendTextType > basic_ws_client<
+	constexpr to_shared_const_buffer_t< SendTextType > basic_ws_client<
 		SendTextType,
 		SendBinaryType,
 		ReceiveTextType,
@@ -99,7 +99,7 @@ namespace webservice{
 		typename SendBinaryType,
 		typename ReceiveTextType,
 		typename ReceiveBinaryType >
-	to_shared_const_buffer_t< SendBinaryType > basic_ws_client<
+	constexpr to_shared_const_buffer_t< SendBinaryType > basic_ws_client<
 		SendTextType,
 		SendBinaryType,
 		ReceiveTextType,
@@ -110,7 +110,7 @@ namespace webservice{
 		typename SendBinaryType,
 		typename ReceiveTextType,
 		typename ReceiveBinaryType >
-	from_multi_buffer_t< ReceiveTextType > basic_ws_client<
+	constexpr from_multi_buffer_t< ReceiveTextType > basic_ws_client<
 		SendTextType,
 		SendBinaryType,
 		ReceiveTextType,
@@ -121,7 +121,7 @@ namespace webservice{
 		typename SendBinaryType,
 		typename ReceiveTextType,
 		typename ReceiveBinaryType >
-	from_multi_buffer_t< ReceiveBinaryType > basic_ws_client<
+	constexpr from_multi_buffer_t< ReceiveBinaryType > basic_ws_client<
 		SendTextType,
 		SendBinaryType,
 		ReceiveTextType,

@@ -6,13 +6,13 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include "error_printing_ws_handler.hpp"
+#include "error_printing_ws_service.hpp"
 #include "error_printing_error_handler.hpp"
 #include "error_printing_request_handler.hpp"
 #include "error_printing_ws_client.hpp"
 
 #include <webservice/server.hpp>
-#include <webservice/ws_handler.hpp>
+#include <webservice/ws_service.hpp>
 #include <webservice/ws_client.hpp>
 
 #include <boost/lexical_cast.hpp>
@@ -60,25 +60,24 @@ void fill_data(){
 	std::cout << "\nend fill data vector" << std::endl;
 }
 
-struct ws_handler
-	: webservice::error_printing_ws_handler< webservice::ws_handler >
+struct ws_service
+	: webservice::error_printing_ws_service< webservice::ws_service >
 {
 	std::size_t count = 0;
 
-	void on_open(webservice::ws_identifier, std::string const&)override{
+	void on_open(webservice::ws_identifier)override{
 		std::thread([this]{
 				fill_data();
 				send_binary(binary_data);
 			}).detach();
 	}
 
-	void on_close(webservice::ws_identifier, std::string const&)override{
+	void on_close(webservice::ws_identifier)override{
 		server()->shutdown();
 	}
 
 	void on_text(
 		webservice::ws_identifier,
-		std::string const&,
 		std::string&& text
 	)override{
 		std::cout << "\033[1;31mfail: server unexpected text message '"
@@ -88,7 +87,6 @@ struct ws_handler
 
 	void on_binary(
 		webservice::ws_identifier,
-		std::string const&,
 		std::vector< std::uint8_t >&& data
 	)override{
 		if(data == binary_data){
@@ -193,12 +191,12 @@ int main(){
 		{
 			using std::make_unique;
 
-			auto ws_handler = make_unique< struct ws_handler >();
-			ws_handler->set_ping_time(std::chrono::milliseconds(4000));
+			auto ws_service = make_unique< struct ws_service >();
+			ws_service->set_ping_time(std::chrono::milliseconds(4000));
 
 			webservice::server server(
 				make_unique< request_handler >(),
-				std::move(ws_handler),
+				std::move(ws_service),
 				make_unique< webservice::error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 

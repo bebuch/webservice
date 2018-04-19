@@ -9,10 +9,6 @@
 #include <webservice/ws_service_handler.hpp>
 #include <webservice/server.hpp>
 
-#include "ws_session.hpp"
-
-#include <thread>
-
 
 namespace webservice{
 
@@ -38,8 +34,12 @@ namespace webservice{
 		/// \brief Run async operation sequential
 		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
 
+		/// \brief Map type from service name to object
+		using service_map =
+			std::map< std::string, std::unique_ptr< ws_service_interface > >;
+
 		/// \brief Map from service name to object
-		std::map< std::string, std::unique_ptr< ws_handler_base > > services;
+		service_map services_;
 	};
 
 
@@ -56,10 +56,11 @@ namespace webservice{
 
 	void ws_service_handler::add_service(
 		std::string name,
-		std::unique_ptr< class ws_handler_base > service
+		std::unique_ptr< ws_service_interface > service
 	){
 		if(!impl_){
-			throw std::logic_error("add_service without server");
+			throw std::logic_error(
+				"called add_service() before server was set");
 		}
 
 		impl_->strand_.dispatch(
@@ -71,7 +72,7 @@ namespace webservice{
 			]()mutable{
 				lock.enter();
 
-				auto r = impl_->services.emplace(std::move(name),
+				auto r = impl_->services_.emplace(std::move(name),
 					std::move(service));
 				if(r.second){
 					r.first->second->set_server(*server());
@@ -84,7 +85,8 @@ namespace webservice{
 
 	void ws_service_handler::erase_service(std::string name){
 		if(!impl_){
-			throw std::logic_error("erase_service without server");
+			throw std::logic_error(
+				"called erase_service() before server was set");
 		}
 
 		impl_->strand_.dispatch(
@@ -95,10 +97,10 @@ namespace webservice{
 			]()mutable{
 				lock.enter();
 
-				auto iter = impl_->services.find(name);
-				if(iter != impl_->services.end()){
+				auto iter = impl_->services_.find(name);
+				if(iter != impl_->services_.end()){
 					iter->second->shutdown();
-					impl_->services.erase(iter);
+					impl_->services_.erase(iter);
 				}else{
 					throw std::logic_error("service(" + name
 						+ ") doesn't exist");
@@ -107,8 +109,13 @@ namespace webservice{
 	}
 
 
-	void ws_service_handler::on_server(class server& server){
-		impl_ = std::make_unique< ws_service_handler_impl >(server);
+	bool ws_service_handler::is_shutdown()noexcept{
+		return impl_ && !impl_->run_lock_.is_locked();
+	}
+
+
+	void ws_service_handler::on_server(){
+		impl_ = std::make_unique< ws_service_handler_impl >(*server());
 	}
 
 	void ws_service_handler::on_make(
@@ -127,11 +134,11 @@ namespace webservice{
 				lock.enter();
 
 				std::string name(req.target());
-				auto iter = impl_->services.find(name);
-				if(iter != impl_->services.end()){
+				auto iter = impl_->services_.find(name);
+				if(iter != impl_->services_.end()){
 					iter->second->make(std::move(socket), std::move(req));
 
-					if(impl_->services.empty() && is_shutdown()){
+					if(impl_->services_.empty() && is_shutdown()){
 						impl_->shutdown_lock_.unlock();
 					}
 				}else{
@@ -156,10 +163,10 @@ namespace webservice{
 				]()mutable{
 					lock.enter();
 
-					if(impl_->services.empty()){
+					if(impl_->services_.empty()){
 						impl_->shutdown_lock_.unlock();
 					}else{
-						for(auto& service: impl_->services){
+						for(auto& service: impl_->services_){
 							service.second->shutdown();
 						}
 					}

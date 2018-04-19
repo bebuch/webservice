@@ -7,7 +7,7 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include <webservice/server.hpp>
-#include <webservice/ws_handler.hpp>
+#include <webservice/ws_service.hpp>
 #include <webservice/ws_client.hpp>
 
 #include <csignal>
@@ -27,7 +27,7 @@ int main(){
 	std::signal(SIGINT, &signal_handler);
 
 	try{
-		auto service_ptr = std::make_unique< webservice::ws_handler >();
+		auto service_ptr = std::make_unique< webservice::ws_service >();
 		auto& service = *service_ptr;
 		webservice::server server(
 			std::make_unique< webservice::http_request_handler >(),
