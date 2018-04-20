@@ -66,7 +66,7 @@ namespace webservice{
 		/// \brief Send a text message to session
 		template < typename UnaryFunction, typename SendTextTypeT >
 		void send_text_if(UnaryFunction fn, SendTextTypeT&& data){
-			ws_service_base< Value >::send_text(
+			ws_service_base< Value >::send_text_if(
 				std::move(fn), text_to_shared_const_buffer(
 					static_cast< SendTextTypeT&& >(data)));
 		}
@@ -91,7 +91,7 @@ namespace webservice{
 		/// \brief Send a binary message to session
 		template < typename UnaryFunction, typename SendBinaryTypeT >
 		void send_binary_if(UnaryFunction fn, SendBinaryTypeT&& data){
-			ws_service_base< Value >::send_binary(
+			ws_service_base< Value >::send_binary_if(
 				std::move(fn), binary_to_shared_const_buffer(
 					static_cast< SendBinaryTypeT&& >(data)));
 		}
