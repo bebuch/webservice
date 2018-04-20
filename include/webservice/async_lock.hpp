@@ -58,12 +58,12 @@ namespace webservice{
 				// If the call was valid increas the counter
 				++(*locker_).lock_count_;
 
-				std::lock_guard< std::mutex > lock(mutex);
-					std::cout
-						<< std::setw(8) << (count_) << " 1 "
-						<< "0x" << std::setfill('0') << std::hex << std::setw(16)
-							<< reinterpret_cast< std::size_t >(locker_.load()) << " - "
-						<< std::dec << std::setfill(' ') << op_ << "1" << std::endl;
+// 				std::lock_guard< std::mutex > lock(mutex);
+// 					std::cout
+// 						<< std::setw(8) << (count_) << " 1 "
+// 						<< "0x" << std::setfill('0') << std::hex << std::setw(16)
+// 							<< reinterpret_cast< std::size_t >(locker_.load()) << " - "
+// 						<< std::dec << std::setfill(' ') << op_ << "1" << std::endl;
 			}
 
 			lock(lock const&) = delete;
@@ -107,12 +107,12 @@ namespace webservice{
 // 							<< std::dec << std::setfill(' ') << op_ << std::endl;
 					}
 
-					std::lock_guard< std::mutex > lock(mutex);
-					std::cout
-						<< std::setw(8) << (count_) << " 3 "
-						<< "0x" << std::setfill('0') << std::hex << std::setw(16)
-							<< reinterpret_cast< std::size_t >(locker) << " - "
-						<< std::dec << std::setfill(' ') << op_ << "3" << std::endl;
+// 					std::lock_guard< std::mutex > lock(mutex);
+// 					std::cout
+// 						<< std::setw(8) << (count_) << " 3 "
+// 						<< "0x" << std::setfill('0') << std::hex << std::setw(16)
+// 							<< reinterpret_cast< std::size_t >(locker) << " - "
+// 						<< std::dec << std::setfill(' ') << op_ << "3" << std::endl;
 				}
 			}
 
@@ -122,12 +122,12 @@ namespace webservice{
 			}
 
 			void enter()const{
-				std::lock_guard< std::mutex > lock(mutex);
-				std::cout
-					<< std::setw(8) << (count_) << " 2 "
-					<< "0x" << std::setfill('0') << std::hex << std::setw(16)
-						<< reinterpret_cast< std::size_t >(locker_.load()) << " - "
-					<< std::dec << std::setfill(' ') << op_ << "2" << std::endl;
+// 				std::lock_guard< std::mutex > lock(mutex);
+// 				std::cout
+// 					<< std::setw(8) << (count_) << " 2 "
+// 					<< "0x" << std::setfill('0') << std::hex << std::setw(16)
+// 						<< reinterpret_cast< std::size_t >(locker_.load()) << " - "
+// 					<< std::dec << std::setfill(' ') << op_ << "2" << std::endl;
 			}
 
 
