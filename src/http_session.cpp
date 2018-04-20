@@ -11,8 +11,6 @@
 
 #include <webservice/server.hpp>
 #include <webservice/async_lock.hpp>
-#include <webservice/ws_handler_interface.hpp>
-#include <webservice/error_handler.hpp>
 
 #include <boost/beast/websocket.hpp>
 
@@ -24,15 +22,15 @@ namespace webservice{
 
 	http_session::http_session(
 		boost::asio::ip::tcp::socket&& socket,
-		http_request_handler& handler
+		server_impl& server
 	)
-		: handler_(handler)
+		: server_(server)
 		, socket_(std::move(socket))
 		, strand_(socket_.get_executor())
 		, timer_(socket_.get_executor().context(),
 			std::chrono::steady_clock::time_point::max())
 		, locker_([this]{
-				handler_.async_erase(this);
+				server_.http().async_erase(this);
 			})
 		{}
 
@@ -51,7 +49,7 @@ namespace webservice{
 				}
 
 				if(ec){
-					handler_.server()->impl().http().on_exception(
+					server_.http().on_exception(
 						std::make_exception_ptr(boost::system::system_error(
 							ec, "http session timer")));
 				}
@@ -81,9 +79,7 @@ namespace webservice{
 		}
 
 		// Set the timer
-		if(timer_.expires_after(
-			handler_.server()->impl().http().timeout()) == 0
-		){
+		if(timer_.expires_after(server_.http().timeout()) == 0){
 			// if the timer could not be cancelled it was already
 			// expired and the session was closed by the timer
 			return;
@@ -114,7 +110,7 @@ namespace webservice{
 					}
 
 					if(ec){
-						handler_.server()->impl().http().on_exception(
+						server_.http().on_exception(
 							std::make_exception_ptr(boost::system::system_error(
 								ec, "http session read")));
 						do_close();
@@ -123,15 +119,15 @@ namespace webservice{
 
 					// See if it is a WebSocket Upgrade
 					if(
-						handler_.server()->impl().has_ws() &&
+						server_.has_ws() &&
 						boost::beast::websocket::is_upgrade(req_)
 					){
-						handler_.server()->impl().ws().make(
+						server_.ws().server_connect(
 							std::move(socket_), std::move(req_));
 						do_close();
 					}else{
 						// Send the response
-						handler_.server()->impl().http()(std::move(req_),
+						server_.http()(std::move(req_),
 							http_response{
 								this,
 								locker_,
@@ -155,8 +151,7 @@ namespace webservice{
 		try{
 			timer_.cancel();
 		}catch(...){
-			handler_.server()->impl().http()
-				.on_exception(std::current_exception());
+			server_.http().on_exception(std::current_exception());
 		}
 	}
 
@@ -167,7 +162,7 @@ namespace webservice{
 		}
 
 		if(ec){
-			handler_.server()->impl().http().on_exception(
+			server_.http().on_exception(
 				std::make_exception_ptr(boost::system::system_error(
 					ec, "http session write")));
 

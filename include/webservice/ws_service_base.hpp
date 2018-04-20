@@ -12,12 +12,14 @@
 #include "shared_const_buffer.hpp"
 #include "ws_service_interface.hpp"
 #include "ws_session_settings.hpp"
-#include "ws_session_container.hpp"
-#include "ws_server_session.hpp"
+#include "ws_session.hpp"
+#include "executor.hpp"
 #include "server.hpp"
 
 #include <string>
 #include <set>
+
+#include <boost/asio/connect.hpp>
 
 
 namespace webservice{
@@ -26,9 +28,10 @@ namespace webservice{
 	/// \brief Base for any server websocket service that handels standing
 	///        sessions
 	///
-	/// If you derive from this class you have to override on_make calling
-	/// async_make with additional ValueArgs that are used as arguments for
-	/// the constructor of Value.
+	/// If you derive from this class you have to override on_server_connect
+	/// calling async_server_connect and / or on_client_connect calling
+	/// async_client_connect with additional ValueArgs that are used as
+	/// arguments for the constructor of Value.
 	template < typename Value >
 	class ws_service_base
 		: public ws_service_interface
@@ -36,11 +39,6 @@ namespace webservice{
 	public:
 		/// \brief Constructor
 		ws_service_base() = default;
-
-		/// \brief Destructor
-		~ws_service_base()override{
-			block();
-		}
 
 
 		ws_service_base(ws_service_base const&) = delete;
@@ -61,7 +59,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock("ws_session_container::send_text"),
+					lock = impl_->locker_.make_lock("ws_service_base::send_text"),
 					identifier,
 					buffer = std::move(buffer)
 				]()mutable{
@@ -95,7 +93,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock("ws_session_container::send_text_if"),
+					lock = impl_->locker_.make_lock("ws_service_base::send_text_if"),
 					fn = std::move(fn),
 					buffer = std::move(buffer)
 				]()mutable{
@@ -126,7 +124,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock("ws_session_container::send_binary"),
+					lock = impl_->locker_.make_lock("ws_service_base::send_binary"),
 					identifier,
 					buffer = std::move(buffer)
 				]()mutable{
@@ -160,7 +158,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock("ws_session_container::send_binary_if"),
+					lock = impl_->locker_.make_lock("ws_service_base::send_binary_if"),
 					fn = std::move(fn),
 					buffer = std::move(buffer)
 				]()mutable{
@@ -190,7 +188,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock("ws_session_container::close"),
+					lock = impl_->locker_.make_lock("ws_service_base::close"),
 					identifier,
 					reason = std::move(reason)
 				]()mutable{
@@ -225,7 +223,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock("ws_session_container::close_if"),
+					lock = impl_->locker_.make_lock("ws_service_base::close_if"),
 					fn = std::move(fn),
 					reason = std::move(reason)
 				]()mutable{
@@ -250,24 +248,14 @@ namespace webservice{
 			return !impl_->run_lock_.is_locked();
 		}
 
-		/// \brief Poll server tasks until shutdown was called and the last
-		///        async task finished
-		void block()noexcept{
-			if(!impl_) return;
-
-			server()->poll_while([this]()noexcept{
-				return impl_->locker_.count() > 0;
-			});
-		}
-
 
 	protected:
 		/// \brief Create the implementation
 		///
-		/// \attention: If you override on_server(), call this from your
+		/// \attention: If you override on_executor(), call this from your
 		///             overriding function.
-		void on_server()override{
-			impl_ = std::make_unique< impl >(*server());
+		void on_executor()override{
+			impl_ = std::make_unique< impl >(this->executor().get_executor());
 		}
 
 		/// \brief Accept no new sessions, send close to all session
@@ -280,7 +268,7 @@ namespace webservice{
 				impl_->shutdown_lock_ = std::move(lock);
 
 				impl_->strand_.defer(
-					[this, lock = impl_->locker_.make_lock("ws_session_container::shutdown")]{
+					[this, lock = impl_->locker_.make_lock("ws_service_base::shutdown")]{
 						lock.enter();
 
 						if(impl_->map_.empty()){
@@ -302,7 +290,7 @@ namespace webservice{
 			assert(impl_ != nullptr);
 
 			impl_->strand_.dispatch(
-				[this, lock = impl_->locker_.make_lock("ws_session_container::on_erase"), identifier]{
+				[this, lock = impl_->locker_.make_lock("ws_service_base::on_erase"), identifier]{
 					lock.enter();
 
 					auto iter = impl_->map_.find(identifier);
@@ -320,20 +308,20 @@ namespace webservice{
 
 		/// \brief Create a new session async
 		///
-		/// Call this function from your on_make() overriding function to
-		/// create a new websocket server session.
+		/// Call this function from your on_server_connect() overriding
+		/// function to create a new websocket server session.
 		template < typename ... ValueArgs >
-		void async_make(
+		void async_server_connect(
 			boost::asio::ip::tcp::socket&& socket,
 			http_request&& req,
 			ValueArgs&& ... args
 		){
-			assert(server() != nullptr);
+			assert(impl_ != nullptr);
 
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock("ws_session_container::async_make"),
+					lock = impl_->locker_.make_lock("ws_service_base::async_server_connect"),
 					socket = std::move(socket),
 					req = std::move(req),
 					args = std::make_tuple(static_cast< ValueArgs&& >(args) ...)
@@ -342,7 +330,7 @@ namespace webservice{
 
 					if(is_shutdown()){
 						throw std::logic_error(
-							"emplace in ws_session_container while shutdown");
+							"emplace in ws_service_base while shutdown");
 					}
 
 					ws_stream ws(std::move(socket));
@@ -363,40 +351,98 @@ namespace webservice{
 		}
 
 
+		/// \brief Create a new session async
+		///
+		/// Call this function from your on_client_connect() overriding
+		/// function to create a new websocket client session.
+		template < typename ... ValueArgs >
+		void async_client_connect(
+			std::string host,
+			std::string port,
+			std::string resource,
+			ValueArgs&& ... args
+		){
+			assert(impl_ != nullptr);
+
+			impl_->strand_.dispatch(
+				[
+					this,
+					lock = impl_->locker_.make_lock("ws_service_base::async_client_connect"),
+					host = std::move(host),
+					port = std::move(port),
+					resource = std::move(resource),
+					args = std::make_tuple(static_cast< ValueArgs&& >(args) ...)
+				](auto&& ... args)mutable{
+					lock.enter();
+
+					if(is_shutdown()){
+						throw std::logic_error(
+							"emplace in ws_service_base while shutdown");
+					}
+
+					boost::asio::ip::tcp::resolver resolver(
+						executor().get_io_context());
+					auto results = resolver.resolve(host, port);
+
+					ws_stream ws(executor().get_io_context());
+					ws.read_message_max(max_read_message_size());
+
+					// Make the session on the IP address we get from a lookup
+					boost::asio::connect(ws.next_layer(),
+						results.begin(), results.end());
+
+					// Perform the ws handshake
+					ws.handshake(host, resource);
+
+					auto iter = impl_->map_.emplace(std::piecewise_construct,
+						std::forward_as_tuple(std::move(ws), *this,
+							ping_time()), std::move(args));
+
+					ws_identifier identifier(strip_const(iter.first->first));
+					try{
+						identifier.session->start();
+					}catch(...){
+						on_erase(identifier);
+						throw;
+					}
+				}, std::allocator< void >());
+		}
+
+
 	private:
 		struct less{
 			using is_transparent = void;
 
 			bool operator()(
-				ws_server_session const& l,
-				ws_server_session const& r
+				ws_session const& l,
+				ws_session const& r
 			)const noexcept{
 				return &l < &r;
 			}
 
 			bool operator()(
-				ws_server_session* l,
-				ws_server_session const& r
+				ws_session* l,
+				ws_session const& r
 			)const noexcept{
 				return l < &r;
 			}
 
 			bool operator()(
-				ws_server_session const& l,
-				ws_server_session* r
+				ws_session const& l,
+				ws_session* r
 			)const noexcept{
 				return &l < r;
 			}
 
 			bool operator()(
 				ws_identifier l,
-				ws_server_session const& r
+				ws_session const& r
 			)const noexcept{
 				return l.session < &r;
 			}
 
 			bool operator()(
-				ws_server_session const& l,
+				ws_session const& l,
 				ws_identifier r
 			)const noexcept{
 				return &l < r.session;
@@ -408,24 +454,24 @@ namespace webservice{
 		/// Map keys are always const, but we need non const session objects.
 		/// The const can be safely removed because map order is done by
 		/// address and the address can not change even for a non-const object.
-		static constexpr ws_server_session& strip_const(
-			ws_server_session const& session
+		static constexpr ws_session& strip_const(
+			ws_session const& session
 		)noexcept{
-			return const_cast< ws_server_session& >(session);
+			return const_cast< ws_session& >(session);
 		}
 
-		/// \brief implementation data after the server was set
+		/// \brief Implementation data after the executor was set
 		struct impl{
-			impl(class server& server)
+			impl(boost::asio::io_context::executor_type&& executor)
 				: locker_([]()noexcept{})
-				, run_lock_(locker_.make_first_lock("ws_session_container::ws_session_container"))
-				, strand_(server.get_executor()) {}
+				, run_lock_(locker_.make_first_lock("ws_service_base::ws_service_base"))
+				, strand_(std::move(executor)) {}
 
 			async_locker locker_;
 			async_locker::lock run_lock_;
 			async_locker::lock shutdown_lock_;
-			ws_strand strand_;
-			std::map< ws_server_session, Value, less > map_;
+			strand strand_;
+			std::map< ws_session, Value, less > map_;
 		};
 
 

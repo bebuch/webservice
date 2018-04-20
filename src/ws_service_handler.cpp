@@ -7,7 +7,10 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include <webservice/ws_service_handler.hpp>
-#include <webservice/server.hpp>
+#include <webservice/async_lock.hpp>
+#include <webservice/executor.hpp>
+
+#include <boost/asio/strand.hpp>
 
 
 namespace webservice{
@@ -16,10 +19,10 @@ namespace webservice{
 	/// \brief Implementation of ws_service_handler
 	struct ws_service_handler_impl{
 		/// \brief Constructor
-		ws_service_handler_impl(class server& server)
-			: locker_([]()noexcept{})
+		ws_service_handler_impl(class executor& executor)
+			: locker_([]()noexcept{}) // TODO: Call erase
 			, run_lock_(locker_.make_first_lock("ws_service_handler_impl"))
-			, strand_(server.get_executor()) {}
+			, strand_(executor.get_executor()) {}
 
 
 		/// \brief Protectes async operations
@@ -45,13 +48,7 @@ namespace webservice{
 
 	ws_service_handler::ws_service_handler() = default;
 
-	ws_service_handler::~ws_service_handler(){
-		if(!impl_) return;
-
-		server()->poll_while([this]()noexcept{
-			return impl_->locker_.count() > 0;
-		});
-	}
+	ws_service_handler::~ws_service_handler() = default;
 
 
 	void ws_service_handler::add_service(
@@ -76,7 +73,7 @@ namespace webservice{
 					auto r = impl_->services_.emplace(std::move(name),
 						std::move(service));
 					if(r.second){
-						r.first->second->set_server(*server());
+						r.first->second->set_executor(executor());
 					}else{
 						throw std::logic_error("service(" + name
 							+ ") already exists");
@@ -122,11 +119,11 @@ namespace webservice{
 	}
 
 
-	void ws_service_handler::on_server(){
-		impl_ = std::make_unique< ws_service_handler_impl >(*server());
+	void ws_service_handler::on_executor(){
+		impl_ = std::make_unique< ws_service_handler_impl >(executor());
 	}
 
-	void ws_service_handler::on_make(
+	void ws_service_handler::on_server_connect(
 		boost::asio::ip::tcp::socket&& socket,
 		http_request&& req
 	){
@@ -135,7 +132,7 @@ namespace webservice{
 		impl_->strand_.dispatch(
 			[
 				this,
-				lock = impl_->locker_.make_lock("ws_service_handler::on_make"),
+				lock = impl_->locker_.make_lock("ws_service_handler::on_server_connect"),
 				socket = std::move(socket),
 				req = std::move(req)
 			]()mutable noexcept{
@@ -145,13 +142,50 @@ namespace webservice{
 					std::string name(req.target());
 					auto iter = impl_->services_.find(name);
 					if(iter != impl_->services_.end()){
-						iter->second->make(std::move(socket), std::move(req));
+						iter->second->server_connect(std::move(socket),
+							std::move(req));
 
 						if(impl_->services_.empty() && is_shutdown()){
 							impl_->shutdown_lock_.unlock();
 						}
 					}else{
 						throw std::logic_error("service(" + name
+							+ ") doesn't exist");
+					}
+				}catch(...){
+					on_exception(std::current_exception());
+				}
+			}, std::allocator< void >());
+	}
+
+	void ws_service_handler::on_client_connect(
+		std::string&& host,
+		std::string&& port,
+		std::string&& resource
+	){
+		assert(impl_ != nullptr);
+
+		impl_->strand_.dispatch(
+			[
+				this,
+				lock = impl_->locker_.make_lock("ws_service_handler::on_client_connect"),
+				host = std::move(host),
+				port = std::move(port),
+				resource = std::move(resource)
+			]()mutable noexcept{
+				try{
+					lock.enter();
+
+					auto iter = impl_->services_.find(resource);
+					if(iter != impl_->services_.end()){
+						iter->second->client_connect(std::move(host),
+							std::move(port), std::move(resource));
+
+						if(impl_->services_.empty() && is_shutdown()){
+							impl_->shutdown_lock_.unlock();
+						}
+					}else{
+						throw std::logic_error("service(" + resource
 							+ ") doesn't exist");
 					}
 				}catch(...){

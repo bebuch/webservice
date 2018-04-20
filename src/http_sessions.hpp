@@ -25,7 +25,7 @@ namespace webservice{
 	using ws_stream
 		= boost::beast::websocket::stream< boost::asio::ip::tcp::socket >;
 
-	using ws_strand
+	using strand
 		= boost::asio::strand< boost::asio::io_context::executor_type >;
 
 	using http_request
@@ -67,7 +67,7 @@ namespace webservice{
 		using set = std::set< std::unique_ptr< http_session >, less >;
 
 
-		http_sessions(class server& server);
+		http_sessions(class server_impl& server);
 
 		http_sessions(http_sessions const&) = delete;
 
@@ -75,7 +75,7 @@ namespace webservice{
 		http_sessions& operator=(http_sessions const&) = delete;
 
 
-		class server* server()const noexcept;
+		class server& server()const noexcept;
 
 
 		void async_emplace(
@@ -90,15 +90,13 @@ namespace webservice{
 		/// \brief true if server is shutting down
 		bool is_shutdown()noexcept;
 
-		void block()noexcept;
-
 
 	private:
-		class server& server_;
+		class server_impl& server_;
 		async_locker locker_;
 		async_locker::lock run_lock_;
 		async_locker::lock shutdown_lock_;
-		ws_strand strand_;
+		strand strand_;
 		set set_;
 	};
 

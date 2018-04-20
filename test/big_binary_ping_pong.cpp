@@ -9,11 +9,10 @@
 #include "error_printing_ws_service.hpp"
 #include "error_printing_error_handler.hpp"
 #include "error_printing_request_handler.hpp"
-#include "error_printing_ws_client.hpp"
 
 #include <webservice/server.hpp>
+#include <webservice/client.hpp>
 #include <webservice/ws_service.hpp>
-#include <webservice/ws_client.hpp>
 
 #include <boost/lexical_cast.hpp>
 
@@ -60,7 +59,7 @@ void fill_data(){
 	std::cout << "\nend fill data vector" << std::endl;
 }
 
-struct ws_service
+struct ws_server_service
 	: webservice::error_printing_ws_service< webservice::ws_service >
 {
 	std::size_t count = 0;
@@ -73,7 +72,7 @@ struct ws_service
 	}
 
 	void on_close(webservice::ws_identifier)override{
-		server()->shutdown();
+		executor().shutdown();
 	}
 
 	void on_text(
@@ -129,20 +128,26 @@ struct ws_service
 };
 
 
-struct ws_client
-	: webservice::error_printing_ws_client< webservice::ws_client >
+struct ws_client_service
+	: webservice::error_printing_ws_service< webservice::ws_service >
 {
-	using error_printing_ws_client::error_printing_ws_client;
+	using error_printing_ws_service::error_printing_ws_service;
 
 	int count = 0;
 
-	void on_text(std::string&& text)override{
+	void on_text(
+		webservice::ws_identifier,
+		std::string&& text
+	)override{
 		std::cout << "\033[1;31mfail: client unexpected text message '"
 			<< text << "'\033[0m\n";
 		close("shutdown");
 	}
 
-	void on_binary(std::vector< std::uint8_t >&& data)override{
+	void on_binary(
+		webservice::ws_identifier,
+		std::vector< std::uint8_t >&& data
+	)override{
 		if(data == binary_data){
 			std::cout << "\033[1;32mclient pass vector with "
 				<< data.size() << "\033[0m\n";
@@ -188,24 +193,28 @@ int main(){
 	std::signal(SIGINT, &signal_handler);
 
 	try{
-		{
-			using std::make_unique;
+		using std::make_unique;
 
-			auto ws_service = make_unique< struct ws_service >();
-			ws_service->set_ping_time(std::chrono::milliseconds(4000));
+		auto ws_server_service = make_unique< struct ws_server_service >();
+		ws_server_service->set_ping_time(std::chrono::milliseconds(4000));
 
-			webservice::server server(
-				make_unique< request_handler >(),
-				std::move(ws_service),
-				make_unique< webservice::error_printing_error_handler >(),
-				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
+		webservice::server server(
+			make_unique< request_handler >(),
+			std::move(ws_server_service),
+			make_unique< webservice::error_printing_error_handler >(),
+			boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
-			ws_client client;
-// 			std::chrono::milliseconds(4000);
-			client.async_connect("127.0.0.1", "1234", "/");
 
-			server.block();
-		}
+		auto ws_client_service = make_unique< struct ws_client_service >();
+		ws_client_service->set_ping_time(std::chrono::milliseconds(4000));
+
+		webservice::client client(
+			std::move(ws_client_service),
+			make_unique< webservice::error_printing_error_handler >());
+
+		client.connect("127.0.0.1", "1234", "/");
+
+		server.block();
 
 		return 0;
 	}catch(std::exception const& e){

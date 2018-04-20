@@ -33,12 +33,22 @@ namespace webservice{
 	{
 		using basic_json_ws_service::basic_json_ws_service;
 
-		/// \brief Create a new ws_server_session
-		void on_make(
+		/// \brief Create a new ws_session
+		void on_server_connect(
 			boost::asio::ip::tcp::socket&& socket,
 			http_request&& req
 		){
-			async_make(std::move(socket), std::move(req));
+			async_server_connect(std::move(socket), std::move(req));
+		}
+
+		/// \brief Create a new client websocket session
+		void on_client_connect(
+			std::string&& host,
+			std::string&& port,
+			std::string&& resource
+		){
+			async_client_connect(std::move(host), std::move(port),
+				std::move(resource));
 		}
 	};
 

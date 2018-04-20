@@ -23,11 +23,7 @@ namespace webservice{
 
 	http_request_handler::http_request_handler() = default;
 
-	http_request_handler::~http_request_handler(){
-		if(list_){
-			list_->block();
-		}
-	}
+	http_request_handler::~http_request_handler() = default;
 
 
 	void http_request_handler::async_emplace(
@@ -103,11 +99,15 @@ namespace webservice{
 	}
 
 
-	void http_request_handler::set_server(class server& server){
+	void http_request_handler::set_server(server_impl& server){
 		list_ = std::make_unique< http_sessions >(server);
 	}
 
-	class server* http_request_handler::server()noexcept{
+	class server& http_request_handler::server(){
+		if(!list_){
+			throw std::logic_error("called sever() before set_server");
+		}
+
 		return list_->server();
 	}
 

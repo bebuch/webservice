@@ -8,24 +8,21 @@
 //-----------------------------------------------------------------------------
 #include "http_sessions.hpp"
 #include "http_session.hpp"
-
-#include <webservice/server.hpp>
-
-#include <thread>
+#include "server_impl.hpp"
 
 
 namespace webservice{
 
 
-	http_sessions::http_sessions(class server& server)
+	http_sessions::http_sessions(server_impl& server)
 		: server_(server)
-		, locker_([]()noexcept{})
+		, locker_([]()noexcept{}) // TODO: call erase
 		, run_lock_(locker_.make_first_lock("http_sessions::http_sessions"))
-		, strand_(server_.get_executor()) {}
+		, strand_(server_.executor().get_executor()) {}
 
 
-	class server* http_sessions::server()const noexcept{
-		return &server_;
+	class server& http_sessions::server()const noexcept{
+		return server_.server();
 	}
 
 
@@ -48,7 +45,7 @@ namespace webservice{
 				}
 
 				auto session = std::make_unique< http_session >(
-					std::move(socket), handler);
+					std::move(socket), server_);
 
 				auto iter = set_.insert(set_.end(), std::move(session));
 
@@ -104,12 +101,6 @@ namespace webservice{
 
 	bool http_sessions::is_shutdown()noexcept{
 		return !run_lock_.is_locked();
-	}
-
-	void http_sessions::block()noexcept{
-		server_.poll_while([this]()noexcept{
-				return locker_.count() > 0;
-			});
 	}
 
 

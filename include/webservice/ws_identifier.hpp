@@ -15,7 +15,7 @@
 namespace webservice{
 
 
-	class ws_server_session;
+	class ws_session;
 	class ws_handler_interface;
 	class shared_const_buffer;
 
@@ -24,12 +24,12 @@ namespace webservice{
 	class ws_identifier{
 	private:
 		/// \brief Constructor
-		explicit constexpr ws_identifier(ws_server_session& session)noexcept
+		explicit constexpr ws_identifier(ws_session& session)noexcept
 			: session(&session) {}
 
 
 		/// \brief The corresponding session
-		ws_server_session* session;
+		ws_session* session;
 
 
 		template < typename CharT, typename Traits >
@@ -86,7 +86,7 @@ namespace webservice{
 
 		template < typename Value >
 		friend class ws_service_base;
-		friend class ws_server_session;
+		friend class ws_session;
 		friend class ws_sessions;
 	};
 

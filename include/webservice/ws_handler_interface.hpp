@@ -39,24 +39,34 @@ namespace webservice{
 		ws_handler_interface& operator=(ws_handler_interface const&) = delete;
 
 
-		/// \brief Set the owning server
+		/// \brief Set the owning server/client
 		///
-		/// Called by the server.
-		void set_server(class server& server)noexcept;
+		/// Called by the server/client.
+		void set_executor(class executor& executor)noexcept;
 
-		/// \brief Make a new websocket session
+		/// \brief Create a new server websocket session
 		///
 		/// Called by the server.
-		void make(boost::asio::ip::tcp::socket&& socket, http_request&& req);
+		void server_connect(
+			boost::asio::ip::tcp::socket&& socket,
+			http_request&& req);
+
+		/// \brief Create a new client websocket session
+		///
+		/// Called by the client.
+		void client_connect(
+			std::string host,
+			std::string port,
+			std::string resource);
 
 		/// \brief Server is shutting down
 		///
-		/// Called by the server.
+		/// Called by the server/client.
 		void shutdown()noexcept;
 
 
-		/// \brief Get reference to server
-		class server* server()noexcept;
+		/// \brief Get reference to server/client executor
+		class executor& executor();
 
 
 		/// \brief Called when an exception was thrown
@@ -66,20 +76,26 @@ namespace webservice{
 
 
 	private:
-		/// \brief Called by set_server
-		virtual void on_server() = 0;
+		/// \brief Called by set_executor
+		virtual void on_executor() = 0;
 
-		/// \brief Create a new ws_server_session
-		virtual void on_make(
+		/// \brief Create a new server websocket connection
+		virtual void on_server_connect(
 			boost::asio::ip::tcp::socket&& socket,
-			http_request&& req) = 0;
+			http_request&& req);
+
+		/// \brief Create a new client websocket session
+		virtual void on_client_connect(
+			std::string&& host,
+			std::string&& port,
+			std::string&& resource);
 
 		/// \brief Shutdown hint called by shutdown()
 		virtual void on_shutdown()noexcept = 0;
 
 
-		/// \brief Pointer to the server object
-		class server* server_ = nullptr;
+		/// \brief Pointer to the executor object
+		class executor* executor_ = nullptr;
 	};
 
 

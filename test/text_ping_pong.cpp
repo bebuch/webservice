@@ -49,7 +49,7 @@ struct ws_service
 	}
 
 	void on_close(webservice::ws_identifier)override{
-		server()->shutdown();
+		executor().shutdown();
 	}
 
 	void on_text(

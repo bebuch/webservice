@@ -9,23 +9,27 @@
 #ifndef _webservice__http_session__hpp_INCLUDED_
 #define _webservice__http_session__hpp_INCLUDED_
 
-#include <webservice/http_request_handler.hpp>
+#include <webservice/http_response.hpp>
 
 #include <boost/circular_buffer.hpp>
 
 #include <boost/beast/core/flat_buffer.hpp>
+#include <boost/beast/http.hpp>
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/asio/steady_timer.hpp>
 
-#include <mutex>
-
 
 namespace webservice{
 
 
-	class http_request_handler;
+	using http_request
+		= boost::beast::http::request< boost::beast::http::string_body >;
+
+	using strand
+		= boost::asio::strand< boost::asio::io_context::executor_type >;
+
 
 	/// \brief Handles an HTTP server session
 	class http_session{
@@ -33,7 +37,7 @@ namespace webservice{
 		/// \brief Take ownership of the socket and start reading
 		explicit http_session(
 			boost::asio::ip::tcp::socket&& socket,
-			http_request_handler& handler
+			class server_impl& server
 		);
 
 		/// \brief Start timer and read
@@ -88,10 +92,10 @@ namespace webservice{
 		};
 
 
-		http_request_handler& handler_;
+		class server_impl& server_;
 
 		boost::asio::ip::tcp::socket socket_;
-		boost::asio::strand< boost::asio::io_context::executor_type > strand_;
+		strand strand_;
 		boost::asio::steady_timer timer_;
 		boost::beast::flat_buffer buffer_;
 

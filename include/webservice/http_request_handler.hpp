@@ -66,7 +66,7 @@ namespace webservice{
 
 
 		/// \brief Set the owning server
-		void set_server(class server& server);
+		void set_server(class server_impl& server);
 
 
 		/// \brief Set session timeout
@@ -81,7 +81,9 @@ namespace webservice{
 
 
 		/// \brief Get reference to server
-		class server* server()noexcept;
+		///
+		/// \throw std::logic_error if handler is not owned by a server
+		class server& server();
 
 
 	private:

@@ -19,6 +19,7 @@ namespace webservice{
 
 	server_impl::server_impl(
 		class server& server,
+		boost::asio::io_context& ioc,
 		std::unique_ptr< http_request_handler >&& http_handler,
 		std::unique_ptr< ws_handler_interface >&& ws_handler,
 		std::unique_ptr< error_handler >&& error_handler,
@@ -27,81 +28,31 @@ namespace webservice{
 		std::uint8_t thread_count
 	)
 		: server_(server)
-		, http_handler_(
-			[&server, http_handler = std::move(http_handler)]()mutable{
-				if(!http_handler){
-					http_handler = std::make_unique< http_request_handler >();
-				}
-				http_handler->set_server(server);
-				return std::move(http_handler);
-			}())
-		, ws_handler_(
-			[&server, ws_handler = std::move(ws_handler)]()mutable{
-				if(ws_handler){
-					ws_handler->set_server(server);
-				}
-				return std::move(ws_handler);
-			}())
-		, error_handler_(
-			[error_handler = std::move(error_handler)]()mutable{
-				if(!error_handler){
-					error_handler = std::make_unique< class error_handler >();
-				}
-				return std::move(error_handler);
-			}())
-		, listener_(
-			*this,
-			boost::asio::ip::tcp::endpoint{address, port},
-			server_.get_io_context())
-	{
-		// Run the I/O service on the requested number of thread_count
-		threads_.reserve(thread_count);
-		for(std::size_t i = 0; i < thread_count; ++i){
-			threads_.emplace_back([this]{
-				// restart io_context if it returned by exception
-				for(;;){
-					try{
-						server_.get_io_context().run();
-						return;
-					}catch(...){
-						error().on_exception(std::current_exception());
-					}
-				}
-			});
-		}
-	}
-
-
-	void server_impl::block()noexcept{
-		std::lock_guard< std::mutex > lock(mutex_);
-		for(auto& thread: threads_){
-			if(thread.joinable()){
-				try{
-					thread.join();
-				}catch(...){
-					error().on_exception(std::current_exception());
-				}
-			}
-		}
-	}
-
-	void server_impl::shutdown()noexcept{
-		get_executor().post([this]{
+		, executor_(ioc, std::move(error_handler), [this]()noexcept{
 				http().shutdown();
 				if(has_ws()){
 					ws().shutdown();
 				}
 				listener_.shutdown();
-			}, std::allocator< void >());
-	}
+			})
+		, http_handler_(std::move(http_handler))
+		, ws_handler_(std::move(ws_handler))
+		, listener_(*this, boost::asio::ip::tcp::endpoint{address, port}, ioc)
+	{
+		// Create the default http_request_handler if none exist
+		if(!http_handler_){
+			http_handler_ = std::make_unique< http_request_handler >();
+		}
 
+		// Make http handler ready
+		http_handler_->set_server(*this);
 
-	boost::asio::io_context::executor_type server_impl::get_executor(){
-		return server_.get_executor();
-	}
+		// Make websocket handler ready if it exists
+		if(ws_handler_){
+			ws_handler_->set_executor(executor_);
+		}
 
-	boost::asio::io_context& server_impl::get_io_context()noexcept{
-		return server_.get_io_context();
+		executor_.run(thread_count);
 	}
 
 

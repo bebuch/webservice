@@ -12,6 +12,7 @@
 #include "listener.hpp"
 
 #include <webservice/server.hpp>
+#include <webservice/executor.hpp>
 
 #include <boost/asio/executor.hpp>
 #include <boost/asio/ip/address.hpp>
@@ -36,6 +37,7 @@ namespace webservice{
 		/// \param port TCP Port
 		server_impl(
 			class server& server,
+			boost::asio::io_context& ioc,
 			std::unique_ptr< class http_request_handler >&& http_handler,
 			std::unique_ptr< class ws_handler_interface >&& service,
 			std::unique_ptr< class error_handler >&& error_handler,
@@ -48,32 +50,6 @@ namespace webservice{
 
 		server_impl& operator=(server_impl const&) = delete;
 
-		/// \brief Wait on all processing threads
-		///
-		/// This effecivly blocks the current thread until the server_impl is
-		/// closed.
-		void block()noexcept;
-
-		/// \brief Don't accept new connections and async tasks
-		///
-		/// This function is not blocking. Call block() if you want to wait
-		/// until all connections are closed.
-		void shutdown()noexcept;
-
-
-		/// \brief Get executor
-		boost::asio::io_context::executor_type get_executor();
-
-		/// \brief Get reference to the internal io_context
-		boost::asio::io_context& get_io_context()noexcept;
-
-
-		/// \brief Poll tasks as long as fn returns true
-		template < typename Fn >
-		void poll_while(Fn&& fn)noexcept{
-			server_.poll_while(static_cast< Fn&& >(fn));
-		}
-
 
 		/// \brief true if a WebSocket handler is set, false otherwise
 		bool has_ws()const{
@@ -83,7 +59,7 @@ namespace webservice{
 
 		/// \brief Reference to the error_handler
 		class error_handler& error()const{
-			return *error_handler_;
+			return executor_.error();
 		}
 
 		/// \brief Reference to the http handler
@@ -100,24 +76,30 @@ namespace webservice{
 		}
 
 
+		/// \brief Get the executor object
+		class executor& executor(){
+			return executor_;
+		}
+
+
+		/// \brief Get the owning server
+		class server& server(){
+			return server_;
+		}
+
+
 	private:
-		/// \brief Back reference to server object
+		/// \brief Back reference to the server
 		class server& server_;
+
+		/// \brief Maps calles from websocket service to server
+		class executor executor_;
 
 		/// \brief Handler for HTTP sessions
 		std::unique_ptr< class http_request_handler > http_handler_;
 
 		/// \brief Handler for WebSocket sessions
 		std::unique_ptr< class ws_handler_interface > ws_handler_;
-
-		/// \brief Handles errors and exceptions in the server
-		std::unique_ptr< class error_handler > error_handler_;
-
-		/// \brief Protect thread joins
-		std::mutex mutex_;
-
-		/// \brief The worker threads
-		std::vector< std::thread > threads_;
 
 		/// \brief Accepts incoming connections and launches the sessions
 		listener listener_;
