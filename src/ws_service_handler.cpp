@@ -69,16 +69,20 @@ namespace webservice{
 				lock = impl_->locker_.make_lock("ws_service_handler::add_service"),
 				name = std::move(name),
 				service = std::move(service)
-			]()mutable{
-				lock.enter();
+			]()mutable noexcept{
+				try{
+					lock.enter();
 
-				auto r = impl_->services_.emplace(std::move(name),
-					std::move(service));
-				if(r.second){
-					r.first->second->set_server(*server());
-				}else{
-					throw std::logic_error("service(" + name
-						+ ") already exists");
+					auto r = impl_->services_.emplace(std::move(name),
+						std::move(service));
+					if(r.second){
+						r.first->second->set_server(*server());
+					}else{
+						throw std::logic_error("service(" + name
+							+ ") already exists");
+					}
+				}catch(...){
+					on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
 	}
@@ -94,16 +98,20 @@ namespace webservice{
 				this,
 				lock = impl_->locker_.make_lock("ws_service_handler::erase_service"),
 				name = std::move(name)
-			]()mutable{
-				lock.enter();
+			]()mutable noexcept{
+				try{
+					lock.enter();
 
-				auto iter = impl_->services_.find(name);
-				if(iter != impl_->services_.end()){
-					iter->second->shutdown();
-					impl_->services_.erase(iter);
-				}else{
-					throw std::logic_error("service(" + name
-						+ ") doesn't exist");
+					auto iter = impl_->services_.find(name);
+					if(iter != impl_->services_.end()){
+						iter->second->shutdown();
+						impl_->services_.erase(iter);
+					}else{
+						throw std::logic_error("service(" + name
+							+ ") doesn't exist");
+					}
+				}catch(...){
+					on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
 	}
@@ -130,23 +138,26 @@ namespace webservice{
 				lock = impl_->locker_.make_lock("ws_service_handler::on_make"),
 				socket = std::move(socket),
 				req = std::move(req)
-			]()mutable{
-				lock.enter();
+			]()mutable noexcept{
+				try{
+					lock.enter();
 
-				std::string name(req.target());
-				auto iter = impl_->services_.find(name);
-				if(iter != impl_->services_.end()){
-					iter->second->make(std::move(socket), std::move(req));
+					std::string name(req.target());
+					auto iter = impl_->services_.find(name);
+					if(iter != impl_->services_.end()){
+						iter->second->make(std::move(socket), std::move(req));
 
-					if(impl_->services_.empty() && is_shutdown()){
-						impl_->shutdown_lock_.unlock();
+						if(impl_->services_.empty() && is_shutdown()){
+							impl_->shutdown_lock_.unlock();
+						}
+					}else{
+						throw std::logic_error("service(" + name
+							+ ") doesn't exist");
 					}
-				}else{
-					throw std::logic_error("service(" + name
-						+ ") doesn't exist");
+				}catch(...){
+					on_exception(std::current_exception());
 				}
 			}, std::allocator< void >());
-
 	}
 
 	void ws_service_handler::on_shutdown()noexcept{
@@ -160,15 +171,19 @@ namespace webservice{
 				[
 					this,
 					lock = impl_->locker_.make_lock("ws_service_handler::on_shutdown")
-				]()mutable{
-					lock.enter();
+				]()mutable noexcept{
+					try{
+						lock.enter();
 
-					if(impl_->services_.empty()){
-						impl_->shutdown_lock_.unlock();
-					}else{
-						for(auto& service: impl_->services_){
-							service.second->shutdown();
+						if(impl_->services_.empty()){
+							impl_->shutdown_lock_.unlock();
+						}else{
+							for(auto& service: impl_->services_){
+								service.second->shutdown();
+							}
 						}
+					}catch(...){
+						on_exception(std::current_exception());
 					}
 				}, std::allocator< void >());
 		}

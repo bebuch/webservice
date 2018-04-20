@@ -26,10 +26,7 @@ namespace webservice{
 	struct error_printing_ws_service: Base{
 		using Base::Base;
 
-		void on_exception(
-			ws_identifier,
-			std::exception_ptr error
-		)noexcept override{
+		void on_exception(std::exception_ptr error)noexcept override{
 			try{
 				std::rethrow_exception(error);
 			}catch(std::exception const& e){
@@ -39,6 +36,13 @@ namespace webservice{
 				std::cout << "\033[1;31mfail ws_service: unexpected unknown "
 					"exception\033[0m\n";
 			}
+		}
+
+		void on_exception(
+			ws_identifier,
+			std::exception_ptr error
+		)noexcept override{
+			on_exception(error);
 		}
 	};
 

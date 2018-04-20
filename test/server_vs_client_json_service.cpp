@@ -129,10 +129,7 @@ struct request_handler
 std::string const test_text = "{\"key\":\"value\"}";
 
 struct ws_service_handler: webservice::ws_service_handler{
-	void on_exception(
-		webservice::ws_identifier,
-		std::exception_ptr error
-	)noexcept override{
+	void on_exception(std::exception_ptr error)noexcept override{
 		try{
 			std::rethrow_exception(error);
 		}catch(std::exception const& e){

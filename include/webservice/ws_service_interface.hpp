@@ -51,6 +51,15 @@ namespace webservice{
 			ws_identifier identifier,
 			boost::beast::multi_buffer&& buffer);
 
+		/// \brief Called when an exception was thrown
+		///
+		/// Default implementation does nothing.
+		virtual void on_exception(
+			ws_identifier identifier,
+			std::exception_ptr error)noexcept;
+
+		using ws_handler_interface::on_exception;
+
 
 		/// \brief Called when a sessions is ready to be erased
 		///

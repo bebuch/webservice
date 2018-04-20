@@ -62,9 +62,7 @@ namespace webservice{
 		/// \brief Called when an exception was thrown
 		///
 		/// Default implementation does nothing.
-		virtual void on_exception(
-			ws_identifier identifier,
-			std::exception_ptr error)noexcept;
+		virtual void on_exception(std::exception_ptr error)noexcept;
 
 
 	private:

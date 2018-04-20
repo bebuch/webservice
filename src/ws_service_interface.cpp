@@ -24,6 +24,10 @@ namespace webservice{
 		ws_identifier /*identifier*/,
 		boost::beast::multi_buffer&& /*buffer*/){}
 
+	void ws_service_interface::on_exception(
+		ws_identifier /*identifier*/,
+		std::exception_ptr /*error*/)noexcept{}
+
 
 	void ws_service_interface::on_erase(ws_identifier /*identifier*/)noexcept{}
 

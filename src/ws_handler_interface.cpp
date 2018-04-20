@@ -36,7 +36,6 @@ namespace webservice{
 
 
 	void ws_handler_interface::on_exception(
-		ws_identifier /*identifier*/,
 		std::exception_ptr /*error*/)noexcept{}
 
 
