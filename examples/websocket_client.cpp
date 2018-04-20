@@ -46,12 +46,11 @@ struct ws_client_service: webservice::ws_service{
 
 webservice::client* client = nullptr;
 
-void close_client(int signum){
+void on_interrupt(int signum){
 	std::signal(signum, SIG_DFL);
 	std::cout << "Signal: " << signum << '\n';
 	client->shutdown();
-	client->block();
-	std::raise(signum);
+	std::cout << "Signal ready\n";
 }
 
 
@@ -86,9 +85,7 @@ int main(int argc, char* argv[]){
 
 		// Allow to shutdown the client with CTRL+C
 		::client = &client;
-		std::signal(SIGSEGV, &close_client);
-		std::signal(SIGABRT, &close_client);
-		std::signal(SIGINT, &close_client);
+		std::signal(SIGINT, &on_interrupt);
 
 		client.block();
 

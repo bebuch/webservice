@@ -49,12 +49,12 @@ struct mirror_ws_service: webservice::ws_service{
 
 webservice::server* server = nullptr;
 
-void close_server(int signum){
+
+void on_interrupt(int signum){
 	std::signal(signum, SIG_DFL);
 	std::cout << "Signal: " << signum << '\n';
 	server->shutdown();
-	server->block();
-	std::raise(signum);
+	std::cout << "Signal ready\n";
 }
 
 
@@ -90,9 +90,7 @@ int main(int argc, char* argv[]){
 
 		// Allow to shutdown the server with CTRL+C
 		::server = &server;
-		std::signal(SIGSEGV, &close_server);
-		std::signal(SIGABRT, &close_server);
-		std::signal(SIGINT, &close_server);
+		std::signal(SIGINT, &on_interrupt);
 
 		server.block();
 
