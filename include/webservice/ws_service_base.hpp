@@ -71,7 +71,7 @@ namespace webservice{
 
 		/// \brief Send a text message to all session
 		void send_text(shared_const_buffer buffer){
-			send_text_if([](Value&)noexcept{
+			send_text_if([](ws_identifier, Value&)noexcept{
 					return true;
 				}, buffer);
 		}
@@ -100,7 +100,7 @@ namespace webservice{
 					for(auto& session: impl_->map_){
 						ws_identifier identifier(strip_const(session.first));
 						try{
-							if(fn(session.second)){
+							if(fn(identifier, session.second)){
 								identifier.session->send(true, buffer);
 							}
 						}catch(...){
@@ -136,7 +136,7 @@ namespace webservice{
 
 		/// \brief Send a binary message to all session
 		void send_binary(shared_const_buffer buffer){
-			send_binary_if([](Value&)noexcept{
+			send_binary_if([](ws_identifier, Value&)noexcept{
 					return true;
 				}, buffer);
 		}
@@ -165,7 +165,7 @@ namespace webservice{
 					for(auto& session: impl_->map_){
 						ws_identifier identifier(strip_const(session.first));
 						try{
-							if(fn(session.second)){
+							if(fn(identifier, session.second)){
 								identifier.session->send(false, buffer);
 							}
 						}catch(...){
@@ -201,7 +201,7 @@ namespace webservice{
 
 		/// \brief Shutdown all sessions
 		void close(boost::beast::websocket::close_reason reason){
-			close_if([](Value&)noexcept{
+			close_if([](ws_identifier, Value&)noexcept{
 					return true;
 				}, reason);
 		}
@@ -230,7 +230,7 @@ namespace webservice{
 					for(auto& session: impl_->map_){
 						ws_identifier identifier(strip_const(session.first));
 						try{
-							if(fn(session.second)){
+							if(fn(identifier, session.second)){
 								identifier.session->close(reason);
 							}
 						}catch(...){
