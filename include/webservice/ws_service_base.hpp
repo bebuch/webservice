@@ -37,6 +37,10 @@ namespace webservice{
 		: public ws_service_interface
 		, public ws_session_settings{
 	public:
+		static_assert(std::is_move_constructible< Value >::value,
+			"Value must be move constructible");
+
+
 		/// \brief Constructor
 		ws_service_base() = default;
 
@@ -246,6 +250,27 @@ namespace webservice{
 			assert(impl_ != nullptr);
 
 			return !impl_->run_lock_.is_locked();
+		}
+
+
+		/// \brief Set value of identifier to given value async
+		void set_value(ws_identifier identifier, Value value){
+			assert(impl_ != nullptr);
+
+			impl_->strand_.dispatch(
+				[
+					this,
+					lock = impl_->locker_.make_lock("ws_service_base::set_value"),
+					identifier,
+					value = std::move(value)
+				]()mutable{
+					lock.enter();
+
+					auto iter = impl_->map_.find(identifier);
+					if(iter != impl_->map_.end()){
+						iter->second = std::move(value);
+					}
+				}, std::allocator< void >());
 		}
 
 
