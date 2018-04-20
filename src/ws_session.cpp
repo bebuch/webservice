@@ -204,7 +204,7 @@ namespace webservice{
 					wait_on_pong_ = true;
 
 					// Set the timer
-					restart_timer("ws_session::do_timer_recursion");
+					restart_timer("ws_session::restart_timer_recursion");
 
 					auto ping_payload = std::to_string(ping_counter_++);
 
@@ -230,6 +230,10 @@ namespace webservice{
 									return;
 								}
 							}));
+
+					// timer was not cancel in restart_timer, so we have to
+					// manuelly restart it
+					do_timer("ws_session::do_timer_recursion");
 				}else{
 					if(ec){
 						on_error("timer", ec);
