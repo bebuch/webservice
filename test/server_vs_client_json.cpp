@@ -9,11 +9,10 @@
 #include "error_printing_ws_service.hpp"
 #include "error_printing_error_handler.hpp"
 #include "error_printing_request_handler.hpp"
-#include "error_printing_ws_client.hpp"
 
 #include <webservice/server.hpp>
+#include <webservice/client.hpp>
 #include <webservice/json_ws_service.hpp>
-#include <webservice/json_ws_client.hpp>
 
 #include <thread>
 #include <csignal>
@@ -178,20 +177,21 @@ struct ws_service
 };
 
 
-struct ws_client
-	: webservice::error_printing_ws_client< webservice::json_ws_client >
+struct ws_client_service
+	: webservice::error_printing_ws_service< webservice::json_ws_service >
 {
-	using error_printing_ws_client::error_printing_ws_client;
-
-	void on_open()override{
+	void on_open(webservice::ws_identifier)override{
 		check(state_t::ws_client_open);
 	}
 
-	void on_close()override{
+	void on_close(webservice::ws_identifier)override{
 		check(state_t::ws_client_close);
 	}
 
-	void on_text(nlohmann::json&& text)override{
+	void on_text(
+		webservice::ws_identifier,
+		nlohmann::json&& text
+	)override{
 		check(state_t::ws_client_json);
 		if(nlohmann::json::parse(test_text) == text){
 			std::cout << "\033[1;32mclient pass: '"
@@ -205,7 +205,10 @@ struct ws_client
 		send_text(nlohmann::json::parse(test_text));
 	}
 
-	void on_binary(std::vector< std::uint8_t >&& data)override{
+	void on_binary(
+		webservice::ws_identifier,
+		std::vector< std::uint8_t >&& data
+	)override{
 		check(state_t::ws_client_binary);
 		std::string text(data.begin(), data.end());
 		if(test_text == text){
@@ -246,8 +249,10 @@ int main(){
 
 			check(state_t::init);
 
-			ws_client client;
-			client.async_connect("127.0.0.1", "1234", "/");
+			webservice::client client(
+				std::make_unique< ws_client_service >(),
+				std::make_unique< webservice::error_handler >());
+			client.connect("127.0.0.1", "1234", "/");
 
 			using system_clock = std::chrono::system_clock;
 			auto const start = system_clock::now();

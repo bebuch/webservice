@@ -9,11 +9,10 @@
 #include "error_printing_ws_service.hpp"
 #include "error_printing_error_handler.hpp"
 #include "error_printing_request_handler.hpp"
-#include "error_printing_ws_client.hpp"
 
 #include <webservice/server.hpp>
 #include <webservice/ws_service.hpp>
-#include <webservice/ws_client.hpp>
+#include <webservice/client.hpp>
 
 #include <boost/lexical_cast.hpp>
 
@@ -77,23 +76,23 @@ struct ws_service
 };
 
 
-struct ws_client
-	: webservice::error_printing_ws_client< webservice::ws_client >
+struct ws_client_service
+	: webservice::error_printing_ws_service< webservice::ws_service >
 {
-	using error_printing_ws_client::error_printing_ws_client;
-
 	int count = 0;
 
-	void on_text(std::string&& text)override{
-// 		if(count % 1000 == 0){
-// 			std::cout << "\033[1;32mclient pass: '" << text << "'\033[0m"
-// 				<< std::endl;
-// 		}
+	void on_text(
+		webservice::ws_identifier,
+		std::string&& text
+	)override{
 		++count;
 		send_text(text);
 	}
 
-	void on_binary(std::vector< std::uint8_t >&& data)override{
+	void on_binary(
+		webservice::ws_identifier,
+		std::vector< std::uint8_t >&& data
+	)override{
 		std::string text(data.begin(), data.end());
 		std::cout << "\033[1;31mfail: client unexpected binary message '"
 			<< text << "'\033[0m\n";
@@ -126,7 +125,9 @@ int main(){
 				}
 			} on_destruction;
 
-			ws_client client;
+			webservice::client client(
+				std::make_unique< ws_client_service >(),
+				std::make_unique< webservice::error_handler >());
 
 			auto http_handler = std::make_unique< request_handler >();
 			http_handler->set_timeout(std::chrono::milliseconds(1500));
@@ -139,7 +140,7 @@ int main(){
 				std::move(ws_service),
 				std::make_unique< webservice::error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 2);
-			client.async_connect("127.0.0.1", "1234", "/");
+			client.connect("127.0.0.1", "1234", "/");
 
 			std::this_thread::sleep_for(
 				std::chrono::milliseconds(rand() % 10));

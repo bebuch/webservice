@@ -9,11 +9,10 @@
 #include "error_printing_ws_service.hpp"
 #include "error_printing_error_handler.hpp"
 #include "error_printing_request_handler.hpp"
-#include "error_printing_ws_client.hpp"
 
 #include <webservice/server.hpp>
 #include <webservice/ws_service.hpp>
-#include <webservice/ws_client.hpp>
+#include <webservice/client.hpp>
 
 #include <boost/lexical_cast.hpp>
 
@@ -40,7 +39,7 @@ struct request_handler
 };
 
 
-struct ws_service
+struct ws_server_service
 	: webservice::error_printing_ws_service< webservice::ws_service >
 {
 	int count = 0;
@@ -57,10 +56,6 @@ struct ws_service
 		webservice::ws_identifier identifier,
 		std::string&& /*text*/
 	)override{
-// 		if(count % 1000 == 0){
-// 			std::cout << "\033[1;32mserver pass: '" << text << "'\033[0m"
-// 				<< std::endl;
-// 		}
 		++count;
 		send_text(identifier, std::to_string(count));
 	}
@@ -77,28 +72,23 @@ struct ws_service
 };
 
 
-struct ws_client
-	: webservice::error_printing_ws_client< webservice::ws_client >
+struct ws_client_service
+	: webservice::error_printing_ws_service< webservice::ws_service >
 {
-	using error_printing_ws_client::error_printing_ws_client;
-
-	~ws_client(){
-		shutdown();
-		block();
-	}
-
 	int count = 0;
 
-	void on_text(std::string&& text)override{
-// 		if(count % 1000 == 0){
-// 			std::cout << "\033[1;32mclient pass: '" << text << "'\033[0m"
-// 				<< std::endl;
-// 		}
+	void on_text(
+		webservice::ws_identifier,
+		std::string&& text
+	)override{
 		++count;
 		send_text(text);
 	}
 
-	void on_binary(std::vector< std::uint8_t >&& data)override{
+	void on_binary(
+		webservice::ws_identifier,
+		std::vector< std::uint8_t >&& data
+	)override{
 		std::string text(data.begin(), data.end());
 		std::cout << "\033[1;31mfail: client unexpected binary message '"
 			<< text << "'\033[0m\n";
@@ -131,10 +121,12 @@ int main(){
 				}
 			} on_destruction;
 
+			using webservice::error_printing_error_handler;
+
 			webservice::server server(
 				make_unique< request_handler >(),
-				make_unique< ws_service >(),
-				make_unique< webservice::error_printing_error_handler >(),
+				make_unique< ws_server_service >(),
+				make_unique< error_printing_error_handler >(),
 				boost::asio::ip::make_address("127.0.0.1"), 1234, 1);
 
 			constexpr std::size_t client_count = 50;
@@ -142,8 +134,10 @@ int main(){
 			client_threads.reserve(client_count);
 			for(std::size_t i = 0; i < client_count; ++i){
 				client_threads.emplace_back([]{
-						ws_client client;
-						client.async_connect("127.0.0.1", "1234", "/");
+						webservice::client client(
+							make_unique< ws_client_service >(),
+							make_unique< error_printing_error_handler >());
+						client.connect("127.0.0.1", "1234", "/");
 						std::this_thread::sleep_for(
 							std::chrono::milliseconds(rand() % 100));
 					});
