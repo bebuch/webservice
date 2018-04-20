@@ -62,6 +62,10 @@ namespace webservice{
 		void block()noexcept;
 
 
+		/// \brief Get reference to the internal io_context
+		boost::asio::io_context& get_io_context()noexcept;
+
+
 	private:
 		/// \brief The io_context is required for all I/O
 		boost::asio::io_context ioc_;

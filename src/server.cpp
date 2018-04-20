@@ -50,4 +50,9 @@ namespace webservice{
 	}
 
 
+	boost::asio::io_context& server::get_io_context()noexcept{
+		return ioc_;
+	}
+
+
 }
