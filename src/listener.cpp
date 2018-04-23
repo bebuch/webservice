@@ -16,11 +16,6 @@
 namespace webservice{
 
 
-	std::mutex async_locker::lock::mutex;
-
-	std::atomic< std::size_t > async_locker::lock::counter{0};
-
-
 	listener::listener(
 		server_impl& server,
 		boost::asio::ip::tcp::endpoint endpoint,

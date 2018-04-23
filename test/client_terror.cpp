@@ -116,8 +116,7 @@ int main(){
 			using std::make_unique;
 			struct on_destruction_t{
 				~on_destruction_t(){
-					std::lock_guard< std::mutex > mutex(webservice::async_locker::lock::mutex);
-					std::cout << "\n\n\n\n\n\n";
+					std::cout << "\n\n";
 				}
 			} on_destruction;
 
@@ -147,7 +146,6 @@ int main(){
 				thread.join();
 			}
 
-			std::lock_guard< std::mutex > mutex(webservice::async_locker::lock::mutex);
 			std::cout << "\n";
 		}
 

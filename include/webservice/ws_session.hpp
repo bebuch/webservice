@@ -81,19 +81,19 @@ namespace webservice{
 		///
 		/// Send a ping after the first timeout. If it timeouts a second time
 		/// after that, close the session.
-		void do_timer(char const* op);
+		void do_timer();
 
 		/// \brief Called to indicate activity from the remote peer
 		void activity();
 
 		/// \brief Read another message
-		void do_read(char const* position);
+		void do_read();
 
 		/// \brief Called when a message was written
 		void on_write(boost::system::error_code ec);
 
 		/// \brief Set timers expires_after
-		void restart_timer(char const* op);
+		void restart_timer();
 
 		/// \brief Close session on socket level
 		void close_socket()noexcept;

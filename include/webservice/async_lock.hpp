@@ -28,59 +28,41 @@ namespace webservice{
 		/// \brief Increase a counter on construction and decrese on destruction
 		class lock{
 		public:
-			static std::mutex mutex;
-			static std::atomic< std::size_t > counter;
-
 			/// \brief Initialize without lock
 			lock()
-				: locker_(nullptr)
-				, op_("") {}
+				: locker_(nullptr) {}
 
 
 			/// \brief Increase the counter
 			///
 			/// \throw std::runtime_error If no other async operation is still
 			///                           running
-			lock(async_locker& locker, char const* op)
+			lock(async_locker& locker)
 				: locker_(&locker)
-				, op_(op)
 			{
-				count_ = counter++;
-
 				// lock_count_ must be increast by 1 before first usage. After
 				// that it must be decreased by 1. This makes sure that if
 				// lock_count_ is 0 the on_last_async() was already fired and
 				// no new calles are accepted
 				if((*locker_).lock_count_ == 0){
-					throw std::runtime_error(std::string("async call after shutdown - ") + op);
+					throw std::runtime_error("async call after shutdown");
 				}
 
 				// If the call was valid increas the counter
 				++(*locker_).lock_count_;
-
-// 				std::lock_guard< std::mutex > lock(mutex);
-// 					std::cout
-// 						<< std::setw(8) << (count_) << " 1 "
-// 						<< "0x" << std::setfill('0') << std::hex << std::setw(16)
-// 							<< reinterpret_cast< std::size_t >(locker_.load()) << " - "
-// 						<< std::dec << std::setfill(' ') << op_ << "1" << std::endl;
 			}
 
 			lock(lock const&) = delete;
 
 			/// \brief Move ownership of the lock
 			lock(lock&& other)noexcept
-				: locker_(other.locker_.exchange(nullptr,
-					std::memory_order_relaxed))
-				, count_(other.count_)
-				, op_(other.op_) {}
+				: locker_(other.locker_.exchange(
+					nullptr, std::memory_order_relaxed)) {}
 
 			/// \brief Move ownership of the lock
 			lock& operator=(lock&& other)noexcept{
-				locker_ = other.locker_.exchange(nullptr,
-					std::memory_order_relaxed);
-				count_ = other.count_;
-				op_ = other.op_;
+				locker_ = other.locker_.exchange(
+					nullptr, std::memory_order_relaxed);
 				return *this;
 			}
 
@@ -93,26 +75,10 @@ namespace webservice{
 
 			/// \brief Decrese counter, call callback if count becomes 0
 			void unlock()noexcept{
-				if(auto locker = locker_.exchange(nullptr,
-					std::memory_order_relaxed)
-				){
-					if(--locker->lock_count_ == 0){
-						locker->on_last_async_callback_();
-
-// 						std::lock_guard< std::mutex > lock(mutex);
-// 						std::cout
-// 							<< std::setw(8) << (count_) << " 0 "
-// 							<< "0x" << std::setfill('0') << std::hex << std::setw(16)
-// 								<< reinterpret_cast< std::size_t >(locker) << " - "
-// 							<< std::dec << std::setfill(' ') << op_ << std::endl;
-					}
-
-// 					std::lock_guard< std::mutex > lock(mutex);
-// 					std::cout
-// 						<< std::setw(8) << (count_) << " 3 "
-// 						<< "0x" << std::setfill('0') << std::hex << std::setw(16)
-// 							<< reinterpret_cast< std::size_t >(locker) << " - "
-// 						<< std::dec << std::setfill(' ') << op_ << "3" << std::endl;
+				auto locker =
+					locker_.exchange(nullptr, std::memory_order_relaxed);
+				if(locker && --locker->lock_count_ == 0){
+					locker->on_last_async_callback_();
 				}
 			}
 
@@ -121,21 +87,10 @@ namespace webservice{
 				return locker_ != nullptr;
 			}
 
-			void enter()const{
-// 				std::lock_guard< std::mutex > lock(mutex);
-// 				std::cout
-// 					<< std::setw(8) << (count_) << " 2 "
-// 					<< "0x" << std::setfill('0') << std::hex << std::setw(16)
-// 						<< reinterpret_cast< std::size_t >(locker_.load()) << " - "
-// 					<< std::dec << std::setfill(' ') << op_ << "2" << std::endl;
-			}
-
 
 		private:
 			/// \brief Pointer to locked object
 			std::atomic< async_locker* > locker_;
-			std::size_t count_;
-			char const* op_;
 		};
 
 
@@ -155,7 +110,7 @@ namespace webservice{
 		///                         time
 		/// \throw std::runtime_error If no other async operation is still
 		///                           running
-		lock make_first_lock(char const* op){
+		lock make_first_lock(){
 			// set lock_count_ to 1 if it was 0 only
 			std::size_t expected = 0;
 			if(!lock_count_.compare_exchange_strong(expected, 1,
@@ -165,7 +120,7 @@ namespace webservice{
 					"async_locker::first_lock() called after first lock.");
 			}
 
-			lock result(*this, op);
+			lock result(*this);
 
 			// undo the first increase from compare_exchange_strong
 			--lock_count_;
@@ -178,8 +133,8 @@ namespace webservice{
 		/// \throw std::runtime_error If first_lock() has not been called
 		///                           before or no other async operation is
 		///                           still running
-		lock make_lock(char const* op){
-			return lock(*this, op);
+		lock make_lock(){
+			return lock(*this);
 		}
 
 		/// \brief Current count of running async operations

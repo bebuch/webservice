@@ -17,7 +17,7 @@ namespace webservice{
 	http_sessions::http_sessions(server_impl& server)
 		: server_(server)
 		, locker_([]()noexcept{}) // TODO: call erase
-		, run_lock_(locker_.make_first_lock("http_sessions::http_sessions"))
+		, run_lock_(locker_.make_first_lock())
 		, strand_(server_.executor().get_executor()) {}
 
 
@@ -33,12 +33,10 @@ namespace webservice{
 		strand_.dispatch(
 			[
 				this,
-				lock = locker_.make_lock("http_sessions::async_emplace"),
+				lock = locker_.make_lock(),
 				socket = std::move(socket),
 				&handler
 			]()mutable{
-				lock.enter();
-
 				if(is_shutdown()){
 					throw std::logic_error(
 						"emplace in http_sessions while shutdown");
@@ -60,9 +58,7 @@ namespace webservice{
 
 	void http_sessions::async_erase(http_session* session){
 		strand_.dispatch(
-			[this, lock = locker_.make_lock("http_sessions::async_erase"), session]{
-				lock.enter();
-
+			[this, lock = locker_.make_lock(), session]{
 				auto iter = set_.find(session);
 				if(iter == set_.end()){
 					throw std::logic_error("session doesn't exist");
@@ -84,10 +80,8 @@ namespace webservice{
 			strand_.defer(
 				[
 					this,
-					lock = locker_.make_lock("http_sessions::shutdown")
+					lock = locker_.make_lock()
 				]()mutable{
-					lock.enter();
-
 					if(set_.empty()){
 						shutdown_lock_.unlock();
 					}else{

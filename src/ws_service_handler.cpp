@@ -21,7 +21,7 @@ namespace webservice{
 		/// \brief Constructor
 		ws_service_handler_impl(class executor& executor)
 			: locker_([]()noexcept{}) // TODO: Call erase
-			, run_lock_(locker_.make_first_lock("ws_service_handler_impl"))
+			, run_lock_(locker_.make_first_lock())
 			, strand_(executor.get_executor()) {}
 
 
@@ -63,13 +63,11 @@ namespace webservice{
 		impl_->strand_.dispatch(
 			[
 				this,
-				lock = impl_->locker_.make_lock("ws_service_handler::add_service"),
+				lock = impl_->locker_.make_lock(),
 				name = std::move(name),
 				service = std::move(service)
 			]()mutable noexcept{
 				try{
-					lock.enter();
-
 					auto r = impl_->services_.emplace(std::move(name),
 						std::move(service));
 					if(r.second){
@@ -93,12 +91,10 @@ namespace webservice{
 		impl_->strand_.dispatch(
 			[
 				this,
-				lock = impl_->locker_.make_lock("ws_service_handler::erase_service"),
+				lock = impl_->locker_.make_lock(),
 				name = std::move(name)
 			]()mutable noexcept{
 				try{
-					lock.enter();
-
 					auto iter = impl_->services_.find(name);
 					if(iter != impl_->services_.end()){
 						iter->second->shutdown();
@@ -132,13 +128,11 @@ namespace webservice{
 		impl_->strand_.dispatch(
 			[
 				this,
-				lock = impl_->locker_.make_lock("ws_service_handler::on_server_connect"),
+				lock = impl_->locker_.make_lock(),
 				socket = std::move(socket),
 				req = std::move(req)
 			]()mutable noexcept{
 				try{
-					lock.enter();
-
 					std::string name(req.target());
 					auto iter = impl_->services_.find(name);
 					if(iter != impl_->services_.end()){
@@ -168,14 +162,12 @@ namespace webservice{
 		impl_->strand_.dispatch(
 			[
 				this,
-				lock = impl_->locker_.make_lock("ws_service_handler::on_client_connect"),
+				lock = impl_->locker_.make_lock(),
 				host = std::move(host),
 				port = std::move(port),
 				resource = std::move(resource)
 			]()mutable noexcept{
 				try{
-					lock.enter();
-
 					auto iter = impl_->services_.find(resource);
 					if(iter != impl_->services_.end()){
 						iter->second->client_connect(std::move(host),
@@ -204,11 +196,9 @@ namespace webservice{
 			impl_->strand_.defer(
 				[
 					this,
-					lock = impl_->locker_.make_lock("ws_service_handler::on_shutdown")
+					lock = impl_->locker_.make_lock()
 				]()mutable noexcept{
 					try{
-						lock.enter();
-
 						if(impl_->services_.empty()){
 							impl_->shutdown_lock_.unlock();
 						}else{

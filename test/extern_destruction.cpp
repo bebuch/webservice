@@ -119,9 +119,7 @@ int main(){
 		for(std::size_t i = 0; i < 1000; ++i){
 			struct on_destruction_t{
 				~on_destruction_t(){
-					std::lock_guard< std::mutex > mutex(
-						webservice::async_locker::lock::mutex);
-					std::cout << "\n\n\n\n\n\n";
+					std::cout << "\n\n";
 				}
 			} on_destruction;
 
@@ -145,7 +143,6 @@ int main(){
 			std::this_thread::sleep_for(
 				std::chrono::milliseconds(rand() % 10));
 
-			std::lock_guard< std::mutex > mutex(webservice::async_locker::lock::mutex);
 			std::cout << "\n";
 		}
 		std::cout << "\n";
