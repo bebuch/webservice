@@ -29,6 +29,8 @@ namespace webservice{
 		class lock{
 		public:
 			/// \brief Initialize without lock
+			///
+			/// Thread safe: Yes.
 			lock()
 				: locker_(nullptr) {}
 
@@ -37,6 +39,8 @@ namespace webservice{
 			///
 			/// \throw std::runtime_error If no other async operation is still
 			///                           running
+			///
+			/// Thread safe: Yes.
 			lock(async_locker& locker)
 				: locker_(&locker)
 			{
@@ -55,11 +59,15 @@ namespace webservice{
 			lock(lock const&) = delete;
 
 			/// \brief Move ownership of the lock
+			///
+			/// Thread safe: Yes.
 			lock(lock&& other)noexcept
 				: locker_(other.locker_.exchange(
 					nullptr, std::memory_order_relaxed)) {}
 
 			/// \brief Move ownership of the lock
+			///
+			/// Thread safe: Yes.
 			lock& operator=(lock&& other)noexcept{
 				locker_ = other.locker_.exchange(
 					nullptr, std::memory_order_relaxed);
@@ -67,6 +75,8 @@ namespace webservice{
 			}
 
 			/// \brief Call unlock()
+			///
+			/// Thread safe: Yes.
 			~lock(){
 				unlock();
 			}
@@ -74,15 +84,21 @@ namespace webservice{
 			lock& operator=(lock const&) = delete;
 
 			/// \brief Decrese counter, call callback if count becomes 0
+			///
+			/// Thread safe: Yes.
 			void unlock()noexcept{
 				auto locker =
 					locker_.exchange(nullptr, std::memory_order_relaxed);
 				if(locker && --locker->lock_count_ == 0){
-					locker->on_last_async_callback_();
+					if(locker->on_last_async_callback_){
+						locker->on_last_async_callback_();
+					}
 				}
 			}
 
 			/// \brief true is unlock was not called, false otherwise
+			///
+			/// Thread safe: Yes.
 			bool is_locked()const noexcept{
 				return locker_ != nullptr;
 			}
@@ -94,15 +110,37 @@ namespace webservice{
 		};
 
 
+		/// \brief Construct without callback
+		async_locker()noexcept = default;
+
 		/// \brief Construct with a callback function that is called when the
 		///        last async operation returns
 		template < typename Fn >
-		async_locker(Fn&& fn)
-			: on_last_async_callback_(static_cast< Fn >(fn))
+		async_locker(Fn&& fn)noexcept
+			: on_last_async_callback_(static_cast< Fn&& >(fn))
 		{
-			static_assert(noexcept(std::declval< Fn >()),
-				"fn must be a noexcept function");
+			static_assert(std::is_nothrow_copy_constructible< Fn >::value,
+				"fn must be nothrow copy constructible");
+			static_assert(noexcept(std::declval< Fn >()()),
+				"fn must be noexcept callable");
 		}
+
+
+		/// \brief Set a callback function that is called when the
+		///        last async operation returns
+		///
+		/// Thread safe: No. This function must not be called in parallel and
+		/// not while last async operation may return.
+		template < typename Fn >
+		void set_callback(Fn&& fn)noexcept{
+			static_assert(std::is_nothrow_copy_constructible< Fn >::value,
+				"fn must be nothrow copy constructible");
+			static_assert(noexcept(std::declval< Fn >()()),
+				"fn must be noexcept callable");
+
+			on_last_async_callback_ = static_cast< Fn&& >(fn);
+		}
+
 
 		/// \brief Generate the first lock object
 		///
@@ -110,6 +148,8 @@ namespace webservice{
 		///                         time
 		/// \throw std::runtime_error If no other async operation is still
 		///                           running
+		///
+		/// Thread safe: Yes.
 		lock make_first_lock(){
 			// set lock_count_ to 1 if it was 0 only
 			std::size_t expected = 0;
@@ -133,11 +173,15 @@ namespace webservice{
 		/// \throw std::runtime_error If first_lock() has not been called
 		///                           before or no other async operation is
 		///                           still running
+		///
+		/// Thread safe: Yes.
 		lock make_lock(){
 			return lock(*this);
 		}
 
 		/// \brief Current count of running async operations
+		///
+		/// Thread safe: Yes.
 		std::size_t count()const noexcept{
 			return lock_count_;
 		}

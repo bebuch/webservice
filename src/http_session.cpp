@@ -10,7 +10,7 @@
 #include "server_impl.hpp"
 
 #include <webservice/server.hpp>
-#include <webservice/async_lock.hpp>
+#include <webservice/async_locker.hpp>
 
 #include <boost/beast/websocket.hpp>
 
@@ -29,7 +29,7 @@ namespace webservice{
 		, strand_(socket_.get_executor())
 		, timer_(socket_.get_executor().context(),
 			std::chrono::steady_clock::time_point::max())
-		, locker_([this]{
+		, locker_([this]()noexcept{
 				server_.http().async_erase(this);
 			})
 		{}

@@ -63,7 +63,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock(),
+					lock = locker_.make_lock(),
 					identifier,
 					buffer = std::move(buffer)
 				]()mutable{
@@ -97,7 +97,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock(),
+					lock = locker_.make_lock(),
 					fn = std::move(fn),
 					buffer = std::move(buffer)
 				]()mutable{
@@ -128,7 +128,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock(),
+					lock = locker_.make_lock(),
 					identifier,
 					buffer = std::move(buffer)
 				]()mutable{
@@ -162,7 +162,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock(),
+					lock = locker_.make_lock(),
 					fn = std::move(fn),
 					buffer = std::move(buffer)
 				]()mutable{
@@ -192,7 +192,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock(),
+					lock = locker_.make_lock(),
 					identifier,
 					reason = std::move(reason)
 				]()mutable{
@@ -227,7 +227,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock(),
+					lock = locker_.make_lock(),
 					fn = std::move(fn),
 					reason = std::move(reason)
 				]()mutable{
@@ -245,14 +245,6 @@ namespace webservice{
 		}
 
 
-		/// \brief true if server is shutting down
-		bool is_shutdown()noexcept{
-			assert(impl_ != nullptr);
-
-			return !impl_->run_lock_.is_locked();
-		}
-
-
 		/// \brief Set value of identifier to given value async
 		void set_value(ws_identifier identifier, Value value){
 			assert(impl_ != nullptr);
@@ -260,7 +252,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock(),
+					lock = locker_.make_lock(),
 					identifier,
 					value = std::move(value)
 				]()mutable{
@@ -284,34 +276,33 @@ namespace webservice{
 		/// \brief Accept no new sessions, send close to all session
 		///
 		/// \attention: If you override on_shutdown(), call this from your
-		///             overriding function.
+		///             overriding function. Is this case you may have to
+		///             override on_shutdown_finished() also.
 		void on_shutdown()noexcept override{
-			auto lock = std::move(impl_->run_lock_);
-			if(lock.is_locked()){
-				impl_->shutdown_lock_ = std::move(lock);
+			assert(impl_ != nullptr);
 
-				impl_->strand_.defer(
-					[this, lock = impl_->locker_.make_lock()]{
-						if(impl_->map_.empty()){
-							impl_->shutdown_lock_.unlock();
-						}else{
-							for(auto& session: impl_->map_){
-								strip_const(session.first).close("shutdown");
-							}
+			impl_->strand_.defer(
+				[this, lock = locker_.make_lock()]{
+					if(impl_->map_.empty() && is_shutdown()){
+						on_shutdown_finished();
+					}else{
+						for(auto& session: impl_->map_){
+							strip_const(session.first).close("shutdown");
 						}
-					}, std::allocator< void >());
-			}
+					}
+				}, std::allocator< void >());
 		}
 
 		/// \brief Erase the session from map_ async
 		///
 		/// \attention: If you override on_shutdown(), call this from your
-		///             overriding function.
+		///             overriding function. Is this case you may have to
+		///             override on_shutdown_finished() also.
 		void on_erase(ws_identifier identifier)noexcept override{
 			assert(impl_ != nullptr);
 
 			impl_->strand_.dispatch(
-				[this, lock = impl_->locker_.make_lock(), identifier]{
+				[this, lock = locker_.make_lock(), identifier]{
 					auto iter = impl_->map_.find(identifier);
 					if(iter == impl_->map_.end()){
 						throw std::logic_error("session doesn't exist");
@@ -319,9 +310,17 @@ namespace webservice{
 					impl_->map_.erase(iter);
 
 					if(impl_->map_.empty() && is_shutdown()){
-						impl_->shutdown_lock_.unlock();
+						on_shutdown_finished();
 					}
 				}, std::allocator< void >());
+		}
+
+		/// \brief Called when all sessions have been erased after shutdown
+		///
+		/// Default implementation calls shutdown_finished(). Override it, if
+		/// you need to call shutdown_finished() yourself.
+		virtual void on_shutdown_finished(){
+			shutdown_finished();
 		}
 
 
@@ -340,7 +339,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock(),
+					lock = locker_.make_lock(),
 					socket = std::move(socket),
 					req = std::move(req),
 					args = std::make_tuple(static_cast< ValueArgs&& >(args) ...)
@@ -384,7 +383,7 @@ namespace webservice{
 			impl_->strand_.dispatch(
 				[
 					this,
-					lock = impl_->locker_.make_lock(),
+					lock = locker_.make_lock(),
 					host = std::move(host),
 					port = std::move(port),
 					resource = std::move(resource),
@@ -478,13 +477,8 @@ namespace webservice{
 		/// \brief Implementation data after the executor was set
 		struct impl{
 			impl(boost::asio::io_context::executor_type&& executor)
-				: locker_([]()noexcept{})
-				, run_lock_(locker_.make_first_lock())
-				, strand_(std::move(executor)) {}
+				: strand_(std::move(executor)) {}
 
-			async_locker locker_;
-			async_locker::lock run_lock_;
-			async_locker::lock shutdown_lock_;
 			strand strand_;
 			std::map< ws_session, Value, less > map_;
 		};

@@ -9,7 +9,7 @@
 #ifndef _webservice__ws_session__hpp_INCLUDED_
 #define _webservice__ws_session__hpp_INCLUDED_
 
-#include "async_lock.hpp"
+#include "async_locker.hpp"
 #include "shared_const_buffer.hpp"
 
 #include <boost/beast/websocket.hpp>

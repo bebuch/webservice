@@ -12,6 +12,9 @@
 namespace webservice{
 
 
+	ws_handler_interface::ws_handler_interface()noexcept
+		: run_lock_(locker_.make_first_lock()) {}
+
 
 	void ws_handler_interface::set_executor(class executor& executor)noexcept{
 		executor_ = &executor;
@@ -35,7 +38,22 @@ namespace webservice{
 	}
 
 	void ws_handler_interface::shutdown()noexcept{
-		on_shutdown();
+		auto lock = std::move(run_lock_);
+		if(lock.is_locked()){
+			shutdown_lock_ = std::move(lock);
+			on_shutdown();
+		}
+	}
+
+	void ws_handler_interface::shutdown_finished(){
+		if(run_lock_.is_locked()){
+			throw std::logic_error("shutdown_finished() call without shutdown");
+		}
+
+		auto lock = std::move(shutdown_lock_);
+		if(!lock.is_locked()){
+			throw std::logic_error("repeated shutdown_finished() call");
+		}
 	}
 
 
@@ -67,6 +85,11 @@ namespace webservice{
 	){
 		throw std::logic_error(
 			"on_client_connect() is not overriden by your websocket service");
+	}
+
+
+	bool ws_handler_interface::is_shutdown()noexcept{
+		return !run_lock_.is_locked();
 	}
 
 

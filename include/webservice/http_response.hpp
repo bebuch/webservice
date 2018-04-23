@@ -9,7 +9,7 @@
 #ifndef _webservice__http_response__hpp_INCLUDED_
 #define _webservice__http_response__hpp_INCLUDED_
 
-#include "async_lock.hpp"
+#include "async_locker.hpp"
 
 #include <boost/beast/http/message.hpp>
 #include <boost/beast/http/write.hpp>

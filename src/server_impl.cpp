@@ -29,11 +29,11 @@ namespace webservice{
 	)
 		: server_(server)
 		, executor_(ioc, std::move(error_handler), [this]()noexcept{
+				listener_.shutdown();
 				http().shutdown();
 				if(has_ws()){
 					ws().shutdown();
 				}
-				listener_.shutdown();
 			})
 		, http_handler_(std::move(http_handler))
 		, ws_handler_(std::move(ws_handler))

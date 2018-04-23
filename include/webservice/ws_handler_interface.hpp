@@ -10,6 +10,7 @@
 #define _webservice__ws_handler_interface__hpp_INCLUDED_
 
 #include "ws_identifier.hpp"
+#include "async_locker.hpp"
 
 #include <boost/asio/ip/tcp.hpp>
 
@@ -26,8 +27,8 @@ namespace webservice{
 	/// \brief The interface for creating server websocket sessions
 	class ws_handler_interface{
 	public:
-		/// \brief Constructor
-		ws_handler_interface() = default;
+		/// \brief Construct with a locked async_locker object
+		ws_handler_interface()noexcept;
 
 
 		/// \brief Destructor
@@ -61,8 +62,23 @@ namespace webservice{
 
 		/// \brief Server is shutting down
 		///
+		/// Can be used to call shutdown with a callback function that is
+		/// called when the handler completed its shutdown and is ready to be
+		/// deleted.
+		template < typename Fn >
+		void shutdown(Fn&& fn)noexcept{
+			locker_.set_callback(static_cast< Fn&& >(fn));
+			shutdown();
+		}
+
+		/// \brief Server is shutting down
+		///
 		/// Called by the server/client.
 		void shutdown()noexcept;
+
+
+		/// \brief Becomes true after shutdown() was called
+		bool is_shutdown()noexcept;
 
 
 		/// \brief Get reference to server/client executor
@@ -73,6 +89,18 @@ namespace webservice{
 		///
 		/// Default implementation does nothing.
 		virtual void on_exception(std::exception_ptr error)noexcept;
+
+
+	protected:
+		/// \brief Protectes async operations
+		async_locker locker_;
+
+		/// \brief Must be called when handler is ready to be erased
+		///
+		/// \throw std::logic_error if it is called without previous
+		///                         on_shutdown call
+		/// \throw std::logic_error if it is called more than one time
+		void shutdown_finished();
 
 
 	private:
@@ -92,6 +120,13 @@ namespace webservice{
 
 		/// \brief Shutdown hint called by shutdown()
 		virtual void on_shutdown()noexcept = 0;
+
+
+		/// \brief Keep one async operation alive until shutdown
+		async_locker::lock run_lock_;
+
+		/// \brief Keep one async operation alive until last async finished
+		async_locker::lock shutdown_lock_;
 
 
 		/// \brief Pointer to the executor object

@@ -28,11 +28,15 @@ namespace webservice{
 
 	void http_request_handler::async_emplace(
 		boost::asio::ip::tcp::socket&& socket
-	){
+	)noexcept{
+		assert(list_ != nullptr);
+
 		list_->async_emplace(std::move(socket), *this);
 	}
 
-	void http_request_handler::async_erase(http_session* session){
+	void http_request_handler::async_erase(http_session* session)noexcept{
+		assert(list_ != nullptr);
+
 		list_->async_erase(session);
 	}
 
@@ -49,12 +53,14 @@ namespace webservice{
 	void http_request_handler::on_shutdown()noexcept{}
 
 	void http_request_handler::shutdown()noexcept{
+		assert(list_ != nullptr);
+
 		list_->shutdown();
 		on_shutdown();
 	}
 
 	bool http_request_handler::is_shutdown()noexcept{
-		return list_->is_shutdown();
+		return list_ && list_->is_shutdown();
 	}
 
 

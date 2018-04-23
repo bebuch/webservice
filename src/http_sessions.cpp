@@ -29,7 +29,7 @@ namespace webservice{
 	void http_sessions::async_emplace(
 		boost::asio::ip::tcp::socket&& socket,
 		http_request_handler& handler
-	){
+	)noexcept try{
 		strand_.dispatch(
 			[
 				this,
@@ -54,9 +54,11 @@ namespace webservice{
 					throw;
 				}
 			}, std::allocator< void >());
+	}catch(...){
+		server_.http().on_exception(std::current_exception());
 	}
 
-	void http_sessions::async_erase(http_session* session){
+	void http_sessions::async_erase(http_session* session)noexcept try{
 		strand_.dispatch(
 			[this, lock = locker_.make_lock(), session]{
 				auto iter = set_.find(session);
@@ -69,6 +71,8 @@ namespace webservice{
 					shutdown_lock_.unlock();
 				}
 			}, std::allocator< void >());
+	}catch(...){
+		server_.http().on_exception(std::current_exception());
 	}
 
 

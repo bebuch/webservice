@@ -40,7 +40,7 @@ namespace webservice{
 		/// Thread safe: Yes.
 		void add_service(
 			std::string name,
-			std::unique_ptr< class ws_service_interface > service);
+			std::unique_ptr< class ws_service_interface > service)noexcept;
 
 		/// \brief Erase ws_service_interface with name
 		///
@@ -50,11 +50,7 @@ namespace webservice{
 		///                         exist
 		///
 		/// Thread safe: Yes.
-		void erase_service(std::string name);
-
-
-		/// \brief true if on_shutdown was called
-		bool is_shutdown()noexcept;
+		void erase_service(std::string name)noexcept;
 
 
 	private:
@@ -64,13 +60,13 @@ namespace webservice{
 		/// \brief Create a new websocket server session
 		void on_server_connect(
 			boost::asio::ip::tcp::socket&& socket,
-			http_request&& req)final;
+			http_request&& req)noexcept final;
 
 		/// \brief Create a new client websocket session
 		void on_client_connect(
 			std::string&& host,
 			std::string&& port,
-			std::string&& resource)final;
+			std::string&& resource)noexcept final;
 
 		/// \brief Call shutdown on all services
 		void on_shutdown()noexcept final;

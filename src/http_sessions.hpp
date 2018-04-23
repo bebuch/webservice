@@ -9,7 +9,7 @@
 #ifndef _webservice__http_sessions__hpp_INCLUDED_
 #define _webservice__http_sessions__hpp_INCLUDED_
 
-#include <webservice/async_lock.hpp>
+#include <webservice/async_locker.hpp>
 
 #include <boost/beast/websocket.hpp>
 
@@ -80,9 +80,9 @@ namespace webservice{
 
 		void async_emplace(
 			boost::asio::ip::tcp::socket&& socket,
-			http_request_handler& handler);
+			http_request_handler& handler)noexcept;
 
-		void async_erase(http_session* session);
+		void async_erase(http_session* session)noexcept;
 
 
 		void shutdown()noexcept;
