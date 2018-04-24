@@ -205,7 +205,7 @@ TEST(ws_server_service_shutdown, on_text){
 
 	boost::asio::io_context ioc;
 	auto ws = connected_client(ioc);
-	ws.text();
+	ws.text(true);
 	ws.write(boost::asio::buffer("a"));
 	ws.close("");
 
@@ -231,7 +231,7 @@ TEST(ws_server_service_shutdown, on_binary){
 
 	boost::asio::io_context ioc;
 	auto ws = connected_client(ioc);
-	ws.binary();
+	ws.binary(true);
 	ws.write(boost::asio::buffer("a"));
 	ws.close("");
 
