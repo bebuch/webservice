@@ -38,10 +38,11 @@ namespace webservice{
 	}
 
 	void ws_handler_interface::shutdown()noexcept{
-		auto lock = std::move(run_lock_);
-		if(lock.is_locked()){
-			shutdown_lock_ = std::move(lock);
-			on_shutdown();
+		if(!shutdown_lock_.is_locked()){
+			shutdown_lock_ = std::move(run_lock_);
+			if(shutdown_lock_.is_locked()){
+				on_shutdown();
+			}
 		}
 	}
 
