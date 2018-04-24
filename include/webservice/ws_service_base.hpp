@@ -346,7 +346,7 @@ namespace webservice{
 					socket = std::move(socket),
 					req = std::move(req),
 					args = std::make_tuple(static_cast< ValueArgs&& >(args) ...)
-				](auto&& ... args)mutable{
+				]()mutable{
 					if(is_shutdown()){
 						throw std::logic_error(
 							"emplace in ws_service_base while shutdown");
@@ -391,7 +391,7 @@ namespace webservice{
 					port = std::move(port),
 					resource = std::move(resource),
 					args = std::make_tuple(static_cast< ValueArgs&& >(args) ...)
-				](auto&& ... args)mutable{
+				]()mutable{
 					if(is_shutdown()){
 						throw std::logic_error(
 							"emplace in ws_service_base while shutdown");

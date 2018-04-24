@@ -78,9 +78,7 @@ namespace webservice{
 		class server& server()const noexcept;
 
 
-		void async_emplace(
-			boost::asio::ip::tcp::socket&& socket,
-			http_request_handler& handler)noexcept;
+		void async_emplace(boost::asio::ip::tcp::socket&& socket)noexcept;
 
 		void async_erase(http_session* session)noexcept;
 

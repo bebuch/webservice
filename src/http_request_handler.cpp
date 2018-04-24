@@ -31,7 +31,7 @@ namespace webservice{
 	)noexcept{
 		assert(list_ != nullptr);
 
-		list_->async_emplace(std::move(socket), *this);
+		list_->async_emplace(std::move(socket));
 	}
 
 	void http_request_handler::async_erase(http_session* session)noexcept{

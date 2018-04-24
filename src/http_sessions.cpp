@@ -27,15 +27,13 @@ namespace webservice{
 
 
 	void http_sessions::async_emplace(
-		boost::asio::ip::tcp::socket&& socket,
-		http_request_handler& handler
+		boost::asio::ip::tcp::socket&& socket
 	)noexcept try{
 		strand_.dispatch(
 			[
 				this,
 				lock = locker_.make_lock(),
-				socket = std::move(socket),
-				&handler
+				socket = std::move(socket)
 			]()mutable{
 				if(is_shutdown()){
 					throw std::logic_error(

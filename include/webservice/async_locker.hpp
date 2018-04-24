@@ -111,7 +111,7 @@ namespace webservice{
 
 
 		/// \brief Construct without callback
-		async_locker()noexcept = default;
+		async_locker()noexcept{}
 
 		/// \brief Construct with a callback function that is called when the
 		///        last async operation returns

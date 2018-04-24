@@ -134,7 +134,7 @@ int main(){
 			auto http_handler = std::make_unique< request_handler >();
 			http_handler->set_timeout(std::chrono::milliseconds(1500));
 
-			auto ws_service = std::make_unique< class ws_service >();
+			auto ws_service = std::make_unique< struct ws_service >();
 			ws_service->set_ping_time(std::chrono::milliseconds(1000));
 
 			webservice::server server(
