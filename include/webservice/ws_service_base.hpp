@@ -283,13 +283,19 @@ namespace webservice{
 
 			impl_->strand_.defer(
 				[this, lock = locker_.make_lock()]{
-					if(impl_->map_.empty() && is_shutdown()){
-						on_shutdown_finished();
+					if(impl_->map_.empty()){
+						try{
+							on_shutdown_finished();
+						}catch(...){
+							on_exception(std::current_exception());
+						}
 					}else{
 						for(auto& session: impl_->map_){
 							strip_const(session.first).close("shutdown");
 						}
 					}
+
+					shutdown_ = true;
 				}, std::allocator< void >());
 		}
 
@@ -309,18 +315,15 @@ namespace webservice{
 					}
 					impl_->map_.erase(iter);
 
-					if(impl_->map_.empty() && is_shutdown()){
-						on_shutdown_finished();
+					// note shutdown_ is used, not is_shutdown()
+					if(impl_->map_.empty() && shutdown_){
+						try{
+							on_shutdown_finished();
+						}catch(...){
+							on_exception(std::current_exception());
+						}
 					}
 				}, std::allocator< void >());
-		}
-
-		/// \brief Called when all sessions have been erased after shutdown
-		///
-		/// Default implementation calls shutdown_finished(). Override it, if
-		/// you need to call shutdown_finished() yourself.
-		virtual void on_shutdown_finished(){
-			shutdown_finished();
 		}
 
 
@@ -463,6 +466,14 @@ namespace webservice{
 			}
 		};
 
+		/// \brief Called when all sessions have been erased after shutdown
+		///
+		/// Default implementation calls shutdown_finished(). Override it, if
+		/// you need to call shutdown_finished() yourself.
+		virtual void on_shutdown_finished(){
+			shutdown_finished();
+		}
+
 		/// \brief Remove const from session
 		///
 		/// Map keys are always const, but we need non const session objects.
@@ -483,6 +494,11 @@ namespace webservice{
 			std::map< ws_session, Value, less > map_;
 		};
 
+
+		/// \brief true after on_shutdown async has finished
+		///
+		/// \attention This is not equivalent with is_shutdown().
+		bool shutdown_{false};
 
 		/// \brief Pointer to implementation
 		std::unique_ptr< impl > impl_;

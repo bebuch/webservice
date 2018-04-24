@@ -72,6 +72,11 @@ namespace webservice{
 		void on_shutdown()noexcept final;
 
 
+		/// \brief true after on_shutdown async has finished
+		///
+		/// \attention This is not equivalent with is_shutdown().
+		bool shutdown_{false};
+
 		/// \brief Pointer to implementation
 		std::unique_ptr< struct ws_service_handler_impl > impl_;
 	};

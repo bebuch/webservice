@@ -97,9 +97,14 @@ namespace webservice{
 										impl_->services_.erase(iter);
 										if(
 											impl_->services_.empty() &&
-											is_shutdown()
+											shutdown_
 										){
-											shutdown_finished();
+											try{
+												shutdown_finished();
+											}catch(...){
+												on_exception(
+													std::current_exception());
+											}
 										}
 									}, std::allocator< void >());
 							});
@@ -191,17 +196,19 @@ namespace webservice{
 				this,
 				lock = locker_.make_lock()
 			]()mutable noexcept{
-				try{
-					if(impl_->services_.empty()){
+				if(impl_->services_.empty()){
+					try{
 						shutdown_finished();
-					}else{
-						for(auto& service: impl_->services_){
-							service.second->shutdown();
-						}
+					}catch(...){
+						on_exception(std::current_exception());
 					}
-				}catch(...){
-					on_exception(std::current_exception());
+				}else{
+					for(auto& service: impl_->services_){
+						service.second->shutdown();
+					}
 				}
+
+				shutdown_ = true;
 			}, std::allocator< void >());
 	}catch(...){
 		on_exception(std::current_exception());
