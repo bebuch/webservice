@@ -61,6 +61,9 @@ namespace webservice{
 		/// This effecivly blocks the current thread until the client is closed.
 		void block()noexcept;
 
+		/// \brief true after all tasks have finished
+		bool is_stopped()noexcept;
+
 
 		/// \brief Get reference to the internal io_context
 		boost::asio::io_context& get_io_context()noexcept;

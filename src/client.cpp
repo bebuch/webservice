@@ -52,6 +52,10 @@ namespace webservice{
 		impl_->executor().shutdown();
 	}
 
+	bool client::is_stopped()noexcept{
+		return impl_->executor().is_stopped();
+	}
+
 
 	boost::asio::io_context& client::get_io_context()noexcept{
 		return ioc_;

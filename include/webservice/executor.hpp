@@ -78,6 +78,9 @@ namespace webservice{
 		/// \brief Get reference to the internal io_context
 		boost::asio::io_context& get_io_context()noexcept;
 
+		/// \brief true after all tasks have finished
+		bool is_stopped()noexcept;
+
 
 		/// \brief Reference to the error_handler
 		error_handler& error()const{

@@ -50,6 +50,10 @@ namespace webservice{
 		threads_.clear();
 	}
 
+	bool executor::is_stopped()noexcept{
+		return ioc_.stopped();
+	}
+
 	void executor::shutdown()noexcept{
 		std::call_once(shutdown_flag_, shutdown_fn_);
 	}
