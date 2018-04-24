@@ -103,6 +103,19 @@ void read(stream& ws){
 	ws.read(buffer, ec);
 }
 
+void wait(server& s){
+	auto end = std::chrono::high_resolution_clock::now()
+		+ std::chrono::seconds(1);
+	while(std::chrono::high_resolution_clock::now() < end){
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		if(s.is_stopped()){
+			return;
+		}
+	}
+
+	FAIL() << "timeout";
+}
+
 
 TEST(ws_server_service_shutdown, plain){
 	server s(
@@ -112,7 +125,8 @@ TEST(ws_server_service_shutdown, plain){
 		boost::asio::ip::make_address(host), port, 1);
 
 	s.shutdown();
-	s.block();
+
+	wait(s);
 }
 
 TEST(ws_server_service_shutdown, with_client){
@@ -129,7 +143,7 @@ TEST(ws_server_service_shutdown, with_client){
 
 	read(ws);
 
-	s.block();
+	wait(s);
 }
 
 TEST(ws_server_service_shutdown, on_open){
@@ -147,9 +161,9 @@ TEST(ws_server_service_shutdown, on_open){
 
 	boost::asio::io_context ioc;
 	auto ws = connected_client(ioc);
-	read(ws);
+	ws.close("");
 
-	s.block();
+	wait(s);
 }
 
 TEST(ws_server_service_shutdown, on_close){
@@ -169,5 +183,59 @@ TEST(ws_server_service_shutdown, on_close){
 	auto ws = connected_client(ioc);
 	ws.close("");
 
-	s.block();
+	wait(s);
 }
+
+TEST(ws_server_service_shutdown, on_text){
+	struct ws_service: ::ws_service{
+		void on_text(ws_identifier, std::string&&)override{
+			executor().shutdown();
+		}
+
+		void on_binary(ws_identifier, std::vector< std::uint8_t >&&)override{
+			FAIL() << "binary message";
+		}
+	};
+
+	server s(
+		std::make_unique< ::request_handler >(),
+		std::make_unique< ws_service >(),
+		std::make_unique< ::error_handler >(),
+		boost::asio::ip::make_address(host), port, 1);
+
+	boost::asio::io_context ioc;
+	auto ws = connected_client(ioc);
+	ws.text();
+	ws.write(boost::asio::buffer("a"));
+	ws.close("");
+
+	wait(s);
+}
+
+TEST(ws_server_service_shutdown, on_binary){
+	struct ws_service: ::ws_service{
+		void on_text(ws_identifier, std::string&&)override{
+			FAIL() << "text message";
+		}
+
+		void on_binary(ws_identifier, std::vector< std::uint8_t >&&)override{
+			executor().shutdown();
+		}
+	};
+
+	server s(
+		std::make_unique< ::request_handler >(),
+		std::make_unique< ws_service >(),
+		std::make_unique< ::error_handler >(),
+		boost::asio::ip::make_address(host), port, 1);
+
+	boost::asio::io_context ioc;
+	auto ws = connected_client(ioc);
+	ws.binary();
+	ws.write(boost::asio::buffer("a"));
+	ws.close("");
+
+	wait(s);
+}
+
+// TODO: TEST(ws_server_service_shutdown, on_exception);
