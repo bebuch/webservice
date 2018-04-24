@@ -112,13 +112,17 @@ int main(){
 	std::srand(std::time(nullptr));
 
 	try{
-		for(std::size_t i = 0; i < 10000; ++i){
+		constexpr std::size_t loop_count = 10000;
+		for(std::size_t i = 0; i < loop_count; ++i){
 			using std::make_unique;
 			struct on_destruction_t{
+				std::size_t i;
+
 				~on_destruction_t(){
-					std::cout << "\n\n";
+					std::cout << i << "/" << loop_count << "\n";
+// 					std::cout << "\n\n";
 				}
-			} on_destruction;
+			} on_destruction{i};
 
 			using webservice::error_printing_error_handler;
 
@@ -146,8 +150,9 @@ int main(){
 				thread.join();
 			}
 
-			std::cout << "\n";
+// 			std::cout << "\n";
 		}
+		std::cout << "\n";
 
 		return 0;
 	}catch(std::exception const& e){

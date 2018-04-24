@@ -116,12 +116,16 @@ int main(){
 	std::srand(std::time(nullptr));
 
 	try{
-		for(std::size_t i = 0; i < 1000; ++i){
+		constexpr std::size_t loop_count = 10000;
+		for(std::size_t i = 0; i < loop_count; ++i){
 			struct on_destruction_t{
+				std::size_t i;
+
 				~on_destruction_t(){
-					std::cout << "\n\n";
+					std::cout << i << "/" << loop_count << "\n";
+// 					std::cout << "\n\n";
 				}
-			} on_destruction;
+			} on_destruction{i};
 
 			webservice::client client(
 				std::make_unique< ws_client_service >(),
@@ -143,7 +147,7 @@ int main(){
 			std::this_thread::sleep_for(
 				std::chrono::milliseconds(rand() % 10));
 
-			std::cout << "\n";
+// 			std::cout << "\n";
 		}
 		std::cout << "\n";
 
