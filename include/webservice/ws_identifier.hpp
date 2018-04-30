@@ -120,6 +120,12 @@ namespace webservice{
 		}
 
 
+		/// \brief true if state is not empty
+		constexpr operator bool()noexcept{
+			return session != nullptr;
+		}
+
+
 	private:
 		/// \brief The corresponding session
 		ws_session* session;
