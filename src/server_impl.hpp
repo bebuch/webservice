@@ -51,6 +51,13 @@ namespace webservice{
 		server_impl& operator=(server_impl const&) = delete;
 
 
+		/// \brief Start a new websocket client connection
+		void connect(
+			std::string&& host,
+			std::string&& port,
+			std::string&& resource);
+
+
 		/// \brief true if a WebSocket handler is set, false otherwise
 		bool has_ws()const{
 			return ws_handler_.get() != nullptr;

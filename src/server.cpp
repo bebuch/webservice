@@ -41,6 +41,15 @@ namespace webservice{
 	}
 
 
+	void server::connect(
+		std::string host,
+		std::string port,
+		std::string resource
+	){
+		impl_->connect(std::move(host), std::move(port), std::move(resource));
+	}
+
+
 	void server::block()noexcept{
 		impl_->executor().block();
 	}

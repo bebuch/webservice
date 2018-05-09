@@ -56,4 +56,19 @@ namespace webservice{
 	}
 
 
+	void server_impl::connect(
+		std::string&& host,
+		std::string&& port,
+		std::string&& resource
+	){
+		if(ws_handler_){
+			ws_handler_->client_connect(std::move(host), std::move(port),
+				std::move(resource));
+		}else{
+			throw std::logic_error(
+				"Called connect on a server without a websocket handler");
+		}
+	}
+
+
 }

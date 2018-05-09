@@ -51,6 +51,13 @@ namespace webservice{
 		~server();
 
 
+		/// \brief Start a new websocket client connection
+		///
+		/// A server can also connect to other websocket servers if its
+		/// websocket handler supports it.
+		void connect(std::string host, std::string port, std::string resource);
+
+
 		/// \brief Don't accept new connections and async tasks
 		///
 		/// This function is not blocking. Call block() if you want to wait
