@@ -66,7 +66,7 @@ namespace webservice{
 					lock = locker_.make_lock(),
 					identifier,
 					buffer = std::move(buffer)
-				]()mutable{
+				]()mutable noexcept{
 					if(impl_->map_.count(identifier) > 0){
 						identifier.session->send(true, std::move(buffer));
 					}
@@ -100,7 +100,7 @@ namespace webservice{
 					lock = locker_.make_lock(),
 					fn = std::move(fn),
 					buffer = std::move(buffer)
-				]()mutable{
+				]()mutable noexcept{
 					for(auto& session: impl_->map_){
 						ws_identifier identifier(strip_const(session.first));
 						try{
@@ -131,7 +131,7 @@ namespace webservice{
 					lock = locker_.make_lock(),
 					identifier,
 					buffer = std::move(buffer)
-				]()mutable{
+				]()mutable noexcept{
 					if(impl_->map_.count(identifier) > 0){
 						identifier.session->send(false, std::move(buffer));
 					}
@@ -165,7 +165,7 @@ namespace webservice{
 					lock = locker_.make_lock(),
 					fn = std::move(fn),
 					buffer = std::move(buffer)
-				]()mutable{
+				]()mutable noexcept{
 					for(auto& session: impl_->map_){
 						ws_identifier identifier(strip_const(session.first));
 						try{
@@ -195,7 +195,7 @@ namespace webservice{
 					lock = locker_.make_lock(),
 					identifier,
 					reason = std::move(reason)
-				]()mutable{
+				]()mutable noexcept{
 					if(impl_->map_.count(identifier) > 0){
 						identifier.session->close(reason);
 					}
@@ -230,7 +230,7 @@ namespace webservice{
 					lock = locker_.make_lock(),
 					fn = std::move(fn),
 					reason = std::move(reason)
-				]()mutable{
+				]()mutable noexcept{
 					for(auto& session: impl_->map_){
 						ws_identifier identifier(strip_const(session.first));
 						try{
@@ -256,10 +256,14 @@ namespace webservice{
 					lock = locker_.make_lock(),
 					identifier,
 					fn = std::move(fn)
-				]()mutable{
+				]()mutable noexcept{
 					auto iter = impl_->map_.find(identifier);
 					if(iter != impl_->map_.end()){
-						fn(iter->second);
+						try{
+							fn(iter->second);
+						}catch(...){
+							on_exception(identifier, std::current_exception());
+						}
 					}
 				}, std::allocator< void >());
 		}
@@ -318,20 +322,20 @@ namespace webservice{
 			assert(impl_ != nullptr);
 
 			impl_->strand_.dispatch(
-				[this, lock = locker_.make_lock(), identifier]{
-					auto iter = impl_->map_.find(identifier);
-					if(iter == impl_->map_.end()){
-						throw std::logic_error("session doesn't exist");
-					}
-					impl_->map_.erase(iter);
-
-					// note shutdown_ is used, not is_shutdown()
-					if(impl_->map_.empty() && shutdown_){
-						try{
-							on_shutdown_finished();
-						}catch(...){
-							on_exception(std::current_exception());
+				[this, lock = locker_.make_lock(), identifier]()noexcept{
+					try{
+						auto iter = impl_->map_.find(identifier);
+						if(iter == impl_->map_.end()){
+							throw std::logic_error("session doesn't exist");
 						}
+						impl_->map_.erase(iter);
+
+						// note shutdown_ is used, not is_shutdown()
+						if(impl_->map_.empty() && shutdown_){
+							on_shutdown_finished();
+						}
+					}catch(...){
+						on_exception(identifier, std::current_exception());
 					}
 				}, std::allocator< void >());
 		}
@@ -356,25 +360,31 @@ namespace webservice{
 					socket = std::move(socket),
 					req = std::move(req),
 					args = std::make_tuple(static_cast< ValueArgs&& >(args) ...)
-				]()mutable{
-					if(is_shutdown()){
-						throw std::logic_error(
-							"emplace in ws_service_base while shutdown");
-					}
-
-					ws_stream ws(std::move(socket));
-					ws.read_message_max(max_read_message_size());
-
-					auto iter = impl_->map_.emplace(std::piecewise_construct,
-						std::forward_as_tuple(std::move(ws), *this,
-							ping_time()), std::move(args));
-
-					ws_identifier identifier(strip_const(iter.first->first));
+				]()mutable noexcept{
 					try{
-						identifier.session->do_accept(std::move(req));
+						if(is_shutdown()){
+							throw std::logic_error(
+								"emplace in ws_service_base while shutdown");
+						}
+
+						ws_stream ws(std::move(socket));
+						ws.read_message_max(max_read_message_size());
+
+						auto iter = impl_->map_.emplace(
+							std::piecewise_construct,
+							std::forward_as_tuple(std::move(ws), *this,
+								ping_time()), std::move(args));
+
+						ws_identifier identifier(
+							strip_const(iter.first->first));
+						try{
+							identifier.session->do_accept(std::move(req));
+						}catch(...){
+							on_erase(identifier);
+							throw;
+						}
 					}catch(...){
-						on_erase(identifier);
-						throw;
+						on_exception(std::current_exception());
 					}
 				}, std::allocator< void >());
 		}
@@ -401,36 +411,43 @@ namespace webservice{
 					port = std::move(port),
 					resource = std::move(resource),
 					args = std::make_tuple(static_cast< ValueArgs&& >(args) ...)
-				]()mutable{
-					if(is_shutdown()){
-						throw std::logic_error(
-							"emplace in ws_service_base while shutdown");
-					}
-
-					boost::asio::ip::tcp::resolver resolver(
-						executor().get_io_context());
-					auto results = resolver.resolve(host, port);
-
-					ws_stream ws(executor().get_io_context());
-					ws.read_message_max(max_read_message_size());
-
-					// Make the session on the IP address we get from a lookup
-					boost::asio::connect(ws.next_layer(),
-						results.begin(), results.end());
-
-					// Perform the ws handshake
-					ws.handshake(host, resource);
-
-					auto iter = impl_->map_.emplace(std::piecewise_construct,
-						std::forward_as_tuple(std::move(ws), *this,
-							ping_time()), std::move(args));
-
-					ws_identifier identifier(strip_const(iter.first->first));
+				]()mutable noexcept{
 					try{
-						identifier.session->start();
+						if(is_shutdown()){
+							throw std::logic_error(
+								"emplace in ws_service_base while shutdown");
+						}
+
+						boost::asio::ip::tcp::resolver resolver(
+							executor().get_io_context());
+						auto results = resolver.resolve(host, port);
+
+						ws_stream ws(executor().get_io_context());
+						ws.read_message_max(max_read_message_size());
+
+						// Make the session on the IP address we get from a
+						// lookup
+						boost::asio::connect(ws.next_layer(),
+							results.begin(), results.end());
+
+						// Perform the ws handshake
+						ws.handshake(host, resource);
+
+						auto iter = impl_->map_.emplace(
+							std::piecewise_construct,
+							std::forward_as_tuple(std::move(ws), *this,
+								ping_time()), std::move(args));
+
+						ws_identifier identifier(
+							strip_const(iter.first->first));
+						try{
+							identifier.session->start();
+						}catch(...){
+							on_erase(identifier);
+							throw;
+						}
 					}catch(...){
-						on_erase(identifier);
-						throw;
+						on_exception(std::current_exception());
 					}
 				}, std::allocator< void >());
 		}
