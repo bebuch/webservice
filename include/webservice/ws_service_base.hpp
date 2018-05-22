@@ -380,8 +380,8 @@ namespace webservice{
 						try{
 							identifier.session->do_accept(std::move(req));
 						}catch(...){
+							on_exception(identifier, std::current_exception());
 							on_erase(identifier);
-							throw;
 						}
 					}catch(...){
 						on_exception(std::current_exception());
@@ -443,8 +443,8 @@ namespace webservice{
 						try{
 							identifier.session->start();
 						}catch(...){
+							on_exception(identifier, std::current_exception());
 							on_erase(identifier);
-							throw;
 						}
 					}catch(...){
 						on_exception(std::current_exception());
