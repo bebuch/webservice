@@ -328,6 +328,13 @@ namespace webservice{
 						if(iter == impl_->map_.end()){
 							throw std::logic_error("session doesn't exist");
 						}
+
+						try{
+							on_value_erase(identifier, std::move(iter->second));
+						}catch(...){
+							on_exception(identifier, std::current_exception());
+						}
+
 						impl_->map_.erase(iter);
 
 						// note shutdown_ is used, not is_shutdown()
@@ -339,6 +346,12 @@ namespace webservice{
 					}
 				}, std::allocator< void >());
 		}
+
+
+		/// \brief Called directly before erasure with the last value state
+		///
+		/// Default Implementation does nothing.
+		virtual void on_value_erase(ws_identifier, Value&&){}
 
 
 		/// \brief Create a new session async
