@@ -245,8 +245,9 @@ namespace webservice{
 		}
 
 
-		/// \brief Set value of identifier to given value async
-		void set_value(ws_identifier identifier, Value value){
+		/// \brief Modify value of identifier via the given function async
+		template < typename Fn >
+		void modify_value(ws_identifier identifier, Fn fn){
 			assert(impl_ != nullptr);
 
 			impl_->strand_.dispatch(
@@ -254,13 +255,22 @@ namespace webservice{
 					this,
 					lock = locker_.make_lock(),
 					identifier,
-					value = std::move(value)
+					fn = std::move(fn)
 				]()mutable{
 					auto iter = impl_->map_.find(identifier);
 					if(iter != impl_->map_.end()){
-						iter->second = std::move(value);
+						fn(iter->second);
 					}
 				}, std::allocator< void >());
+		}
+
+		/// \brief Set value of identifier to given value async
+		void set_value(ws_identifier identifier, Value value){
+			modify_value(
+				identifier,
+				[value = std::move(value)](Value& value_ref)mutable{
+					value_ref = std::move(value);
+				});
 		}
 
 
