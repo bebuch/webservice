@@ -6,7 +6,7 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
-#include "mime_type.hpp"
+#include <webservice/mime_type.hpp>
 
 
 namespace webservice{
@@ -41,7 +41,8 @@ namespace webservice{
 
 		auto const ext = [&path]{
 				auto const pos = path.rfind(".");
-				return pos != string_view::npos ? path.substr(pos) : string_view{};
+				return pos != string_view::npos
+					? path.substr(pos) : string_view{};
 			}();
 
 		auto iter = map.find(ext);

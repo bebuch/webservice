@@ -7,9 +7,8 @@
 // file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 //-----------------------------------------------------------------------------
 #include <webservice/file_request_handler.hpp>
-
-#include "path_concat.hpp"
-#include "mime_type.hpp"
+#include <webservice/path_concat.hpp>
+#include <webservice/mime_type.hpp>
 
 #include <iostream>
 
@@ -43,7 +42,7 @@ namespace webservice{
 		}
 
 		// Build the path to the requested file
-		std::string path = path_concat(doc_root_, req.target());
+		std::string path = path_concat(doc_root(), req.target());
 		if(req.target().back() == '/'){
 			path.append("index.html");
 		}
@@ -55,7 +54,7 @@ namespace webservice{
 
 		// Handle the case where the file doesn't exist
 		if(ec == boost::system::errc::no_such_file_or_directory){
-			send(not_found(req, req.target()));
+			on_file_not_found(std::move(req), std::move(send));
 			return;
 		}
 
@@ -65,6 +64,29 @@ namespace webservice{
 			return;
 		}
 
+		send_body(std::move(req), std::move(send), std::move(body),
+			mime_type(path));
+	}
+
+	std::string const& file_request_handler::doc_root()const{
+		return doc_root_;
+	}
+
+	void file_request_handler::on_file_not_found(
+		http_request&& req,
+		http_response&& send
+	){
+		send(not_found(req, req.target()));
+	}
+
+	void file_request_handler::send_body(
+		http_request&& req,
+		http_response&& send,
+		boost::beast::http::file_body::value_type&& body,
+		boost::beast::string_view mime_type
+	){
+		namespace http = boost::beast::http;
+
 		// Cache the size since we need it after the move
 		auto const size = body.size();
 
@@ -73,7 +95,7 @@ namespace webservice{
 			http::response< http::empty_body > res{
 				http::status::ok, req.version()};
 			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-			res.set(http::field::content_type, mime_type(path));
+			res.set(http::field::content_type, mime_type);
 			res.content_length(size);
 			res.keep_alive(req.keep_alive());
 			send(std::move(res));
@@ -86,18 +108,12 @@ namespace webservice{
 			std::make_tuple(std::move(body)),
 			std::make_tuple(http::status::ok, req.version())};
 		res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-		res.set(http::field::content_type, mime_type(path));
+		res.set(http::field::content_type, mime_type);
 		res.content_length(size);
 		res.keep_alive(req.keep_alive());
 		send(std::move(res));
 	}
 
-	void file_request_handler::on_file_not_found(
-		http_request&& req,
-		http_response&& send
-	){
-		send(not_found(req, req.target()));
-	}
 
 
 }

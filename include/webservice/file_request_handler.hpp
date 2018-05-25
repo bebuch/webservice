@@ -25,9 +25,23 @@ namespace webservice{
 
 		void operator()(http_request&& req, http_response&& send)override;
 
+
+		std::string const& doc_root()const;
+
+
+	protected:
+
 		virtual void on_file_not_found(
 			http_request&& req,
-			http_response&& send);
+			http_response&& send
+		);
+
+		void send_body(
+			http_request&& req,
+			http_response&& send,
+			boost::beast::http::file_body::value_type&& body,
+			boost::beast::string_view mime_type
+		);
 
 
 	private:
