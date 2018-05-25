@@ -25,6 +25,10 @@ namespace webservice{
 
 		void operator()(http_request&& req, http_response&& send)override;
 
+		virtual void on_file_not_found(
+			http_request&& req,
+			http_response&& send);
+
 
 	private:
 		std::string doc_root_;

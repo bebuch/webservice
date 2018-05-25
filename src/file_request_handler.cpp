@@ -92,5 +92,12 @@ namespace webservice{
 		send(std::move(res));
 	}
 
+	void file_request_handler::on_file_not_found(
+		http_request&& req,
+		http_response&& send
+	){
+		send(not_found(req, req.target()));
+	}
+
 
 }
