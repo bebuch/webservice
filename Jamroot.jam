@@ -1,5 +1,5 @@
 import os ;
-local boost = [ os.environ BOOST ] ;
+local boost = [ os.environ BOOST_ROOT ] ;
 
 use-project /boost
 	: $(boost)

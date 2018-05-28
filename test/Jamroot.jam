@@ -1,6 +1,6 @@
 import os ;
 local webservice = .. ;
-local boost = [ os.environ BOOST ] ;
+local boost = [ os.environ BOOST_ROOT ] ;
 local json = ../../nlohmann/json ;
 
 searched-lib gtest ;
