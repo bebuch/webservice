@@ -16,7 +16,6 @@ namespace webservice{
 
 	http_sessions::http_sessions(server_impl& server)
 		: server_(server)
-		, locker_([]()noexcept{}) // TODO: call erase
 		, run_lock_(locker_.make_first_lock())
 		, strand_(server_.executor().get_executor()) {}
 
