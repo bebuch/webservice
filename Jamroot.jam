@@ -29,7 +29,9 @@ project webservice
 	<toolset>clang:<cxxflags>-Wall
 	<toolset>clang:<cxxflags>-Wextra
 	<toolset>clang:<cxxflags>-stdlib=libc++
-	<toolset>clang:<cxxflags>-DBOOST_ASIO_HAS_STD_CHRONO
+	<toolset>clang:<variant>debug:<cxxflags>-fstandalone-debug
+	<toolset>clang:<variant>debug:<cxxflags>-fno-limit-debug-info
+	<toolset>clang:<variant>debug:<define>_LIBCPP_DEBUG
 	<toolset>clang:<linkflags>-lpthread
 	<toolset>clang:<linkflags>-lc++abi
 	<toolset>clang:<linkflags>-stdlib=libc++
