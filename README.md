@@ -88,3 +88,9 @@ If a user defined handler like `on_text` or `on_binary` takes to long time, the
 activity timer expires and closes the session with a timeout. The session can
 not pong while a handler is running. Set `websocket_ping_time` to a higher
 value or to `0` or implement you handling asynchronous.
+
+## License notice
+
+This software was originally developed privately by Benjamin Buch. All changes are released under the Boost Software License - Version 1.0 and published on GitHub.
+
+https://github.com/bebuch/webservice
