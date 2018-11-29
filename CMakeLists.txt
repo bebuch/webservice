@@ -10,6 +10,7 @@ set(DEFAULT_BUILD_TYPE "Release")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
 file(GLOB SOURCE_FILES src/*.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
@@ -45,6 +46,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
     DESTINATION ${LIB_INSTALL_DIR}/cmake/${PROJECT_NAME})
 
 
+### TODO: Add examples and tests with cmake!
 # # other subdirectories
 # # only add if not inside add_subdirectory()
 # option(WEBSERVICE_BUILD_EXAMPLES "build examples" OFF)
